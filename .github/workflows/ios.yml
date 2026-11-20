@@ -34,7 +34,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release download game-data --pattern "Slotbound-2026-11-15-ios11.love" --output game.love --clobber
+          gh release download game-data --pattern "Slotbound-v2-ios11.love" --clobber
+          mv "Slotbound-v2-ios11.love" game.love
           ls -lh game.love
 
       - name: Validate game package
