@@ -1,30 +1,25 @@
-# SlotBound iOS (LÖVE 11.5)
+# SlotBound iOS 移植版
 
-iOS port of the latest PC SlotBound game package, built with the official
-LÖVE 11.5 iOS Xcode project. Unsigned IPA, re-sign with your own Apple ID
-(AltStore / Sideloadly) before installing.
+在 iPhone 上玩 SlotBound。基于最新 PC 版游戏包，用 LÖVE 11.5 编译的未签名 IPA，用 LiveContainer 安装即可游玩。
 
-## Download
+## 下载
 
-- IPA: https://github.com/Yakult00/Slotbound-iOS-v3/releases/download/ios-latest/Slotbound.ipa
-- Game data: https://github.com/Yakult00/Slotbound-iOS-v3/releases/tag/game-data
+- **最新版 v1.0**：[Slotbound-v1.0.ipa](https://github.com/Yakult00/Slotbound-iOS/releases/download/v1.0/Slotbound-v1.0.ipa)
 
-## Build
+## 安装方法
 
-Run **Build unsigned iOS IPA** from GitHub Actions. The workflow runs on a
-macOS runner, downloads the latest game package from the `game-data` release,
-builds an iPhoneOS ARM64 app, embeds `game.love`, verifies the Mach-O
-platform and architecture, and uploads an unsigned IPA artifact (and, by
-default, publishes it to the `ios-latest` release).
+1. 下载上面的 IPA 文件。
+2. 用 LiveContainer 打开 IPA 安装即可游玩。
 
-Bundle identifier: `com.yakult00.slotbound`.
+## 说明
 
-## Notes
+- 游戏数据来自 2026 年 11 月的 PC 最新版（2063 个文件）。
+- Windows 专属的运气/保底系统（`SbLuck*` / `SbPity*`）在 iOS 上没有原生支持，已用纯 Lua 替代，游戏按基础概率运行，完全可玩。
+- 韩文文件名已正确处理，不会出现缺文件的问题。
+- 仓库里不含 Windows 启动器、Steam DLL、修改器等 PC 专属文件。
 
-- The game data is the Nov 2026 PC package (SBDATA008, 2063 files). The
-  Windows-only luck/pity natives (`SbLuck*` / `SbPity*`, exported by
-  Slotbound.exe) are stubbed with neutral pure-Lua replacements in `main.lua`,
-  so the game runs on iOS with base slot odds and no pity forcing.
-- Korean filenames are stored with the ZIP UTF-8 flag so LÖVE can find them.
-- This repo intentionally does not contain the Windows launcher, Steam DLLs,
-  trainer, loader, or ANGLE runtime.
+## 自己编译
+
+仓库根目录有 `game.love`（游戏包）。GitHub Actions 工作流（`.github/workflows/ios.yml`）会用它编译出未签名 IPA。点 Actions → Build unsigned iOS IPA → Run workflow 即可。
+
+包名：`com.yakult00.slotbound`
