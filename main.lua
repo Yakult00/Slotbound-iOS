@@ -72,107 +72,135 @@ local chunk = love.filesystem.load("real_main.luac")
 chunk()
 package.loaded["ffi"] = real_ffi
 
--- Two-finger tap = right-click (touch only).
--- A single-finger tap is held for TAP_DELAY seconds before it is delivered
--- as a left-click, so a second finger landing in that window can turn the
--- gesture into a right-click instead of firing a stray left-click first.
-local TAP_DELAY = 0.09
-local game_mousepressed = love.mousepressed
-local game_mousereleased = love.mousereleased
-local game_update = love.update
+-- Two-finger tap = right-click (v1.1.2)
+-- Left-click fires on RELEASE (a tap), not on a timer: holding one finger
+-- to aim a right-click never triggers a left-click, so it can no longer
+-- open an item info page by accident. Right-click fires at the pointer
+-- (first finger) the moment the second finger goes down. mousemoved is
+-- redirected to the pointer during a two-finger gesture, so the pointer
+-- never visibly jumps to the second finger.
+do
+    local game_mousepressed = love.mousepressed
+    local game_mousereleased = love.mousereleased
+    local game_mousemoved = love.mousemoved
+    local real_getPosition = love.mouse and love.mouse.getPosition
 
-local active_touches = {}
-local pending = nil          -- {x, y, t, released, rx, ry}
-local right_pos = nil        -- {x, y} of the touch that fired the right-click
--- Positions where a touch left-press was swallowed (cancelled pending or
--- second-finger auto click). Their matching releases are swallowed too, so
--- the game never sees a release without a press. Entries expire after 1s.
-local swallowed = {}
+    local active_touches = {}
+    local first_pos = nil      -- position of the first (pointer) finger
+    local pending = nil        -- {x, y} single tap waiting for release
+    local right_pos = nil      -- pointer position during a right-click
+    local right_touch_id = nil
+    local swallowed = {}
 
-local function dist2(x1, y1, x2, y2)
-    local dx, dy = x1 - x2, y1 - y2
-    return dx * dx + dy * dy
-end
+    local function is_swallowed(x, y)
+        local now = love.timer.getTime()
+        for i = #swallowed, 1, -1 do
+            local s = swallowed[i]
+            if now - s.t > 1 then
+                table.remove(swallowed, i)
+            elseif math.abs(s.x - x) <= 60 and math.abs(s.y - y) <= 60 then
+                table.remove(swallowed, i)
+                return true
+            end
+        end
+        return false
+    end
 
-local function swallow_at(x, y)
-    swallowed[#swallowed + 1] = { x = x, y = y, t = love.timer.getTime() }
-end
-
-local function is_swallowed(x, y)
-    local now = love.timer.getTime()
-    for i = #swallowed, 1, -1 do
-        local s = swallowed[i]
-        if now - s.t > 1.0 then
-            table.remove(swallowed, i)
-        elseif dist2(x, y, s.x, s.y) <= 60 * 60 then
-            table.remove(swallowed, i)
-            return true
+    local function set_pointer(x, y)
+        if love.mouse and love.mouse.setPosition then
+            pcall(love.mouse.setPosition, x, y)
         end
     end
-    return false
-end
 
-function love.touchpressed(id, x, y, dx, dy, pressure)
-    local count = 0
-    for _ in pairs(active_touches) do count = count + 1 end
-    active_touches[id] = { x = x, y = y }
-    if count == 1 then
-        -- Second finger down: cancel the pending left-click, fire right-click.
-        if pending then swallow_at(pending.x, pending.y) end
-        pending = nil
-        right_pos = { x = x, y = y }
-        if game_mousepressed then game_mousepressed(x, y, 2, true, 1) end
+    local function count_touches()
+        local n = 0
+        for _ in pairs(active_touches) do n = n + 1 end
+        return n
     end
-end
 
-function love.touchreleased(id, x, y, dx, dy, pressure)
-    local was_right = right_pos and dist2(x, y, right_pos.x, right_pos.y) <= 60 * 60
-    active_touches[id] = nil
-    if was_right then
-        right_pos = nil
-        if game_mousereleased then game_mousereleased(x, y, 2, true, 1) end
+    love.touchpressed = function(id, x, y, dx, dy, pressure)
+        active_touches[id] = { x = x, y = y }
+        if count_touches() == 1 then
+            first_pos = { x = x, y = y }
+            pending = { x = x, y = y }
+        elseif count_touches() >= 2 and first_pos then
+            -- second finger: right-click at the pointer (first finger)
+            right_pos = { x = first_pos.x, y = first_pos.y }
+            right_touch_id = id
+            pending = nil
+            set_pointer(right_pos.x, right_pos.y)
+            if game_mousepressed then
+                game_mousepressed(right_pos.x, right_pos.y, 2, true, 1)
+            end
+        end
     end
-end
 
-function love.mousepressed(x, y, button, istouch, presses)
-    if istouch and button == 1 then
-        -- Auto left-click generated from a touch. If two fingers are down,
-        -- this is the second finger: swallow it (right-click is handled
-        -- through love.touchpressed instead).
-        local touches = love.touch.getTouches()
-        if #touches >= 2 or (right_pos and dist2(x, y, right_pos.x, right_pos.y) <= 60 * 60) then
-            swallow_at(x, y)
+    love.touchreleased = function(id, x, y, dx, dy, pressure)
+        local was_right = (id == right_touch_id)
+        active_touches[id] = nil
+        if was_right and right_pos then
+            local rp = right_pos
+            right_pos = nil
+            right_touch_id = nil
+            set_pointer(rp.x, rp.y)
+            if game_mousereleased then
+                game_mousereleased(rp.x, rp.y, 2, true, 1)
+            end
+        elseif count_touches() == 0 then
+            -- all fingers up: a pending tap becomes a left click now
+            if pending then
+                local p = pending
+                pending = nil
+                set_pointer(p.x, p.y)
+                if game_mousepressed then
+                    game_mousepressed(p.x, p.y, 1, true, 1)
+                end
+                if game_mousereleased then
+                    game_mousereleased(p.x, p.y, 1, true, 1)
+                end
+            end
+            first_pos = nil
+        end
+    end
+
+    love.mousepressed = function(x, y, button, istouch, presses)
+        if istouch then
+            if count_touches() >= 2 then
+                swallowed[#swallowed + 1] = { x = x, y = y, t = love.timer.getTime() }
+            end
+            -- single-finger auto left-click is held as a pending tap,
+            -- it fires on release (see touchreleased)
             return
         end
-        -- First finger: hold briefly to see if a second finger joins.
-        pending = { x = x, y = y, t = love.timer.getTime(), released = false }
-        return
+        if game_mousepressed then game_mousepressed(x, y, button, istouch, presses) end
     end
-    if game_mousepressed then game_mousepressed(x, y, button, istouch, presses) end
-end
 
-function love.mousereleased(x, y, button, istouch, presses)
-    if istouch and button == 1 then
-        if is_swallowed(x, y) then return end
-        if pending then
-            -- Finger lifted before the delayed press fired: remember the
-            -- release so it is delivered right after the press.
-            pending.released = true
-            pending.rx, pending.ry = x, y
+    love.mousereleased = function(x, y, button, istouch, presses)
+        if istouch then
+            -- the tap is fired by touchreleased; swallow the engine's
+            -- auto release so the game never sees a release without a press
+            is_swallowed(x, y)
             return
         end
+        if game_mousereleased then game_mousereleased(x, y, button, istouch, presses) end
     end
-    if game_mousereleased then game_mousereleased(x, y, button, istouch, presses) end
-end
 
-function love.update(dt)
-    if game_update then game_update(dt) end
-    if pending and love.timer.getTime() - pending.t >= TAP_DELAY then
-        local p = pending
-        pending = nil
-        if game_mousepressed then game_mousepressed(p.x, p.y, 1, true, 1) end
-        if p.released and game_mousereleased then
-            game_mousereleased(p.rx, p.ry, 1, true, 1)
+    love.mousemoved = function(x, y, dx, dy, istouch)
+        if istouch and right_pos then
+            -- during a two-finger gesture, keep the pointer at the first finger
+            if game_mousemoved then game_mousemoved(right_pos.x, right_pos.y, 0, 0, istouch) end
+            return
+        end
+        if game_mousemoved then game_mousemoved(x, y, dx, dy, istouch) end
+    end
+
+    -- If the game polls love.mouse.getPosition() instead of using
+    -- mousemoved, it must also see the pointer, not the second finger.
+    if love.mouse and real_getPosition then
+        love.mouse.getPosition = function()
+            if right_pos then return right_pos.x, right_pos.y end
+            if pending then return pending.x, pending.y end
+            return real_getPosition()
         end
     end
 end
