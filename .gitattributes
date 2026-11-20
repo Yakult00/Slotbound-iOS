@@ -1,0 +1,16 @@
+# 游戏文件一律按二进制处理，禁止 git 改换行符。
+# 游戏启动时会校验文件哈希，CRLF 被改成 LF 会导致黑屏无法启动。
+src/** binary
+*.luac binary
+*.lua binary
+*.png binary
+*.mp3 binary
+*.wav binary
+*.ogg binary
+*.json binary
+*.txt binary
+main.lua binary
+conf.lua binary
+icon.png binary
+@bootstrap binary
+release.flag binary
