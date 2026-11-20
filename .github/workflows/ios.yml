@@ -2,18 +2,12 @@ name: Build unsigned iOS IPA
 
 on:
   workflow_dispatch:
-    inputs:
-      publish_release:
-        description: Upload the unsigned IPA to the ios-latest release
-        required: true
-        default: true
-        type: boolean
 
 permissions:
   contents: write
 
 concurrency:
-  group: slotbound-ios-v3
+  group: slotbound-ios
   cancel-in-progress: true
 
 jobs:
@@ -29,13 +23,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download latest game package
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Package game.love from repo files
         run: |
           set -euo pipefail
-          gh release download game-data --pattern "Slotbound-v2-ios11-final.love" --clobber
-          mv "Slotbound-v2-ios11-final.love" game.love
+          python3 - << 'PYEOF'
+          import os, zipfile
+          # Files/dirs that belong in the .love (the game project in repo root).
+          include = ["main.lua", "real_main.luac", "conf.lua", "icon.png",
+                     "release.flag", "@bootstrap", "src"]
+          with zipfile.ZipFile("game.love", "w", zipfile.ZIP_DEFLATED) as z:
+              for entry in include:
+                  if os.path.isdir(entry):
+                      for root, _, files in os.walk(entry):
+                          for f in files:
+                              p = os.path.join(root, f)
+                              z.write(p, p)
+                  else:
+                      z.write(entry, entry)
+          print("game.love packaged")
+          PYEOF
           ls -lh game.love
 
       - name: Validate game package
@@ -101,16 +107,3 @@ jobs:
             Slotbound.ipa
             BUILD-METADATA.txt
             game.love.sha256
-
-      - name: Publish release asset
-        if: ${{ inputs.publish_release == true }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          tag=ios-latest
-          if ! gh release view "$tag" >/dev/null 2>&1; then
-            gh release create "$tag" --prerelease --title "SlotBound iOS (unsigned)" \
-              --notes "Unsigned ARM64 iPhoneOS package built from the official LÖVE 11.5 source. Re-sign before installing on a device."
-          fi
-          gh release upload "$tag" Slotbound.ipa BUILD-METADATA.txt game.love.sha256 --clobber
