@@ -219,13 +219,14 @@ function love.touchpressed(id, x, y, dx, dy, pressure)
     end
     active_touches[id] = { x = x, y = y }
     if count == 0 and right_mode then
-        -- Single tap in right mode: one complete right-click fired on press
-        -- (press + release together); lifting the finger fires nothing.
+        -- Single tap in right mode: exactly one right-press event.
+        -- The game toggles the item on every right-button event, so a
+        -- release event here would cancel the activation at once.
+        -- Lifting the finger fires nothing.
         if love.mouse and love.mouse.setPosition then
             pcall(love.mouse.setPosition, x, y)
         end
         if game_mousepressed then game_mousepressed(x, y, 2, true, 1) end
-        if game_mousereleased then game_mousereleased(x, y, 2, true, 1) end
         return
     end
     if count == 1 then
