@@ -1,0 +1,113 @@
+name: Build unsigned iOS IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: Upload the unsigned IPA to the ios-latest release
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: slotbound-ios-v3
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: LÖVE 11.5 iPhoneOS ARM64
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      LOVE_VERSION: "11.5"
+      BUNDLE_ID: com.yakult00.slotbound
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download latest game package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download game-data --pattern "Slotbound-2026-11-15-ios11.love" --output game.love --clobber
+          ls -lh game.love
+
+      - name: Validate game package
+        run: |
+          set -euo pipefail
+          test -s game.love
+          unzip -l game.love | grep -E '^(.* )(main\.lua|conf\.lua)$'
+          shasum -a 256 game.love | tee game.love.sha256
+
+      - name: Download official LÖVE iOS source
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output love-ios-source.zip \
+            "https://github.com/love2d/love/releases/download/${LOVE_VERSION}/love-${LOVE_VERSION}-ios-source.zip"
+          unzip -q love-ios-source.zip
+          test -d "love-${LOVE_VERSION}-ios-source/platform/xcode/love.xcodeproj"
+
+      - name: Build unsigned iPhoneOS app
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project "love-${LOVE_VERSION}-ios-source/platform/xcode/love.xcodeproj" \
+            -target love-ios \
+            -sdk iphoneos \
+            -configuration Release \
+            ARCHS=arm64 ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            IPHONEOS_DEPLOYMENT_TARGET=12.0 \
+            build
+
+      - name: Fuse package and verify device binary
+        run: |
+          set -euo pipefail
+          APP="love-${LOVE_VERSION}-ios-source/platform/xcode/build/Release-iphoneos/love.app"
+          test -n "$APP"
+          cp game.love "$APP/game.love"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName SlotBound" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleName SlotBound" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier ${BUNDLE_ID}" "$APP/Info.plist"
+          /usr/bin/xcrun vtool -show-build "$APP/love" | grep -Eq '^[[:space:]]*platform IOS$'
+          /usr/bin/lipo -archs "$APP/love" | grep -qw arm64
+          mkdir -p Payload
+          cp -R "$APP" Payload/SlotBound.app
+          /usr/bin/ditto -c -k --keepParent Payload Slotbound.ipa
+          unzip -t Slotbound.ipa
+          unzip -l Slotbound.ipa | grep -E 'Payload/SlotBound.app/(game\.love|Info\.plist|love)$'
+          {
+            echo "bundle_id=${BUNDLE_ID}"
+            echo "engine=LÖVE ${LOVE_VERSION}"
+            echo "platform=iphoneos"
+            echo "architecture=arm64"
+            echo "signing=unsigned; re-sign required"
+            echo "game_sha256=$(shasum -a 256 game.love | awk '{print $1}')"
+          } > BUILD-METADATA.txt
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Slotbound-unsigned
+          path: |
+            Slotbound.ipa
+            BUILD-METADATA.txt
+            game.love.sha256
+
+      - name: Publish release asset
+        if: ${{ inputs.publish_release == true }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=ios-latest
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --prerelease --title "SlotBound iOS (unsigned)" \
+              --notes "Unsigned ARM64 iPhoneOS package built from the official LÖVE 11.5 source. Re-sign before installing on a device."
+          fi
+          gh release upload "$tag" Slotbound.ipa BUILD-METADATA.txt game.love.sha256 --clobber
