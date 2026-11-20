@@ -4,22 +4,65 @@
 
 ## 下载
 
-- **最新版 v1.0**：[Slotbound-v1.0.ipa](https://github.com/Yakult00/Slotbound-iOS/releases/download/v1.0/Slotbound-v1.0.ipa)
+- **最新版 v1.1.3**：[Slotbound-v1.1.3.ipa](https://github.com/Yakult00/Slotbound-iOS/releases/download/v1.1.3/Slotbound-v1.1.3.ipa)
 
 ## 安装方法
 
 1. 下载上面的 IPA 文件。
 2. 用 LiveContainer 打开 IPA 安装即可游玩。
 
-## 说明
+## 触屏操作
 
-- 游戏数据来自 2026 年 11 月的 PC 最新版（2063 个文件）。
-- Windows 专属的运气/保底系统（`SbLuck*` / `SbPity*`）在 iOS 上没有原生支持，已用纯 Lua 替代，游戏按基础概率运行，完全可玩。
-- 韩文文件名已正确处理，不会出现缺文件的问题。
+游戏原本是 PC 鼠标操作，触屏做了适配：
+
+- **点按**：左键（选择、查看道具）。
+- **右上角按钮 L / R**：切换右键模式。平时显示 L（左键，深色），点一下变成 R（右键，橙色），这时点道具就是右键（使用道具），再点一下切回左键。
+- **左上角 ESC 按钮**：返回，相当于键盘 Esc。
+- **双指点按**：也可以右键（第一根手指的位置）。
+
+## 项目结构
+
+仓库根目录就是完整的游戏项目（解开的游戏包），不是一个黑盒 zip：
+
+```
+Slotbound-iOS/
+├── main.lua              # 垫片：iOS 适配（见下）
+├── real_main.luac        # 游戏原本的 main.lua（LuaJIT 字节码）
+├── conf.lua              # 游戏配置
+├── icon.png              # 应用图标
+├── release.flag
+├── @bootstrap
+├── src/                  # 游戏全部代码和资源
+│   ├── audio/            # 音效、音乐
+│   ├── data/             # 游戏数据
+│   ├── game/             # 游戏逻辑
+│   ├── language/         # 语言文件
+│   ├── sprites/          # 图片资源
+│   ├── ui/               # 界面
+│   └── ...               # 其余 2063 个文件
+├── README.md
+└── .github/workflows/    # 编译流水线
+    └── ios.yml
+```
+
+## 移植说明
+
+- 游戏数据来自 2026 年 11 月的 PC 最新版（2063 个文件），原先锁在加密容器 `Slotbound.dat`（SBDATA008）里，已逆向解出。
+- `main.lua` 是垫片，做了三件事：用纯 Lua 的 `ffi` 替代 Windows 原生的运气/保底系统（`SbLuck*` / `SbPity*`，游戏按基础概率运行，完全可玩）；用 `pcall` 包住 `jit.on/off`（iOS 没有 JIT，直接调会黑屏）；加上触屏适配（右键切换按钮、返回按钮、双指点按）。
+- 韩文文件名已正确处理（UTF-8 标志），不会出现缺文件的问题。
 - 仓库里不含 Windows 启动器、Steam DLL、修改器等 PC 专属文件。
+- 66 个 `.lua` 文件是 LuaJIT 字节码（不是源码），在 GitHub 上打开会显示二进制；图片、音乐、配置文件可以直接浏览。
 
 ## 自己编译
 
-仓库根目录有 `game.love`（游戏包）。GitHub Actions 工作流（`.github/workflows/ios.yml`）会用它编译出未签名 IPA。点 Actions → Build unsigned iOS IPA → Run workflow 即可。
+GitHub Actions 工作流（`.github/workflows/ios.yml`）会把仓库根目录的文件打包成 `game.love`，再用 LÖVE 11.5 iOS 源码编译出未签名 IPA。点 Actions → Build unsigned iOS IPA → Run workflow 即可，编好在 Artifacts 里下载 `Slotbound-unsigned`。
 
 包名：`com.yakult00.slotbound`
+
+## 版本
+
+- v1.0：第一版 iOS 移植版
+- v1.1：双指点按 = 右键
+- v1.1.1：双指右键落在第一根手指（指针）的位置
+- v1.1.2：左键松手才触发
+- v1.1.3：在 v1.1.1 基础上加切换右键模式按钮（右上角 L / R）
