@@ -90,6 +90,7 @@ local game_keyreleased = love.keyreleased
 
 -- Toggle button (top-right corner) and back button (top-left, ESC)
 local right_mode = false
+local right_taps = {}  -- touch id -> {x, y} for single taps in right mode
 local BW, BH = 100, 48
 local MARGIN = 12
 
@@ -219,10 +220,8 @@ function love.touchpressed(id, x, y, dx, dy, pressure)
     end
     active_touches[id] = { x = x, y = y }
     if count == 0 and right_mode then
-        -- Single tap in right mode: exactly one right-press event.
-        -- The game toggles the item on every right-button event, so a
-        -- release event here would cancel the activation at once.
-        -- Lifting the finger fires nothing.
+        -- Single tap in right mode: fire a right-click at once.
+        right_taps[id] = { x = x, y = y }
         if love.mouse and love.mouse.setPosition then
             pcall(love.mouse.setPosition, x, y)
         end
@@ -253,6 +252,12 @@ function love.touchreleased(id, x, y, dx, dy, pressure)
         return
     end
     active_touches[id] = nil
+    if right_taps[id] then
+        local p = right_taps[id]
+        right_taps[id] = nil
+        if game_mousereleased then game_mousereleased(p.x, p.y, 2, true, 1) end
+        return
+    end
     if right_touch_id and id == right_touch_id then
         -- The finger that triggered the right-click lifted: release it at
         -- the same pointer position where the press fired.
