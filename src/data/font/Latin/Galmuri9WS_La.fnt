@@ -1,7 +1,7 @@
-info face="Galmuri9WS_La" size=10 bold=0 italic=0 charset="32-91,93,95-125,161,169,171,180,187,191-207,209-214,216-221,223-239,241-246,248-253,255,258-263,268-269,272-273,280-281,286-287,296-297,304-307,321-324,336-339,346-347,352-353,360-361,368-369,376-382,416-417,431-432,536-539,7838,7840-7929,8211-8212,8216-8217,8220-8221,8230,8364,8381,8470" unicode=1 stretchH=100 smooth=1 aa=1 padding=1,1,1,1 spacing=1,1 outline=0
-common lineHeight=8 base=8 scaleW=182 scaleH=179 pages=1 packed=0 alphaChnl=0 redChnl=4 greenChnl=4 blueChnl=4
+info face="Galmuri9WS_La" size=10 bold=0 italic=0 charset="32-91,93,95-125,161,169,171,180,187,191-207,209-214,216-221,223-239,241-246,248-253,255,258-263,268-269,272-273,280-281,286-287,296-297,304-307,321-324,336-339,346-347,350-351,352-353,360-361,368-369,376-382,416-417,431-432,536-539,7838,7840-7929,8211-8212,8216-8217,8220-8221,8230,8364,8381,8470" unicode=1 stretchH=100 smooth=1 aa=1 padding=1,1,1,1 spacing=1,1 outline=0
+common lineHeight=8 base=8 scaleW=182 scaleH=195 pages=1 packed=0 alphaChnl=0 redChnl=4 greenChnl=4 blueChnl=4
 page id=0 file="Galmuri9WS_La.png"
-chars count=308
+chars count=310
 char id=32 x=0 y=0 width=0 height=0 xoffset=0 yoffset=0 xadvance=4 page=0 chnl=15
 char id=33 x=4 y=132 width=3 height=12 xoffset=0 yoffset=0 xadvance=4 page=0 chnl=15
 char id=34 x=107 y=170 width=5 height=5 xoffset=-1 yoffset=0 xadvance=4 page=0 chnl=15
@@ -310,7 +310,9 @@ char id=8230 x=127 y=170 width=9 height=4 xoffset=0 yoffset=4 xadvance=10 page=0
 char id=8364 x=81 y=132 width=8 height=12 xoffset=-1 yoffset=0 xadvance=7 page=0 chnl=15
 char id=8381 x=90 y=132 width=8 height=12 xoffset=-1 yoffset=0 xadvance=7 page=0 chnl=15
 char id=8470 x=171 y=119 width=11 height=12 xoffset=-1 yoffset=0 xadvance=10 page=0 chnl=15
-kernings count=351
+char id=350 x=1 y=180 width=6 height=14 xoffset=-1 yoffset=0 xadvance=5 page=0 chnl=15
+char id=351 x=9 y=180 width=6 height=11 xoffset=-1 yoffset=3 xadvance=5 page=0 chnl=15
+kernings count=357
 kerning first=34 second=44 amount=-1
 kerning first=34 second=46 amount=-1
 kerning first=34 second=47 amount=-1
@@ -662,3 +664,9 @@ kerning first=8230 second=84 amount=-1
 kerning first=8230 second=89 amount=-1
 kerning first=8230 second=95 amount=-1
 kerning first=8230 second=106 amount=-1
+kerning first=350 second=106 amount=-1
+kerning first=84 second=351 amount=-1
+kerning first=89 second=351 amount=-1
+kerning first=351 second=84 amount=-1
+kerning first=351 second=89 amount=-1
+kerning first=351 second=106 amount=-1
