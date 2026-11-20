@@ -75,6 +75,8 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName SlotBound" "$APP/Info.plist"
           /usr/libexec/PlistBuddy -c "Set :CFBundleName SlotBound" "$APP/Info.plist"
           /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier ${BUNDLE_ID}" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :UIFileSharingEnabled bool true" "$APP/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Add :LSSupportsOpeningDocumentsInPlace bool true" "$APP/Info.plist" || true
           /usr/bin/xcrun vtool -show-build "$APP/love" | grep -Eq '^[[:space:]]*platform IOS$'
           /usr/bin/lipo -archs "$APP/love" | grep -qw arm64
           mkdir -p Payload
