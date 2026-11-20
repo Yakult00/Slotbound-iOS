@@ -1,10 +1,10 @@
 # SlotBound iOS 移植版
 
-在 iPhone 上玩 SlotBound。基于最新 PC 版游戏包，用 LÖVE 11.5 编译的未签名 IPA，用 LiveContainer 安装即可游玩。
+把 PC 游戏 SlotBound 搬到 iPhone 上玩。SlotBound 是一款老虎机肉鸽游戏（拉老虎机打怪、攒遗物、闯关），原本只有 PC 版，没有官方手游。这个项目把最新 PC 版的游戏包解出来，用 LÖVE 11.5 编译成未签名 IPA，在 iPhone 上用 LiveContainer 安装就能直接玩，存档、道具、关卡都和 PC 版一样。
 
 ## 下载
 
-- **最新版 v1.1.3**：[Slotbound-v1.1.3.ipa](https://github.com/Yakult00/Slotbound-iOS/releases/download/v1.1.3/Slotbound-v1.1.3.ipa)
+- **最新版 v1.1.5**：[Slotbound-v1.1.5.ipa](https://github.com/Yakult00/Slotbound-iOS/releases/download/v1.1.5/Slotbound-v1.1.5.ipa)
 
 ## 安装方法
 
@@ -66,3 +66,5 @@ GitHub Actions 工作流（`.github/workflows/ios.yml`）会把仓库根目录�
 - v1.1.1：双指右键落在第一根手指（指针）的位置
 - v1.1.2：左键松手才触发
 - v1.1.3：在 v1.1.1 基础上加切换右键模式按钮（右上角 L / R）
+- v1.1.4：左上角 ESC 返回按钮（因换行符问题黑屏，已撤回）
+- v1.1.5：修复 v1.1.4 黑屏，含 ESC 返回按钮与右键切换按钮
