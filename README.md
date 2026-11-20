@@ -2,9 +2,6 @@
 
 把 PC 游戏 SlotBound 搬到 iPhone 上玩。SlotBound 是一款老虎机肉鸽游戏（拉老虎机打怪、攒遗物、闯关），原本只有 PC 版，没有官方手游。这个项目把最新 PC 版的游戏包解出来，用 LÖVE 11.5 编译成未签名 IPA，在 iPhone 上用 LiveContainer 安装就能直接玩，存档、道具、关卡都和 PC 版一样。
 
-## 下载
-
-- **最新版 v1.1.5**：[Slotbound-v1.1.5.ipa](https://github.com/Yakult00/Slotbound-iOS/releases/download/v1.1.5/Slotbound-v1.1.5.ipa)
 
 ## 安装方法
 
