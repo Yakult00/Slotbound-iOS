@@ -10,7 +10,7 @@
 #import <mach-o/loader.h>
 #import <sys/mman.h>
 #import <pthread.h>
-#import "dobby/dobby.h"
+#import "dobby.h"
 
 // ---------- Lua C API types (LuaJIT 2.1, Lua 5.1 ABI) ----------
 typedef struct lua_State lua_State;
