@@ -1,0 +1,31 @@
+name: Build drop-rate dylib
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-dylib:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build SlotboundDropRate.dylib (iOS arm64)
+        run: |
+          SDK=$(xcrun -sdk iphoneos --show-sdk-path)
+          echo "SDK: $SDK"
+          xcrun -sdk iphoneos clang -arch arm64 -dynamiclib \
+            -O2 -fPIC \
+            -isysroot "$SDK" \
+            -miphoneos-version-min=12.0 \
+            -o SlotboundDropRate.dylib \
+            dylib/SlotboundDropRate.c dylib/fishhook.c
+          file SlotboundDropRate.dylib
+          otool -L SlotboundDropRate.dylib
+          ls -la SlotboundDropRate.dylib
+
+      - name: Upload dylib artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SlotboundDropRate-dylib
+          path: SlotboundDropRate.dylib
