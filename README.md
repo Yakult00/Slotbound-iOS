@@ -17,6 +17,15 @@
 - **左上角 ESC 按钮**：返回，相当于键盘 Esc。
 - **双指点按**：也可以右键（第一根手指的位置）。
 
+## 版本对照
+
+| 移植版 | 基于 PC 版 | 说明 |
+|---|---|---|
+| v1.0 – v1.1.5 | v1.0.0 | 首批移植版 |
+| v1.2.0 – v1.3.0 | v1.0.2 | 游戏内容升级到官方 v1.0.2 |
+
+每次发布的改动见 [CHANGELOG.md](CHANGELOG.md)。
+
 ## 项目结构
 
 仓库根目录就是完整的游戏项目（解开的游戏包），不是一个黑盒 zip：
@@ -36,20 +45,25 @@ Slotbound-iOS/
 │   ├── language/         # 语言文件
 │   ├── sprites/          # 图片资源
 │   ├── ui/               # 界面
-│   └── ...               # 其余 2063 个文件
+│   └── ...               # 其余 2076 个文件
 ├── trainer_backend.lua   # 游戏辅助：后端逻辑（纯 Lua，随游戏一起打包）
 ├── assistant/            # 游戏辅助：原生面板
 │   ├── dylib/            # 面板源码 + 内嵌后端
 │   └── ...
+├── tools/
+│   └── verify_integrity.py  # CI 用的游戏完整性校验（对照游戏自带清单）
 ├── README.md
+├── CHANGELOG.md
 └── .github/workflows/    # 编译流水线
     ├── ios.yml           # 打 IPA
     └── assist.yml        # 打辅助面板 dylib
 ```
 
+本地构建产物（`build/`、`.ipa`、`game.love`）不提交进仓库，只走 release assets。
+
 ## 移植说明
 
-- 游戏数据来自 2026 年 11 月的 PC 最新版（2063 个文件），原先锁在加密容器 `Slotbound.dat`（SBDATA008）里，已逆向解出。
+- 游戏数据来自 2026 年 11 月的 PC 最新版（2076 个文件），原先锁在加密容器 `Slotbound.dat`（SBDATA008）里，已逆向解出。
 - `main.lua` 是垫片，做了三件事：用纯 Lua 的 `ffi` 替代 Windows 原生的运气/保底系统（`SbLuck*` / `SbPity*`，游戏按基础概率运行，完全可玩）；用 `pcall` 包住 `jit.on/off`（iOS 没有 JIT，直接调会黑屏）；加上触屏适配（右键切换按钮、返回按钮、双指点按）。
 - 韩文文件名已正确处理（UTF-8 标志），不会出现缺文件的问题。
 - 仓库里不含 Windows 启动器、Steam DLL、修改器等 PC 专属文件。
@@ -67,9 +81,17 @@ Slotbound-iOS/
 
 安装：把 dylib 放到 `/var/jb/Library/MobileSubstrate/DynamicLibraries/`，`ldid -S` 签一次，重开游戏，点右下角浮球打开面板。
 
-## 自己编译
+## 自己编译与发布
 
-GitHub Actions 工作流（`.github/workflows/ios.yml`）会把仓库根目录的文件打包成 `game.love`，再用 LÖVE 11.5 iOS 源码编译出未签名 IPA。点 Actions → Build unsigned iOS IPA → Run workflow 即可，编好在 Artifacts 里下载 `Slotbound-unsigned`。
+发布流程是自动的：**打 tag 即发布**。
+
+```bash
+git tag v1.3.1
+git push origin v1.3.1
+```
+
+推送 tag 后，`ios.yml` 自动编译 IPA、`assist.yml` 自动编译两个 dylib，编好后自动创建 `v1.3.1` release 并上传全部资产（IPA + 两个 dylib）。版本号从 tag 派生，`CFBundleShortVersionString` 和文件名都跟着走，不用手动改。
+
+只想手动编一次不发布：点 Actions → Build unsigned iOS IPA → Run workflow，编好在 Artifacts 里下载 `Slotbound-unsigned`（只有 IPA，不建 release）。
 
 包名：`com.yakult00.slotbound`
-
