@@ -46,16 +46,16 @@ local last_mtime = -1
 local catalog_dirty = true
 local catalog_written = false
 
-local perf = { t = 0, interval = 60, spikes = 0, worst = 0, gc_tuned = false }
 local alive_t = 0
 local alive_now = false
 
--- 只调「更早开始收、每次多收一点」，不加每帧 step，避免拖慢 update。
+-- GC：只调「更早开始收、每次多收一点」，不加每帧 step，不动帧率上限。
 -- pause 200→150：堆没翻倍就开始收，单次停顿更小。
 -- stepmul 200→400：每次增量多干一点，减少一次性 full GC 的概率。
+local gc_tuned = false
 local function tune_gc()
-  if perf.gc_tuned then return end
-  perf.gc_tuned = true
+  if gc_tuned then return end
+  gc_tuned = true
   pcall(collectgarbage, "setpause", 150)
   pcall(collectgarbage, "setstepmul", 400)
 end
@@ -65,31 +65,8 @@ local function panel_alive(now)
   local ok, info = pcall(love.filesystem.getInfo, "cheats_alive.txt")
   if not ok or not info then return false end
   local m = info.modtime or 0
-  if m == 0 then return true end          -- 拿不到 mtime 就当活着（保守）
+  if m == 0 then return true end
   return (now - m) <= 6
-end
-
--- 探针：每 60 秒往 perf_log.txt 追加一行，用来对比改前/改后
-local function write_perf(dt)
-  if dt then
-    if dt > 0.034 then perf.spikes = perf.spikes + 1 end
-    if dt > perf.worst then perf.worst = dt end
-    perf.t = perf.t + dt
-  end
-  if perf.t < perf.interval then return end
-  perf.t = 0
-  local st
-  pcall(function() st = love.graphics.getStats() end)
-  st = st or {}
-  local luaMB = collectgarbage("count") / 1024
-  local line = string.format(
-    "[PERF] %s fps=%.1f luaMB=%.1f texMB=%.1f canvases=%d images=%d fonts=%d spikes=%d worstMS=%.1f\n",
-    os.date("%H:%M:%S"), love.timer.getFPS(), luaMB,
-    (st.texturememory or 0) / 1048576, st.canvases or 0, st.images or 0,
-    st.fonts or 0, perf.spikes, perf.worst * 1000)
-  pcall(love.filesystem.append, "perf_log.txt", line)
-  perf.spikes = 0
-  perf.worst = 0
 end
 
 ----------------------------------------------------------------
@@ -872,7 +849,6 @@ function M.tick(dt)
     pcall(write_status)
   end
 
-  write_perf(dt)
 end
 
 -- 包住 love.update：先跑游戏自己的 update，再跑 tick。

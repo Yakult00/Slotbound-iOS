@@ -17,6 +17,8 @@ jobs:
     timeout-minutes: 90
     env:
       LOVE_VERSION: "11.5"
+      APP_VERSION: "1.3.0"
+      APP_BUILD: "130"
       BUNDLE_ID: com.yakult00.slotbound
 
     steps:
@@ -97,6 +99,8 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName SlotBound" "$APP/Info.plist"
           /usr/libexec/PlistBuddy -c "Set :CFBundleName SlotBound" "$APP/Info.plist"
           /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier ${BUNDLE_ID}" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${APP_VERSION}" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${APP_BUILD}" "$APP/Info.plist"
           /usr/libexec/PlistBuddy -c "Add :UIFileSharingEnabled bool true" "$APP/Info.plist" || true
           /usr/libexec/PlistBuddy -c "Add :LSSupportsOpeningDocumentsInPlace bool true" "$APP/Info.plist" || true
           /usr/bin/xcrun vtool -show-build "$APP/love" | grep -Eq '^[[:space:]]*platform IOS$'
