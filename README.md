@@ -17,6 +17,21 @@
 - **左上角 ESC 按钮**：返回，相当于键盘 Esc。
 - **双指点按**：也可以右键（第一根手指的位置）。
 
+## 游戏辅助（可选）
+
+每个 release 里除了 IPA 还有两个辅助面板 dylib，游戏里改金币 / 旋转次数 / 水晶、调老虎机大奖、改单位属性。面板不改游戏文件，不注入不生效，删掉 dylib 就是原版游戏。
+
+**LiveContainer（非越狱）用 NoJIT 版**：
+
+1. 从 release 下载 `SlotboundTrainer-NoJIT.dylib`（不要用 `SlotboundTrainer.dylib`，它含 Dobby 内存 hook，在 LiveContainer 下会闪退）。
+2. 在 LiveContainer 里找到 SlotBound，把 dylib 放进它的 Tweaks 目录。
+3. 对 App 重新签名（Sign），再启动游戏。
+4. 游戏里出现悬浮骰子按钮，点开就是面板（资源 / 老虎机 / 单位三页）。
+
+面板左上角显示的版本号（vX.Y.Z）由编译时注入，和 release 版本一致。`trainer_backend.lua` 是面板的后端逻辑（纯 Lua），已随 game.love 打进 IPA，不用另外装。
+
+越狱设备也可以用 `SlotboundTrainer.dylib`（Dobby hook 版），装法见 `assistant/` 里的说明。
+
 ## 版本对照
 
 | 移植版 | 基于 PC 版 | 说明 |
@@ -51,7 +66,10 @@ Slotbound-iOS/
 │   ├── dylib/            # 面板源码 + 内嵌后端
 │   └── ...
 ├── tools/
-│   └── verify_integrity.py  # CI 用的游戏完整性校验（对照游戏自带清单）
+│   ├── verify_integrity.py  # CI 用的游戏完整性校验（对照游戏自带清单 + 垫片 pin）
+│   ├── shim.sha256          # 垫片层 pin（main.lua / real_main.luac / trainer_backend.lua / @bootstrap）
+│   ├── sync_backend.py      # 同步训练器后端三份拷贝（lua → dylib 内嵌版 → C 头文件）
+│   └── changelog_notes.py   # 从 CHANGELOG.md 提取 release 说明（不用 awk，macOS 上中文会炸）
 ├── README.md
 ├── CHANGELOG.md
 └── .github/workflows/    # 编译流水线
