@@ -327,6 +327,9 @@ static UIView *build_panel(CGRect screenBounds) {
     return panel;
 }
 
+// Forward declaration: wire_panel references DropRateOverlay (defined below).
+@class DropRateOverlay;
+
 // Wire targets after the panel is built (keeps the builder simple).
 static void wire_panel(UIView *panel) {
     for (UIView *v in panel.subviews) {
