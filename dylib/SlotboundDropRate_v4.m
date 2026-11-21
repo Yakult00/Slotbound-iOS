@@ -13,6 +13,9 @@
 #import "dobby.h"
 
 // ---------- Lua C API types (LuaJIT 2.1, Lua 5.1 ABI) ----------
+#ifndef LUA_MULTRET
+#define LUA_MULTRET (-1)
+#endif
 typedef struct lua_State lua_State;
 typedef int (*lua_CFunction)(lua_State *L);
 typedef int (*lua_pcall_fn)(lua_State *L, int nargs, int nresults, int errfunc);
@@ -317,7 +320,7 @@ static void applyCurrent(void) {
     self.window.windowLevel = UIWindowLevelAlert + 1;
     self.window.backgroundColor = [UIColor clearColor];
     self.window.hidden = NO;
-    if (keyWindow) self.window.windowScene = keyWindow.windowScene;
+    if (keyWindow && @available(iOS 13.0, *)) self.window.windowScene = keyWindow.windowScene;
 
     // Circular dice button (44x44), self-drawn icon.
     self.button = [UIButton buttonWithType:UIButtonTypeCustom];
