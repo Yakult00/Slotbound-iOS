@@ -10,7 +10,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build SlotboundDropRate.dylib (iOS arm64, UIKit overlay)
+      - name: Build SlotboundDropRate.dylib (v4, Dobby hook + UIKit overlay)
         run: |
           SDK=$(xcrun -sdk iphoneos --show-sdk-path)
           echo "SDK: $SDK"
@@ -18,12 +18,15 @@ jobs:
             -O2 -fPIC -fobjc-arc \
             -isysroot "$SDK" \
             -miphoneos-version-min=12.0 \
+            -Idylib/dobby \
             -framework Foundation -framework UIKit -framework CoreGraphics \
             -o SlotboundDropRate.dylib \
-            dylib/SlotboundDropRate.m
+            dylib/SlotboundDropRate_v4.m dylib/dobby/libdobby.a
           file SlotboundDropRate.dylib
           otool -L SlotboundDropRate.dylib
           ls -la SlotboundDropRate.dylib
+          echo "--- lua refs (should show _lua_pushnumber etc via LC_SYMTAB, not dlsym) ---"
+          strings SlotboundDropRate.dylib | grep -E "lua_pushnumber|DobbyHook|droprate|__sbDropRate" | head -20
 
       - name: Upload dylib artifact
         uses: actions/upload-artifact@v4
