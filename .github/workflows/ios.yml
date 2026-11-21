@@ -79,12 +79,12 @@ jobs:
           test -n "$APP"
           cp game.love "$APP/game.love"
           # ---- 正版图标：用游戏原始 App 的图标重建（LÖVE 模板默认图标必须换掉）----
-          # 源图 icon-app-152.png 是从正版 App bundle 里还原出来的 1024/152 图标
-          sips -z 120 120 icon-app-152.png --out "$APP/iOS AppIcon60x60@2x.png" >/dev/null
-          sips -z 180 180 icon-app-152.png --out "$APP/iOS AppIcon60x60@3x.png" >/dev/null
-          sips -z 76  76  icon-app-152.png --out "$APP/iOS AppIcon76x76~ipad.png" >/dev/null
-          sips -z 152 152 icon-app-152.png --out "$APP/iOS AppIcon76x76@2x~ipad.png" >/dev/null
-          sips -z 167 167 icon-app-152.png --out "$APP/iOS AppIcon83.5x83.5@2x~ipad.png" >/dev/null
+          # 源图 icon.png 是从正版 App bundle 里还原出来的 1024/152 图标
+          sips -z 120 120 icon.png --out "$APP/iOS AppIcon60x60@2x.png" >/dev/null
+          sips -z 180 180 icon.png --out "$APP/iOS AppIcon60x60@3x.png" >/dev/null
+          sips -z 76  76  icon.png --out "$APP/iOS AppIcon76x76~ipad.png" >/dev/null
+          sips -z 152 152 icon.png --out "$APP/iOS AppIcon76x76@2x~ipad.png" >/dev/null
+          sips -z 167 167 icon.png --out "$APP/iOS AppIcon83.5x83.5@2x~ipad.png" >/dev/null
           # Assets.car 里是 LÖVE 模板的图标，留着它 iOS 会优先用旧的 → 直接删掉，
           # 并把 CFBundleIconName 去掉，让系统回落到 CFBundleIconFiles 的 PNG
           rm -f "$APP/Assets.car"
