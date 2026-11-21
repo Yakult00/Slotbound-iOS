@@ -1,5 +1,7 @@
-// SlotboundDropRate v2 dylib
+// SlotboundDropRate v2.1 dylib
 // Floating button + slider panel for grade/class drop rates.
+// v2.1: button is much bigger (100x100) and drawn with love.graphics.origin()
+// so it appears in raw screen coordinates like the shim's own buttons.
 // Hooks lua_pcall (fishhook) to capture lua_State, injects Lua that
 // draws the UI on top of the game and rewrites grade probabilities
 // (constants.unitGrades.probabilities) and class weights (cores).
@@ -146,7 +148,8 @@ static const char kInjectLua[] =
 "local ROW_H = 40\n"
 "local function layout()\n"
 "  local w, h = love.graphics.getDimensions()\n"
-"  local btn = { x = w - 64, y = 76, w = 52, h = 52 }\n"
+"  -- Big floating button: right-aligned with the L/R toggle, just below it.\n"
+"  local btn = { x = w - 112, y = 72, w = 100, h = 100 }\n"
 "  local panel_w = math.min(640, w - 16)\n"
 "  local rows = math.max(#GradeUI.grades, #GradeUI.classes)\n"
 "  local panel_h = 44 + rows * ROW_H + 48\n"
@@ -196,12 +199,16 @@ static const char kInjectLua[] =
 "\n"
 "function GradeUI.draw()\n"
 "  local w, h, btn, panel, left, right = layout()\n"
-"  love.graphics.push(\"all\")\n"
-"  love.graphics.setColor(0.12, 0.12, 0.16, 0.88)\n"
-"  love.graphics.rectangle(\"fill\", btn.x, btn.y, btn.w, btn.h, 12, 12)\n"
-"  love.graphics.setColor(1, 0.8, 0.3, 1)\n"
-"  love.graphics.setLineWidth(2)\n"
-"  love.graphics.rectangle(\"line\", btn.x, btn.y, btn.w, btn.h, 12, 12)\n"
+"  -- Reset to raw screen coordinates (like the shim's own buttons do):\n"
+"  -- the game leaves a scale/translate transform active, and without\n"
+"  -- origin() our button would be drawn in the game's transformed space.\n"
+"  love.graphics.push()\n"
+"  love.graphics.origin()\n"
+"  love.graphics.setColor(0.95, 0.55, 0.10, 0.95)\n"
+"  love.graphics.rectangle(\"fill\", btn.x, btn.y, btn.w, btn.h, 16, 16)\n"
+"  love.graphics.setColor(1, 1, 1, 1)\n"
+"  love.graphics.setLineWidth(4)\n"
+"  love.graphics.rectangle(\"line\", btn.x, btn.y, btn.w, btn.h, 16, 16)\n"
 "  love.graphics.setColor(1, 1, 1, 1)\n"
 "  local font = love.graphics.getFont()\n"
 "  local label = \"爆率\"\n"
