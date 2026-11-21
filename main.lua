@@ -91,8 +91,9 @@ local game_keyreleased = love.keyreleased
 -- Toggle button (top-right corner) and back button (top-left, ESC)
 local right_mode = false
 local right_taps = {}  -- touch id -> {x, y} for single taps in right mode
-local BW, BH = 100, 48
+local BW, BH = 124, 60   -- 放大：原 100x48
 local MARGIN = 12
+local LABEL_SCALE = 1.45   -- 按钮文字跟着放大，不然大字框小字
 
 local function back_rect()
     return MARGIN, MARGIN, BW, BH
@@ -121,6 +122,18 @@ local function on_button(x, y)
     return x >= bx and x <= bx + bw and y >= by and y <= by + bh
 end
 
+-- 按钮文字：按屏幕居中 + 缩放，避免"框放大了字还是原来那么小"
+local function draw_label_centered(text, bx, by, bw, bh, scale)
+    local font = love.graphics.getFont()
+    love.graphics.push()
+    love.graphics.translate(bx + bw / 2, by + bh / 2)
+    love.graphics.scale(scale or 1)
+    local tw = font:getWidth(text)
+    local th = font:getHeight()
+    love.graphics.print(text, -tw / 2, -th / 2)
+    love.graphics.pop()
+end
+
 local function draw_button()
     local bx, by, bw, bh = button_rect()
     local r, g, b, a = love.graphics.getColor()
@@ -136,11 +149,8 @@ local function draw_button()
     love.graphics.setLineWidth(2)
     love.graphics.rectangle("line", bx, by, bw, bh, 8, 8)
     local label = right_mode and "R" or "L"
-    local font = love.graphics.getFont()
-    local tw = font:getWidth(label)
-    local th = font:getHeight()
     love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.print(label, bx + (bw - tw) / 2, by + (bh - th) / 2)
+    draw_label_centered(label, bx, by, bw, bh, LABEL_SCALE)
     love.graphics.pop()
     love.graphics.setColor(r, g, b, a)
 end
@@ -156,11 +166,8 @@ local function draw_back_button()
     love.graphics.setLineWidth(2)
     love.graphics.rectangle("line", bx, by, bw, bh, 8, 8)
     local label = "ESC"
-    local font = love.graphics.getFont()
-    local tw = font:getWidth(label)
-    local th = font:getHeight()
     love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.print(label, bx + (bw - tw) / 2, by + (bh - th) / 2)
+    draw_label_centered(label, bx, by, bw, bh, LABEL_SCALE)
     love.graphics.pop()
     love.graphics.setColor(r, g, b, a)
 end

@@ -40,11 +40,70 @@ local status_t = 0
 local catalog_t = 0
 
 ----------------------------------------------------------------
+-- 性能：GC 平滑 + 探针（不动帧率上限、不动 vsync）
+----------------------------------------------------------------
+local last_mtime = -1
+local catalog_dirty = true
+local catalog_written = false
+
+local perf = { t = 0, interval = 60, spikes = 0, worst = 0, gc_tuned = false }
+local alive_t = 0
+local alive_now = false
+
+-- 只调「更早开始收、每次多收一点」，不加每帧 step，避免拖慢 update。
+-- pause 200→150：堆没翻倍就开始收，单次停顿更小。
+-- stepmul 200→400：每次增量多干一点，减少一次性 full GC 的概率。
+local function tune_gc()
+  if perf.gc_tuned then return end
+  perf.gc_tuned = true
+  pcall(collectgarbage, "setpause", 150)
+  pcall(collectgarbage, "setstepmul", 400)
+end
+
+-- 面板活着吗：dylib 打开面板时每 2 秒写一次 cheats_alive.txt
+local function panel_alive(now)
+  local ok, info = pcall(love.filesystem.getInfo, "cheats_alive.txt")
+  if not ok or not info then return false end
+  local m = info.modtime or 0
+  if m == 0 then return true end          -- 拿不到 mtime 就当活着（保守）
+  return (now - m) <= 6
+end
+
+-- 探针：每 60 秒往 perf_log.txt 追加一行，用来对比改前/改后
+local function write_perf(dt)
+  if dt then
+    if dt > 0.034 then perf.spikes = perf.spikes + 1 end
+    if dt > perf.worst then perf.worst = dt end
+    perf.t = perf.t + dt
+  end
+  if perf.t < perf.interval then return end
+  perf.t = 0
+  local st
+  pcall(function() st = love.graphics.getStats() end)
+  st = st or {}
+  local luaMB = collectgarbage("count") / 1024
+  local line = string.format(
+    "[PERF] %s fps=%.1f luaMB=%.1f texMB=%.1f canvases=%d images=%d fonts=%d spikes=%d worstMS=%.1f\n",
+    os.date("%H:%M:%S"), love.timer.getFPS(), luaMB,
+    (st.texturememory or 0) / 1048576, st.canvases or 0, st.images or 0,
+    st.fonts or 0, perf.spikes, perf.worst * 1000)
+  pcall(love.filesystem.append, "perf_log.txt", line)
+  perf.spikes = 0
+  perf.worst = 0
+end
+
+----------------------------------------------------------------
 -- 配置读取（dylib → 游戏）
 ----------------------------------------------------------------
 local function load_cfg()
+  -- 先用 getInfo 比 mtime：没变就完全不读文件（省掉每秒 2 次读盘）
+  local iok, info = pcall(love.filesystem.getInfo, "cheats_ui.lua")
+  if not iok then return end
+  local mt = (info and info.modtime) or 0
+  if mt > 0 and mt == last_mtime then return end
   local ok, content = pcall(love.filesystem.read, "cheats_ui.lua")
   if not ok or not content then return end
+  if mt > 0 then last_mtime = mt end
   if content == last_content then return end
   last_content = content
   local fn = load_chunk(content)
@@ -657,6 +716,7 @@ end
 -- 命令分发
 ----------------------------------------------------------------
 local commands = {
+  catalog = function() catalog_dirty = true return "ok" end,
   add_option = function() return cmd_add_option(cfg.arg) end,
   remove_option = function() return cmd_remove_option(cfg.arg) end,
   replace_option = function() return cmd_replace_option(cfg.arg, cfg.arg2) end,
@@ -770,27 +830,49 @@ end
 -- 每帧入口 + 自己包 love.update（注入版，不改 main.lua）
 ----------------------------------------------------------------
 function M.tick(dt)
+  tune_gc()
+
   poll_t = poll_t + (dt or 0)
   if poll_t >= 0.5 then
     poll_t = 0
     load_cfg()
+    -- 这两个原来每帧都调（内部才短路）；降到 2Hz，省每帧的表查找
+    install_skill_hooks()
+    install_jackpot()
   end
-  install_skill_hooks()
+
   apply_once()
   apply_continuous()
-  install_jackpot()
 
+  local now = love.timer.getTime()
+  alive_t = alive_t + (dt or 0)
+  if alive_t >= 1.0 then
+    alive_t = 0
+    alive_now = panel_alive(now)
+  end
+  local alive = alive_now
+
+  -- 目录：只有"需要写"且（面板在 / 还没写过）才序列化那 128 条
   catalog_t = catalog_t + (dt or 0)
-  if catalog_t >= 5.0 then
+  if catalog_dirty and (alive or not catalog_written) then
+    catalog_dirty = false
+    catalog_written = true
     catalog_t = 0
     pcall(write_catalog)
+  elseif catalog_t >= 30 then
+    -- 30 秒兜底：面板可能是后打开的
+    catalog_t = 0
+    if alive then catalog_dirty = true end
   end
 
+  -- 状态：面板开着 1Hz，关着降到 0.125Hz（没人看就别写盘）
   status_t = status_t + (dt or 0)
-  if status_t >= 1.0 then
+  if status_t >= (alive and 1.0 or 8.0) then
     status_t = 0
-    write_status()
+    pcall(write_status)
   end
+
+  write_perf(dt)
 end
 
 -- 包住 love.update：先跑游戏自己的 update，再跑 tick。
