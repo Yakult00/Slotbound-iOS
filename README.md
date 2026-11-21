@@ -69,29 +69,6 @@ Slotbound-iOS/
 - 仓库里不含 Windows 启动器、Steam DLL、修改器等 PC 专属文件。
 - 66 个 `.lua` 文件是 LuaJIT 字节码（不是源码），在 GitHub 上打开会显示二进制；图片、音乐、配置文件可以直接浏览。
 
-## 游戏辅助
-
-仓库里带一个可选的原生面板（`assistant/`），用来在游戏里调整数值、查看当前单位状态，不影响不装的时候的表现——不注入就是原版游戏。
-
-- **后端**（`trainer_backend.lua`）：随 `game.love` 一起打包，纯 Lua，不做任何内存改写。所有开关默认关闭，没有面板写入命令时它什么都不做。
-- **面板**（`assistant/dylib/SlotboundTrainer.mm`）：iOS 原生 UIKit 浮窗，通过存档目录里的两个文件和后端通信（`cheats_ui.lua` 下发、`cheats_status.lua` 回读）。
-- 两个构建产物：
-  - `SlotboundTrainer.dylib` —— 越狱设备用（MobileSubstrate / ElleKit 注入）
-  - `SlotboundTrainer-NoJIT.dylib` —— 不含任何内存 hook，配合游戏内后端使用，适合 LiveContainer 之类的无 JIT 环境
-
-安装：把 dylib 放到 `/var/jb/Library/MobileSubstrate/DynamicLibraries/`，`ldid -S` 签一次，重开游戏，点右下角浮球打开面板。
-
-## 自己编译与发布
-
-发布流程是自动的：**打 tag 即发布**。
-
-```bash
-git tag v1.3.1
-git push origin v1.3.1
-```
-
-推送 tag 后，`ios.yml` 自动编译 IPA、`assist.yml` 自动编译两个 dylib，编好后自动创建 `v1.3.1` release 并上传全部资产（IPA + 两个 dylib）。版本号从 tag 派生，`CFBundleShortVersionString` 和文件名都跟着走，不用手动改。
-
 只想手动编一次不发布：点 Actions → Build unsigned iOS IPA → Run workflow，编好在 Artifacts 里下载 `Slotbound-unsigned`（只有 IPA，不建 release）。
 
 包名：`com.yakult00.slotbound`
