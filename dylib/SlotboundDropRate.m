@@ -85,6 +85,34 @@ static UIWindow *g_overlayWindow = nil;
 static UIButton *g_floatButton = nil;
 static UIView *g_panel = nil;
 static BOOL g_panelOpen = NO;
+// Small draggable floating button.
+static const CGFloat kBtnSize = 56;
+static CGPoint g_btnPos = {0, 0};      // button top-left in screen coords
+static CGPoint g_dragOffset = {0, 0};  // finger offset inside the button
+static CGPoint g_dragStartLoc = {0, 0};
+static BOOL g_dragMoved = NO;
+
+// Resize the overlay window: full screen while the panel is open,
+// otherwise exactly the button's frame. A button-sized window can never
+// block the game anywhere except on the button itself.
+static void layout_button(void) {
+    if (!g_floatButton) return;
+    if (g_panelOpen) {
+        g_floatButton.frame = CGRectMake(g_btnPos.x, g_btnPos.y, kBtnSize, kBtnSize);
+    } else {
+        g_floatButton.frame = CGRectMake(0, 0, kBtnSize, kBtnSize);
+    }
+}
+static void sync_window_frame(void) {
+    if (!g_overlayWindow || !g_floatButton) return;
+    CGRect bounds = [UIScreen mainScreen].bounds;
+    if (g_panelOpen) {
+        g_overlayWindow.frame = bounds;
+    } else {
+        g_overlayWindow.frame = CGRectMake(g_btnPos.x, g_btnPos.y, kBtnSize, kBtnSize);
+    }
+    layout_button();
+}
 
 // Grade and class definitions (must match grade_logic.lua).
 static NSArray<NSDictionary *> *gradeDefs(void) {
@@ -186,11 +214,13 @@ static void class_slider_changed(UISlider *sender) {
 static void close_panel(void) {
     g_panelOpen = NO;
     if (g_panel) g_panel.hidden = YES;
+    sync_window_frame();
 }
 
 static void toggle_panel(void) {
     g_panelOpen = !g_panelOpen;
     if (g_panel) g_panel.hidden = !g_panelOpen;
+    sync_window_frame();
 }
 
 static void reset_tapped(void) {
@@ -217,6 +247,7 @@ static void reset_tapped(void) {
 + (void)closeTapped:(id)sender;
 + (void)resetTapped:(id)sender;
 + (void)floatTapped:(id)sender;
++ (void)panButton:(UIPanGestureRecognizer *)gr;
 @end
 
 static UIView *build_panel(CGRect screenBounds) {
@@ -365,35 +396,65 @@ static void wire_panel(UIView *panel) {
 + (void)resetTapped:(id)sender { reset_tapped(); }
 + (void)floatTapped:(id)sender { toggle_panel(); }
 
+// Drag the button; a tap (almost no movement) toggles the panel.
++ (void)panButton:(UIPanGestureRecognizer *)gr {
+    if (!g_overlayWindow || g_panelOpen) return;
+    if (gr.state == UIGestureRecognizerStateBegan) {
+        CGPoint loc = [gr locationInView:nil];
+        g_dragOffset = CGPointMake(loc.x - g_overlayWindow.frame.origin.x,
+                                   loc.y - g_overlayWindow.frame.origin.y);
+        g_dragStartLoc = loc;
+        g_dragMoved = NO;
+    } else if (gr.state == UIGestureRecognizerStateChanged) {
+        CGPoint loc = [gr locationInView:nil];
+        if (fabs(loc.x - g_dragStartLoc.x) + fabs(loc.y - g_dragStartLoc.y) > 10) g_dragMoved = YES;
+        CGRect bounds = [UIScreen mainScreen].bounds;
+        CGRect f = g_overlayWindow.frame;
+        CGFloat nx = loc.x - g_dragOffset.x;
+        CGFloat ny = loc.y - g_dragOffset.y;
+        nx = MAX(0, MIN(bounds.size.width - f.size.width, nx));
+        ny = MAX(0, MIN(bounds.size.height - f.size.height, ny));
+        f.origin = CGPointMake(nx, ny);
+        g_overlayWindow.frame = f;
+        g_btnPos = f.origin;
+    } else if (gr.state == UIGestureRecognizerStateEnded ||
+               gr.state == UIGestureRecognizerStateCancelled) {
+        if (!g_dragMoved) toggle_panel();
+    }
+}
+
 + (void)setup {
     if (g_overlayWindow) return;
     dispatch_async(dispatch_get_main_queue(), ^{
         CGRect bounds = [UIScreen mainScreen].bounds;
-        g_overlayWindow = [[UIWindow alloc] initWithFrame:bounds];
+        // Start with a button-sized window (top-right, below the L/R toggle).
+        // It only grows to full screen while the panel is open.
+        g_btnPos = CGPointMake(bounds.size.width - kBtnSize - 12, 72);
+        g_overlayWindow = [[UIWindow alloc] initWithFrame:CGRectMake(g_btnPos.x, g_btnPos.y, kBtnSize, kBtnSize)];
         g_overlayWindow.windowLevel = UIWindowLevelAlert + 1;
         g_overlayWindow.backgroundColor = [UIColor clearColor];
         g_overlayWindow.hidden = NO;
 
         UIViewController *vc = [[UIViewController alloc] init];
-        PassthroughView *root = [[PassthroughView alloc] initWithFrame:bounds];
+        PassthroughView *root = [[PassthroughView alloc] initWithFrame:g_overlayWindow.bounds];
         root.backgroundColor = [UIColor clearColor];
+        root.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         vc.view = root;
         g_overlayWindow.rootViewController = vc;
 
-        // Big floating button: top-right, below the game's L/R toggle.
-        CGFloat bs = 100;
-        CGFloat bx = bounds.size.width - bs - 12;
-        CGFloat by = 72;
+        // Small floating button (fills the button-sized window).
         g_floatButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        g_floatButton.frame = CGRectMake(bx, by, bs, bs);
+        g_floatButton.frame = CGRectMake(0, 0, kBtnSize, kBtnSize);
         g_floatButton.backgroundColor = [UIColor colorWithRed:0.95 green:0.55 blue:0.10 alpha:0.95];
-        g_floatButton.layer.cornerRadius = 20;
+        g_floatButton.layer.cornerRadius = 14;
         g_floatButton.layer.borderColor = [UIColor whiteColor].CGColor;
-        g_floatButton.layer.borderWidth = 4;
+        g_floatButton.layer.borderWidth = 2.5;
         [g_floatButton setTitle:@"爆率" forState:UIControlStateNormal];
-        g_floatButton.titleLabel.font = [UIFont boldSystemFontOfSize:28];
+        g_floatButton.titleLabel.font = [UIFont boldSystemFontOfSize:17];
         [g_floatButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        [g_floatButton addTarget:[DropRateOverlay class] action:@selector(floatTapped:) forControlEvents:UIControlEventTouchUpInside];
+        // Drag to move; tap (no drag) opens the panel.
+        UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:[DropRateOverlay class] action:@selector(panButton:)];
+        [g_floatButton addGestureRecognizer:pan];
         [root addSubview:g_floatButton];
 
         g_panel = build_panel(bounds);
