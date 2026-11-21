@@ -210,6 +210,15 @@ static void reset_tapped(void) {
     refresh_value_labels(g_panel);
 }
 
+@interface DropRateOverlay : NSObject
++ (void)setup;
++ (void)gradeChanged:(UISlider *)sender;
++ (void)classChanged:(UISlider *)sender;
++ (void)closeTapped:(id)sender;
++ (void)resetTapped:(id)sender;
++ (void)floatTapped:(id)sender;
+@end
+
 static UIView *build_panel(CGRect screenBounds) {
     CGFloat pw = MIN(660, screenBounds.size.width - 24);
     CGFloat rows = 6; // max(grades 5, classes 6)
@@ -327,9 +336,6 @@ static UIView *build_panel(CGRect screenBounds) {
     return panel;
 }
 
-// Forward declaration: wire_panel references DropRateOverlay (defined below).
-@class DropRateOverlay;
-
 // Wire targets after the panel is built (keeps the builder simple).
 static void wire_panel(UIView *panel) {
     for (UIView *v in panel.subviews) {
@@ -351,14 +357,6 @@ static void wire_panel(UIView *panel) {
     }
 }
 
-@interface DropRateOverlay : NSObject
-+ (void)setup;
-+ (void)gradeChanged:(UISlider *)sender;
-+ (void)classChanged:(UISlider *)sender;
-+ (void)closeTapped:(id)sender;
-+ (void)resetTapped:(id)sender;
-+ (void)floatTapped:(id)sender;
-@end
 
 @implementation DropRateOverlay
 + (void)gradeChanged:(UISlider *)sender { grade_slider_changed(sender); }
