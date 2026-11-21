@@ -18,9 +18,9 @@ T.values = {
 
 T.state = {
     panel = false,
-    coins = false,
-    spins = false,
-    essence = false,
+    coins = true,
+    spins = true,
+    essence = true,
     jackpot = false,
 }
 
@@ -108,10 +108,33 @@ local function hookSlot()
     if type(orig) ~= "function" then return end
 
     s.buildResultGrid = function(self, ...)
-        if T.state.jackpot then return jackpotGrid() end
+        if T.state.jackpot then
+            local g = jackpotGrid()
+            T._jpCalls = (T._jpCalls or 0) + 1
+            local s1 = T.jackpotSymbol or "A"
+            T._lastGrid = s1 .. s1 .. s1 .. "/" .. s1 .. s1 .. s1 .. "/" .. s1 .. s1 .. s1
+            return g
+        end
         return orig(self, ...)
     end
     s.__sbTrainerHooked = true
+end
+
+----------------------------------------------------------------------
+-- remote control: read trainer_cmd.txt from the save dir every tick
+--   coins=1  spins=0  essence=1  jackpot=1
+----------------------------------------------------------------------
+local CMD = "trainer_cmd.txt"
+
+local function pollRemote()
+    local ok, data = pcall(function() return love.filesystem.read(CMD) end)
+    if not ok or type(data) ~= "string" then return end
+    for line in data:gmatch("[^\r\n]+") do
+        local k, v = line:match("^([%w_]+)%s*=%s*(%d+)")
+        if k and T.state[k] ~= nil and k ~= "panel" then
+            T.state[k] = (v ~= "0")
+        end
+    end
 end
 
 ----------------------------------------------------------------------
@@ -213,6 +236,33 @@ local function drawUi()
 end
 
 ----------------------------------------------------------------------
+-- debug: snapshot of the hooked globals, written to the save dir
+----------------------------------------------------------------------
+local function logValues()
+    pcall(function()
+        local s = _G.slot
+        local lines = {
+            "time=" .. string.format("%.1f", love.timer.getTime()),
+            "coins=" .. tostring(_G.coins) .. " [" .. type(_G.coins) .. "]",
+            "displayCoins=" .. tostring(_G.displayCoins),
+            "spinsLeft=" .. tostring(_G.spinsLeft) .. " [" .. type(_G.spinsLeft) .. "]",
+            "jungsu=" .. tostring(_G.jungsu) .. " [" .. type(_G.jungsu) .. "]",
+            "jungsuBalanceTarget=" .. tostring(_G.jungsuBalanceTarget),
+            "displayJungsu=" .. tostring(_G.displayJungsu),
+            "slot=" .. tostring(s ~= nil),
+            "slotHooked=" .. tostring(s and s.__sbTrainerHooked or false),
+            "switch.coins=" .. tostring(T.state.coins),
+            "switch.spins=" .. tostring(T.state.spins),
+            "switch.essence=" .. tostring(T.state.essence),
+            "switch.jackpot=" .. tostring(T.state.jackpot),
+            "jackpotCalls=" .. tostring(T._jpCalls or 0),
+            "lastGrid=" .. tostring(T._lastGrid or "-"),
+        }
+        love.filesystem.write("trainer_log.txt", table.concat(lines, "\n"))
+    end)
+end
+
+----------------------------------------------------------------------
 -- hooking
 ----------------------------------------------------------------------
 local prev_update = love.update
@@ -220,10 +270,18 @@ local prev_draw = love.draw
 local prev_touchpressed = love.touchpressed
 local prev_mousepressed = love.mousepressed
 
+local logTimer = 0
+
 love.update = function(dt)
     if prev_update then prev_update(dt) end
     hookSlot()
     enforce()
+    logTimer = logTimer + (dt or 0)
+    if logTimer >= 2 then
+        logTimer = 0
+        pollRemote()
+        logValues()
+    end
 end
 
 love.draw = function()
