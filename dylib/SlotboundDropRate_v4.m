@@ -297,6 +297,7 @@ static void applyCurrent(void) {
 @property (nonatomic, strong) UIButton *button;
 @property (nonatomic, strong) UIView *panel;
 @property (nonatomic, strong) UILabel *statusLabel;
+@property (nonatomic, strong) NSMutableDictionary<NSNumber *, UILabel *> *valueLabels;
 + (instancetype)shared;
 - (void)setup;
 - (void)togglePanel;
@@ -396,62 +397,117 @@ static void applyCurrent(void) {
 }
 
 - (void)rebuildPanel {
-    UIView *panel = [[UIView alloc] initWithFrame:self.window.bounds];
+    CGRect bounds = self.window.bounds;
+    UIView *panel = [[UIView alloc] initWithFrame:bounds];
     panel.backgroundColor = [UIColor colorWithWhite:0 alpha:0.55];
     self.panel = panel;
-    UIView *card = [[UIView alloc] initWithFrame:CGRectMake(20, 90, self.window.bounds.size.width - 40, 470)];
+    // Tap the dimmed area outside the card to close.
+    UITapGestureRecognizer *bgTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(togglePanel)];
+    [panel addGestureRecognizer:bgTap];
+
+    // Card: at most 82% of screen height, centered. Fixed header + fixed footer,
+    // scrollable sliders in the middle so nothing is ever off-screen.
+    CGFloat cardW = bounds.size.width - 40;
+    CGFloat cardH = MIN(bounds.size.height * 0.82, 560);
+    CGFloat cardY = (bounds.size.height - cardH) / 2;
+    UIView *card = [[UIView alloc] initWithFrame:CGRectMake(20, cardY, cardW, cardH)];
     card.backgroundColor = [UIColor colorWithWhite:0.12 alpha:0.96];
     card.layer.cornerRadius = 14;
+    card.clipsToBounds = YES;
     [panel addSubview:card];
+
     CGFloat y = 14;
-    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(16, y, card.bounds.size.width - 32, 22)];
+    UILabel *title = [[UILabel alloc] initWithFrame:CGRectMake(16, y, cardW - 32, 22)];
     title.text = @"爆率调节"; title.textColor = [UIColor whiteColor]; title.font = [UIFont boldSystemFontOfSize:17];
     [card addSubview:title]; y += 30;
-    self.statusLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, y, card.bounds.size.width - 32, 18)];
+    self.statusLabel = [[UILabel alloc] initWithFrame:CGRectMake(16, y, cardW - 32, 18)];
     self.statusLabel.font = [UIFont systemFontOfSize:12];
     self.statusLabel.textColor = g_jitAvailable ? [UIColor colorWithRed:0.4 green:1.0 blue:0.5 alpha:1.0] : [UIColor colorWithRed:1.0 green:0.8 blue:0.3 alpha:1.0];
     self.statusLabel.text = g_jitAvailable ? @"JIT 已开启，修改实时生效" : @"未检测到 JIT：请在 LiveContainer 里对 Slotbound 开 “Launch with JIT”（StikDebug），否则修改不生效";
     self.statusLabel.numberOfLines = 0;
     [self.statusLabel sizeToFit];
-    [card addSubview:self.statusLabel]; y += MAX(22, self.statusLabel.frame.size.height + 6);
+    [card addSubview:self.statusLabel]; y += MAX(22, self.statusLabel.frame.size.height + 8);
+
+    // Footer: fixed close button, always visible.
+    CGFloat footerH = 48;
+    UIView *footer = [[UIView alloc] initWithFrame:CGRectMake(0, cardH - footerH, cardW, footerH)];
+    footer.backgroundColor = [UIColor colorWithWhite:0.16 alpha:1.0];
+    [card addSubview:footer];
+    UIButton *close = [UIButton buttonWithType:UIButtonTypeSystem];
+    close.frame = CGRectMake(16, 7, cardW - 32, 34);
+    [close setTitle:@"完成" forState:UIControlStateNormal];
+    close.titleLabel.font = [UIFont boldSystemFontOfSize:16];
+    [close addTarget:self action:@selector(togglePanel) forControlEvents:UIControlEventTouchUpInside];
+    [footer addSubview:close];
+
+    // Scrollable sliders area between header and footer.
+    CGFloat scrollTop = y;
+    CGFloat scrollH = cardH - footerH - scrollTop;
+    UIScrollView *scroll = [[UIScrollView alloc] initWithFrame:CGRectMake(0, scrollTop, cardW, scrollH)];
+    scroll.showsVerticalScrollIndicator = YES;
+    scroll.alwaysBounceVertical = YES;
+    [card addSubview:scroll];
+    // Bring footer above the scroll view.
+    [card bringSubviewToFront:footer];
+
+    CGFloat sy = 0;
+    CGFloat rowH = 36;
+    CGFloat nameW = 64, valW = 52;
+    CGFloat sliderX = 16 + nameW + 4;
+    CGFloat sliderW = cardW - sliderX - valW - 16;
+    self.valueLabels = [NSMutableDictionary dictionary];
     NSArray *gradeNames = @[@"普通", @"高级", @"稀有", @"传说", @"棱镜"];
     double gradeVals[5] = {gN, gA, gR, gL, gP};
     for (int i = 0; i < 5; i++) {
-        UILabel *lb = [[UILabel alloc] initWithFrame:CGRectMake(16, y, 60, 20)];
+        UILabel *lb = [[UILabel alloc] initWithFrame:CGRectMake(16, sy + 8, nameW, 20)];
         lb.text = gradeNames[i]; lb.textColor = [UIColor whiteColor]; lb.font = [UIFont systemFontOfSize:14];
-        [card addSubview:lb];
+        [scroll addSubview:lb];
         UISlider *sl = [self makeSliderWithValue:gradeVals[i] min:0 max:100 tag:100+i];
-        sl.frame = CGRectMake(80, y - 4, card.bounds.size.width - 96, 28);
-        [card addSubview:sl];
-        y += 34;
+        sl.frame = CGRectMake(sliderX, sy + 4, sliderW, 28);
+        [scroll addSubview:sl];
+        UILabel *vl = [[UILabel alloc] initWithFrame:CGRectMake(sliderX + sliderW + 4, sy + 8, valW, 20)];
+        vl.text = [NSString stringWithFormat:@"%.0f%%", gradeVals[i]];
+        vl.textColor = [UIColor colorWithRed:0.5 green:0.8 blue:1.0 alpha:1.0];
+        vl.font = [UIFont systemFontOfSize:13];
+        vl.textAlignment = NSTextAlignmentRight;
+        [scroll addSubview:vl];
+        self.valueLabels[@(100+i)] = vl;
+        sy += rowH;
     }
     NSArray *classNames = @[@"弓手 A", @"决斗者 D", @"骑兵 H", @"法师 M", @"枪兵 S", @"战士 W"];
     double classVals[6] = {cA, cD, cH, cM, cS, cW};
     for (int i = 0; i < 6; i++) {
-        UILabel *lb = [[UILabel alloc] initWithFrame:CGRectMake(16, y, 70, 20)];
+        UILabel *lb = [[UILabel alloc] initWithFrame:CGRectMake(16, sy + 8, nameW, 20)];
         lb.text = classNames[i]; lb.textColor = [UIColor whiteColor]; lb.font = [UIFont systemFontOfSize:14];
-        [card addSubview:lb];
+        [scroll addSubview:lb];
         UISlider *sl = [self makeSliderWithValue:classVals[i] min:0 max:5 tag:200+i];
-        sl.frame = CGRectMake(90, y - 4, card.bounds.size.width - 106, 28);
-        [card addSubview:sl];
-        y += 34;
+        sl.frame = CGRectMake(sliderX, sy + 4, sliderW, 28);
+        [scroll addSubview:sl];
+        UILabel *vl = [[UILabel alloc] initWithFrame:CGRectMake(sliderX + sliderW + 4, sy + 8, valW, 20)];
+        vl.text = [NSString stringWithFormat:@"%.1fx", classVals[i]];
+        vl.textColor = [UIColor colorWithRed:0.5 green:0.8 blue:1.0 alpha:1.0];
+        vl.font = [UIFont systemFontOfSize:13];
+        vl.textAlignment = NSTextAlignmentRight;
+        [scroll addSubview:vl];
+        self.valueLabels[@(200+i)] = vl;
+        sy += rowH;
     }
-    UIButton *close = [UIButton buttonWithType:UIButtonTypeSystem];
-    close.frame = CGRectMake(16, y + 4, card.bounds.size.width - 32, 34);
-    [close setTitle:@"完成" forState:UIControlStateNormal];
-    close.titleLabel.font = [UIFont boldSystemFontOfSize:16];
-    [close addTarget:self action:@selector(togglePanel) forControlEvents:UIControlEventTouchUpInside];
-    [card addSubview:close];
+    scroll.contentSize = CGSizeMake(cardW, sy + 8);
     [self.window addSubview:panel];
 }
 
 - (void)sliderChanged:(UISlider *)sl {
     if (sl.tag >= 100 && sl.tag < 105) {
-        double v = sl.value;
+        double v = round(sl.value);
+        sl.value = (float)v;
         if (sl.tag == 100) gN = v; else if (sl.tag == 101) gA = v; else if (sl.tag == 102) gR = v; else if (sl.tag == 103) gL = v; else gP = v;
+        UILabel *vl = self.valueLabels[@(sl.tag)];
+        if (vl) vl.text = [NSString stringWithFormat:@"%.0f%%", v];
     } else if (sl.tag >= 200 && sl.tag < 206) {
         double v = sl.value;
         if (sl.tag == 200) cA = v; else if (sl.tag == 201) cD = v; else if (sl.tag == 202) cH = v; else if (sl.tag == 203) cM = v; else if (sl.tag == 204) cS = v; else cW = v;
+        UILabel *vl = self.valueLabels[@(sl.tag)];
+        if (vl) vl.text = [NSString stringWithFormat:@"%.1fx", v];
     }
     applyCurrent();
 }
