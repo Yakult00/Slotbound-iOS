@@ -68,47 +68,70 @@ if jit then
     end
 end
 
--- Drop-rate tuner (v1.3.0): user-editable multipliers for the 6 slot symbol
--- classes (A=弓手 D=决斗者 H=骑兵 M=法师 S=枪兵 W=战士). Config file
--- "drop_rates.lua" lives in the save directory (same folder as
--- save_fallback.dat). Created with defaults when the game loads; edit it
--- with any text editor, restart the game to apply.
-local drop_cfg = nil
-local drop_cfg_loaded = false
-local DROP_KEYS = { "A", "D", "H", "M", "S", "W" }
-local DROP_DEFAULT = "-- 暴率调节（SlotBound 掉率插件）\n"
-    .. "-- 把想多出的那类数字调大：1 = 正常，2 = 两倍，5 = 五倍，0 = 不出\n"
-    .. "-- 改完保存，重启游戏生效。文件位置：和 save_fallback.dat 同一个文件夹。\n"
-    .. "-- A=弓手 D=决斗者 H=骑兵 M=法师 S=枪兵 W=战士\n"
-    .. "return {\n  A = 1,\n  D = 1,\n  H = 1,\n  M = 1,\n  S = 1,\n  W = 1,\n}\n"
-local function load_drop_config()
-    if drop_cfg_loaded then return drop_cfg end
-    drop_cfg_loaded = true
-    drop_cfg = { A = 1, D = 1, H = 1, M = 1, S = 1, W = 1 }
-    local ok, content = pcall(love.filesystem.read, "drop_rates.lua")
-    if ok and content then
-        local fn = loadstring(content)
-        if fn then
-            local ok2, tbl = pcall(fn)
-            if ok2 and type(tbl) == "table" then
-                for _, k in ipairs(DROP_KEYS) do
-                    local v = tonumber(tbl[k])
-                    if v and v >= 0 then drop_cfg[k] = v end
-                end
+-- Drop-rate tuner v1.3.0 (live, file-based).
+-- The dylib's native UI writes slider values to "drop_rates_ui.lua"
+-- in the save dir (same folder as save_fallback.dat).
+-- Format: return { grade = { normal=100, advanced=0, rare=0, legendary=0, prism=0 },
+--                 class = { A=1, D=1, H=1, M=1, S=1, W=1 } }
+-- This shim polls that file in love.update and applies changes live
+-- (no restart). Grades: normal=普通 advanced=高级 rare=稀有
+-- legendary=传说 prism=棱镜. Classes: A=弓手 D=决斗者 H=骑兵
+-- M=法师 S=枪兵 W=战士 (multiplier: 1=正常, 5=五倍, 0=不出).
+local drop_grade = { normal = 100, advanced = 0, rare = 0, legendary = 0, prism = 0 }
+local drop_class = { A = 1, D = 1, H = 1, M = 1, S = 1, W = 1 }
+local drop_last_content = nil
+local drop_poll_t = 0
+local GRADE_KEYS = { "normal", "advanced", "rare", "legendary", "prism" }
+local CLASS_KEYS = { "A", "D", "H", "M", "S", "W" }
+
+local function apply_drop_grades()
+    local total = 0
+    for _, k in ipairs(GRADE_KEYS) do total = total + (drop_grade[k] or 0) end
+    local ok, constants = pcall(require, "src.data.constants")
+    if ok and constants and constants.unitGrades and constants.unitGrades.probabilities then
+        local p = constants.unitGrades.probabilities
+        for _, k in ipairs(GRADE_KEYS) do
+            if total > 0 then
+                p[k] = (drop_grade[k] or 0) / total
+            else
+                p[k] = (k == "normal") and 1 or 0
             end
         end
-    else
-        pcall(love.filesystem.write, "drop_rates.lua", DROP_DEFAULT)
+        p.special = 0
     end
-    return drop_cfg
 end
+
+local function load_drop_ui_config()
+    local ok, content = pcall(love.filesystem.read, "drop_rates_ui.lua")
+    if not ok or not content then return false end
+    if content == drop_last_content then return false end
+    drop_last_content = content
+    local fn = loadstring(content)
+    if not fn then return false end
+    local ok2, tbl = pcall(fn)
+    if not ok2 or type(tbl) ~= "table" then return false end
+    if type(tbl.grade) == "table" then
+        for _, k in ipairs(GRADE_KEYS) do
+            local v = tonumber(tbl.grade[k])
+            if v and v >= 0 and v <= 100 then drop_grade[k] = v end
+        end
+    end
+    if type(tbl.class) == "table" then
+        for _, k in ipairs(CLASS_KEYS) do
+            local v = tonumber(tbl.class[k])
+            if v and v >= 0 and v <= 5 then drop_class[k] = v end
+        end
+    end
+    apply_drop_grades()
+    return true
+end
+
 local function apply_drop_mult(weights)
     if type(weights) ~= "table" then return weights end
-    local cfg = load_drop_config()
     local out = {}
     local total = 0
     for k, v in pairs(weights) do
-        local m = cfg[k] or 1
+        local m = drop_class[k] or 1
         local nv = (tonumber(v) or 0) * m
         out[k] = nv
         total = total + nv
@@ -117,16 +140,16 @@ local function apply_drop_mult(weights)
     for k in pairs(out) do out[k] = out[k] / total end
     return out
 end
+
 -- Hook src.game.cores as soon as it loads, so every weight lookup (base and
 -- projected) passes through the user's multipliers before any slot spins.
--- Also create the config file at load time so the user can find it right away.
 local _require = require
 function require(name)
     local mod = _require(name)
     if name == "src.game.cores" and type(mod) == "table" and not mod.__drop_hooked then
         mod.__drop_hooked = true
-        -- create the config file now (identity is set by the time cores loads)
-        pcall(load_drop_config)
+        pcall(load_drop_ui_config)
+        pcall(apply_drop_grades)
         if type(mod.getProjectedSymbolWeights) == "function" then
             local orig = mod.getProjectedSymbolWeights
             mod.getProjectedSymbolWeights = function(...) return apply_drop_mult(orig(...)) end
@@ -398,6 +421,13 @@ end
 
 function love.update(dt)
     if game_update then game_update(dt) end
+    -- Live drop-rate polling: the dylib UI writes drop_rates_ui.lua;
+    -- pick up changes within ~0.5s and apply them immediately.
+    drop_poll_t = drop_poll_t + dt
+    if drop_poll_t >= 0.5 then
+        drop_poll_t = 0
+        pcall(load_drop_ui_config)
+    end
     if pending and love.timer.getTime() - pending.t >= TAP_DELAY then
         local p = pending
         pending = nil
