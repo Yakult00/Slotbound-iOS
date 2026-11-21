@@ -116,7 +116,7 @@ jobs:
           test -n "$APP"
           cp game.love "$APP/game.love"
           # ---- 正版图标：用游戏原始 App 的图标重建（LÖVE 模板默认图标必须换掉）----
-          # 源图 icon.png 是从正版 App bundle 里还原出来的 1024/152 图标
+          # 源图 icon.png 是仓库里的 256x256 图标，由它生成各尺寸
           sips -z 120 120 icon.png --out "$APP/iOS AppIcon60x60@2x.png" >/dev/null
           sips -z 180 180 icon.png --out "$APP/iOS AppIcon60x60@3x.png" >/dev/null
           sips -z 76  76  icon.png --out "$APP/iOS AppIcon76x76~ipad.png" >/dev/null
@@ -177,7 +177,7 @@ jobs:
           NOTES="$(mktemp)"
           if [[ -f CHANGELOG.md ]]; then
             awk -v ver="## v${VERSION}" '
-              $0 == ver { flag = 1; next }
+              index($0, ver) == 1 { c = substr($0, length(ver)+1, 1); if (c == "" || c !~ /[0-9.]/) { flag = 1; next } }
               /^## v[0-9]/ && flag { exit }
               flag { print }
             ' CHANGELOG.md | sed -e :a -e '/^\n*$/{$d;N;ba}' > "$NOTES" || true
