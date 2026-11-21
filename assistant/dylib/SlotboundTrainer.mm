@@ -38,6 +38,12 @@
 #include "dobby.h"
 #include "trainer_lua.h"
 
+// 面板版本号：CI 编译时用 -DSB_PANEL_VERSION="vX.Y.Z" 注入；
+// 本地手工编译不传该 flag 时用这里的兜底值。
+#ifndef SB_PANEL_VERSION
+#define SB_PANEL_VERSION "v1.3.0"
+#endif
+
 #pragma mark - Lua types
 typedef void lua_State;
 typedef void (*lua_pushnumber_t)(lua_State*, double);
@@ -1233,7 +1239,7 @@ static UIView *build_panel(CGRect bounds) {
     [panel addSubview:title];
 
     UILabel *ver = [[UILabel alloc] initWithFrame:CGRectMake(18, 36, w - 80, 14)];
-    ver.text = @"v1.3.0 · 金色按钮是主操作";
+    ver.text = [NSString stringWithFormat:@"%s · 金色按钮是主操作", SB_PANEL_VERSION];
     ver.font = [UIFont systemFontOfSize:11];
     ver.textColor = txtDim();
     [panel addSubview:ver];
