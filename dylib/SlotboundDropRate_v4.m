@@ -320,7 +320,9 @@ static void applyCurrent(void) {
     self.window.windowLevel = UIWindowLevelAlert + 1;
     self.window.backgroundColor = [UIColor clearColor];
     self.window.hidden = NO;
-    if (keyWindow && @available(iOS 13.0, *)) self.window.windowScene = keyWindow.windowScene;
+    if (keyWindow) {
+        if (@available(iOS 13.0, *)) { self.window.windowScene = keyWindow.windowScene; }
+    }
 
     // Circular dice button (44x44), self-drawn icon.
     self.button = [UIButton buttonWithType:UIButtonTypeCustom];
