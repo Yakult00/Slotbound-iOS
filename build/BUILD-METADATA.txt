@@ -1,6 +1,0 @@
-bundle_id=com.yakult00.slotbound
-engine=LÖVE 11.5
-platform=iphoneos
-architecture=arm64
-signing=unsigned; re-sign required
-game_sha256=b3198a7db086ca0d51e200f91bc3913bd309d5afc9289df78674e1047d4243a7
