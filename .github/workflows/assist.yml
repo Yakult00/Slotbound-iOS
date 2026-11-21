@@ -1,7 +1,15 @@
 name: Build assistant panel dylib
 
 on:
+  # 与 ios.yml 共用同一 release：打 tag 后两个 workflow 并行构建，
+  # 各自把产物传到同一个 vX.Y.Z release。先建后传，建失败说明已存在，改传。
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-dylib:
@@ -9,6 +17,26 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 版本号从 tag 派生（与 ios.yml 同一套逻辑）。
+      - name: Derive version from tag
+        id: version
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            LATEST="$(git describe --tags --abbrev=0 2>/dev/null || echo '')"
+            if [[ -n "$LATEST" ]]; then
+              VERSION="${LATEST#v}"
+            else
+              VERSION="0.0.0-dev"
+            fi
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION"
 
       - name: Build SlotboundTrainer.dylib (iOS arm64)
         run: |
@@ -54,3 +82,34 @@ jobs:
           path: |
             SlotboundTrainer.dylib
             SlotboundTrainer-NoJIT.dylib
+
+      # 只在 tag 推送时发布到同一 release。dylib 名字不带版本号，
+      # 所属版本由 release 决定（安装文档里写的就是这个名字）。
+      - name: Publish dylibs to release (tag only)
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          NOTES="$(mktemp)"
+          if [[ -f CHANGELOG.md ]]; then
+            awk -v ver="## v${VERSION}" '
+              $0 == ver { flag = 1; next }
+              /^## v[0-9]/ && flag { exit }
+              flag { print }
+            ' CHANGELOG.md | sed -e :a -e '/^\n*$/{$d;N;ba}' > "$NOTES" || true
+          fi
+          if [[ ! -s "$NOTES" ]]; then
+            printf 'SlotBound iOS 移植版 v%s\n\n用 LiveContainer 安装即可游玩。详情见 CHANGELOG.md。\n' "$VERSION" > "$NOTES"
+          fi
+          # 等 ios.yml 先建好 release（最多等 5 分钟），等不到就自己建。
+          for i in $(seq 1 10); do
+            if gh release view "v${VERSION}" >/dev/null 2>&1; then break; fi
+            sleep 30
+          done
+          gh release create "v${VERSION}" --title "v${VERSION}" --notes-file "$NOTES" \
+            SlotboundTrainer.dylib SlotboundTrainer-NoJIT.dylib 2>/dev/null \
+            || gh release upload "v${VERSION}" \
+              SlotboundTrainer.dylib SlotboundTrainer-NoJIT.dylib --clobber
+          gh release view "v${VERSION}" --json assets --jq '.assets[].name'
