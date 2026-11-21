@@ -41,3 +41,31 @@ if bad:
         print("  " + b)
     sys.exit(1)
 print(f"OK: all {declared} manifest files verified (sha256 + size)")
+
+# 垫片层 pin：main.lua / real_main.luac / trainer_backend.lua / @bootstrap
+# 不在游戏 manifest 里，靠 tools/shim.sha256 钉死。改动垫片后重新生成该文件。
+SHIM = os.path.join(ROOT, "tools", "shim.sha256")
+shim_bad = []
+shim_count = 0
+if os.path.isfile(SHIM):
+    for line in open(SHIM, encoding="utf-8"):
+        line = line.rstrip("\n")
+        if not line or line.startswith("#"):
+            continue
+        digest, path = line.split(None, 1)
+        path = path.strip()
+        shim_count += 1
+        full = os.path.join(ROOT, path)
+        if not os.path.isfile(full):
+            shim_bad.append(f"missing: {path}")
+            continue
+        if hashlib.sha256(open(full, "rb").read()).hexdigest() != digest:
+            shim_bad.append(f"hash mismatch: {path} (regenerate tools/shim.sha256)")
+    if shim_bad:
+        print(f"FAIL: {len(shim_bad)} of {shim_count} shim files failed pin check:")
+        for b in shim_bad:
+            print("  " + b)
+        sys.exit(1)
+    print(f"OK: all {shim_count} shim files verified against tools/shim.sha256")
+else:
+    print("WARN: tools/shim.sha256 not found, shim layer not checked")
