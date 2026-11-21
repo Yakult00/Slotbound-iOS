@@ -1,6 +1,10 @@
 name: Build unsigned iOS IPA
 
 on:
+  # 打 tag 即发布：git tag v1.3.1 && git push origin v1.3.1
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 permissions:
@@ -17,13 +21,44 @@ jobs:
     timeout-minutes: 90
     env:
       LOVE_VERSION: "11.5"
-      APP_VERSION: "1.3.0"
-      APP_BUILD: "130"
       BUNDLE_ID: com.yakult00.slotbound
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 版本号一律从 tag 派生，不许硬编码。
+      # tag 推送：v1.3.1 -> 1.3.1；手动 dispatch：取最近的 tag，取不到则用 dev。
+      - name: Derive version from tag
+        id: version
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            LATEST="$(git describe --tags --abbrev=0 2>/dev/null || echo '')"
+            if [[ -n "$LATEST" ]]; then
+              VERSION="${LATEST#v}"
+            else
+              VERSION="0.0.0-dev"
+            fi
+          fi
+          BUILD="$(echo "$VERSION" | tr -d '.')"
+          if ! [[ "$BUILD" =~ ^[0-9]+$ ]]; then
+            BUILD="${GITHUB_RUN_NUMBER}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Version: $VERSION (build $BUILD)"
+
+      # 游戏完整性校验：用游戏自带的 release_integrity_manifest.bin
+      # 对 2072 个文件逐个比对 SHA-256 + 大小。v1.1.4 黑屏事故（git 把
+      # 13 个文件 CRLF 改成 LF）在这里就会被拦下，不再靠用户真机发现。
+      - name: Verify game file integrity
+        run: python3 tools/verify_integrity.py .
 
       - name: Package game.love from repo files
         run: |
@@ -99,17 +134,17 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName SlotBound" "$APP/Info.plist"
           /usr/libexec/PlistBuddy -c "Set :CFBundleName SlotBound" "$APP/Info.plist"
           /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier ${BUNDLE_ID}" "$APP/Info.plist"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${APP_VERSION}" "$APP/Info.plist"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${APP_BUILD}" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.version }}" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.build }}" "$APP/Info.plist"
           /usr/libexec/PlistBuddy -c "Add :UIFileSharingEnabled bool true" "$APP/Info.plist" || true
           /usr/libexec/PlistBuddy -c "Add :LSSupportsOpeningDocumentsInPlace bool true" "$APP/Info.plist" || true
           /usr/bin/xcrun vtool -show-build "$APP/love" | grep -Eq '^[[:space:]]*platform IOS$'
           /usr/bin/lipo -archs "$APP/love" | grep -qw arm64
           mkdir -p Payload
           cp -R "$APP" Payload/SlotBound.app
-          /usr/bin/ditto -c -k --keepParent Payload Slotbound.ipa
-          unzip -t Slotbound.ipa
-          unzip -l Slotbound.ipa | grep -E 'Payload/SlotBound.app/(game\.love|Info\.plist|love)$'
+          /usr/bin/ditto -c -k --keepParent Payload "Slotbound-v${{ steps.version.outputs.version }}.ipa"
+          unzip -t "Slotbound-v${{ steps.version.outputs.version }}.ipa"
+          unzip -l "Slotbound-v${{ steps.version.outputs.version }}.ipa" | grep -E 'Payload/SlotBound.app/(game\.love|Info\.plist|love)$'
           {
             echo "bundle_id=${BUNDLE_ID}"
             echo "engine=LÖVE ${LOVE_VERSION}"
@@ -124,6 +159,32 @@ jobs:
         with:
           name: Slotbound-unsigned
           path: |
-            Slotbound.ipa
+            Slotbound-v${{ steps.version.outputs.version }}.ipa
             BUILD-METADATA.txt
             game.love.sha256
+
+      # 只在 tag 推送时发布。release 只含 IPA（.love 已包在 IPA 里，不再单独发）。
+      # 与 assist.yml 共用同一 release：先建后传，建失败说明已存在，改传。
+      # release notes 优先取 CHANGELOG.md 里对应版本的章节，取不到用默认文案。
+      - name: Publish release (tag only)
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          IPA="Slotbound-v${VERSION}.ipa"
+          NOTES="$(mktemp)"
+          if [[ -f CHANGELOG.md ]]; then
+            awk -v ver="## v${VERSION}" '
+              $0 == ver { flag = 1; next }
+              /^## v[0-9]/ && flag { exit }
+              flag { print }
+            ' CHANGELOG.md | sed -e :a -e '/^\n*$/{$d;N;ba}' > "$NOTES" || true
+          fi
+          if [[ ! -s "$NOTES" ]]; then
+            printf 'SlotBound iOS 移植版 v%s\n\n用 LiveContainer 安装即可游玩。详情见 CHANGELOG.md。\n' "$VERSION" > "$NOTES"
+          fi
+          gh release create "v${VERSION}" --title "v${VERSION}" --notes-file "$NOTES" "$IPA" 2>/dev/null \
+            || gh release upload "v${VERSION}" "$IPA" --clobber
+          gh release view "v${VERSION}" --json assets --jq '.assets[].name'
