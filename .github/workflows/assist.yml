@@ -95,7 +95,7 @@ jobs:
           NOTES="$(mktemp)"
           if [[ -f CHANGELOG.md ]]; then
             awk -v ver="## v${VERSION}" '
-              $0 == ver { flag = 1; next }
+              index($0, ver) == 1 { c = substr($0, length(ver)+1, 1); if (c == "" || c !~ /[0-9.]/) { flag = 1; next } }
               /^## v[0-9]/ && flag { exit }
               flag { print }
             ' CHANGELOG.md | sed -e :a -e '/^\n*$/{$d;N;ba}' > "$NOTES" || true
@@ -104,7 +104,7 @@ jobs:
             printf 'SlotBound iOS 移植版 v%s\n\n用 LiveContainer 安装即可游玩。详情见 CHANGELOG.md。\n' "$VERSION" > "$NOTES"
           fi
           # 等 ios.yml 先建好 release（最多等 5 分钟），等不到就自己建。
-          for i in $(seq 1 10); do
+          for i in $(seq 1 30); do
             if gh release view "v${VERSION}" >/dev/null 2>&1; then break; fi
             sleep 30
           done
