@@ -14,3 +14,6 @@ conf.lua binary
 icon.png binary
 @bootstrap binary
 release.flag binary
+# 脚本和 workflow 固定 LF：CRLF 会让 bash 在 Windows 本地跑不起来
+*.sh text eol=lf
+*.yml text eol=lf
