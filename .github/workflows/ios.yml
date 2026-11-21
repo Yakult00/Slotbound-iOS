@@ -198,9 +198,9 @@ jobs:
           /usr/bin/lipo -archs "$APP/love" | grep -qw arm64
           mkdir -p Payload
           cp -R "$APP" Payload/SlotBound.app
-          /usr/bin/ditto -c -k --keepParent Payload "Slotbound-v${{ steps.version.outputs.version }}.ipa"
-          unzip -t "Slotbound-v${{ steps.version.outputs.version }}.ipa"
-          unzip -l "Slotbound-v${{ steps.version.outputs.version }}.ipa" | grep -E 'Payload/SlotBound.app/(game\.love|Info\.plist|love)$'
+          /usr/bin/ditto -c -k --keepParent Payload "Slotbound-${{ steps.version.outputs.version }}.ipa"
+          unzip -t "Slotbound-${{ steps.version.outputs.version }}.ipa"
+          unzip -l "Slotbound-${{ steps.version.outputs.version }}.ipa" | grep -E 'Payload/SlotBound.app/(game\.love|Info\.plist|love)$'
           {
             echo "bundle_id=${BUNDLE_ID}"
             echo "engine=LÖVE ${LOVE_VERSION}"
@@ -215,7 +215,7 @@ jobs:
         with:
           name: Slotbound-unsigned
           path: |
-            Slotbound-v${{ steps.version.outputs.version }}.ipa
+            Slotbound-${{ steps.version.outputs.version }}.ipa
             BUILD-METADATA.txt
             game.love.sha256
 
@@ -257,7 +257,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          IPA="Slotbound-v${VERSION}.ipa"
+          IPA="Slotbound-${VERSION}.ipa"
           NOTES="$(mktemp)"
           python3 tools/changelog_notes.py --fallback "$VERSION" CHANGELOG.md > "$NOTES"
           gh release create "v${VERSION}" --title "v${VERSION}" --notes-file "$NOTES" "$IPA" 2>/dev/null \
