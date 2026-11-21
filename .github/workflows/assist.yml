@@ -1,0 +1,56 @@
+name: Build assistant panel dylib
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-dylib:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build SlotboundTrainer.dylib (iOS arm64)
+        run: |
+          SDK=$(xcrun -sdk iphoneos --show-sdk-path)
+          echo "SDK: $SDK"
+          # clang++ links the C++ runtime (Dobby is C++); CoreGraphics for CGPointZero
+          xcrun -sdk iphoneos clang++ -arch arm64 -dynamiclib \
+            -O2 -fPIC -fobjc-arc \
+            -isysroot "$SDK" \
+            -miphoneos-version-min=14.0 \
+            -framework Foundation -framework UIKit -framework CoreGraphics -framework QuartzCore \
+            -lc++ \
+            -Iassistant/dylib/dobby \
+            -o SlotboundTrainer.dylib \
+            assistant/dylib/SlotboundTrainer.mm assistant/dylib/dobby/libdobby.a
+          file SlotboundTrainer.dylib
+          otool -L SlotboundTrainer.dylib
+          ls -la SlotboundTrainer.dylib
+
+      # 纯 Lua 后端版：不含任何内存 hook（Dobby 那段被 SB_NO_HOOK 关掉），
+      # 面板只负责 UI + cheats_ui.lua / cheats_status.lua 文件桥。
+      # 用在 LiveContainer / 非 JIT 环境；需要 game.love 里带 trainer_backend.lua。
+      - name: Build SlotboundTrainer-NoJIT.dylib
+        run: |
+          SDK=$(xcrun -sdk iphoneos --show-sdk-path)
+          xcrun -sdk iphoneos clang++ -arch arm64 -dynamiclib \
+            -O2 -fPIC -fobjc-arc -DSB_NO_HOOK \
+            -isysroot "$SDK" \
+            -miphoneos-version-min=14.0 \
+            -framework Foundation -framework UIKit -framework CoreGraphics -framework QuartzCore \
+            -lc++ \
+            -Iassistant/dylib/dobby \
+            -o SlotboundTrainer-NoJIT.dylib \
+            assistant/dylib/SlotboundTrainer.mm
+          file SlotboundTrainer-NoJIT.dylib
+          otool -L SlotboundTrainer-NoJIT.dylib
+          ls -la SlotboundTrainer-NoJIT.dylib
+
+      - name: Upload dylib artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SlotboundTrainer-dylib
+          path: |
+            SlotboundTrainer.dylib
+            SlotboundTrainer-NoJIT.dylib
