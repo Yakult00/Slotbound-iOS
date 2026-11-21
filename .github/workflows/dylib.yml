@@ -18,7 +18,7 @@ jobs:
             -O2 -fPIC -fobjc-arc \
             -isysroot "$SDK" \
             -miphoneos-version-min=12.0 \
-            -framework Foundation -framework UIKit \
+            -framework Foundation -framework UIKit -framework CoreGraphics \
             -o SlotboundDropRate.dylib \
             dylib/SlotboundDropRate.m
           file SlotboundDropRate.dylib
