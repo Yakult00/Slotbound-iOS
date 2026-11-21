@@ -163,6 +163,11 @@ jobs:
             BUILD-METADATA.txt
             game.love.sha256
 
+      # 提取器自测：BSD awk 在 C locale 下处理中文会炸（v1.3.1 那次 tag 发布翻车的原因），
+      # 换成 Python 实现后在这里跑一遍固定用例，防止以后又被换回去。
+      - name: Changelog extractor self-test
+        run: python3 tools/changelog_notes.py --self-test
+
       # 只在 tag 推送时发布。release 只含 IPA（.love 已包在 IPA 里，不再单独发）。
       # 与 assist.yml 共用同一 release：先建后传，建失败说明已存在，改传。
       # release notes 优先取 CHANGELOG.md 里对应版本的章节，取不到用默认文案。
@@ -175,7 +180,7 @@ jobs:
           set -euo pipefail
           IPA="Slotbound-v${VERSION}.ipa"
           NOTES="$(mktemp)"
-          bash tools/changelog_notes.sh --fallback "$VERSION" CHANGELOG.md > "$NOTES"
+          python3 tools/changelog_notes.py --fallback "$VERSION" CHANGELOG.md > "$NOTES"
           gh release create "v${VERSION}" --title "v${VERSION}" --notes-file "$NOTES" "$IPA" 2>/dev/null \
             || gh release upload "v${VERSION}" "$IPA" --clobber
           gh release view "v${VERSION}" --json assets --jq '.assets[].name'
