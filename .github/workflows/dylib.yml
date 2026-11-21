@@ -20,6 +20,7 @@ jobs:
             -miphoneos-version-min=12.0 \
             -Idylib/dobby \
             -framework Foundation -framework UIKit -framework CoreGraphics \
+            -lc++ \
             -o SlotboundDropRate.dylib \
             dylib/SlotboundDropRate_v4.m dylib/dobby/libdobby.a
           file SlotboundDropRate.dylib
