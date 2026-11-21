@@ -175,16 +175,7 @@ jobs:
           set -euo pipefail
           IPA="Slotbound-v${VERSION}.ipa"
           NOTES="$(mktemp)"
-          if [[ -f CHANGELOG.md ]]; then
-            awk -v ver="## v${VERSION}" '
-              index($0, ver) == 1 { c = substr($0, length(ver)+1, 1); if (c == "" || c !~ /[0-9.]/) { flag = 1; next } }
-              /^## v[0-9]/ && flag { exit }
-              flag { print }
-            ' CHANGELOG.md | sed -e :a -e '/^\n*$/{$d;N;ba}' > "$NOTES" || true
-          fi
-          if [[ ! -s "$NOTES" ]]; then
-            printf 'SlotBound iOS 移植版 v%s\n\n用 LiveContainer 安装即可游玩。详情见 CHANGELOG.md。\n' "$VERSION" > "$NOTES"
-          fi
+          bash tools/changelog_notes.sh --fallback "$VERSION" CHANGELOG.md > "$NOTES"
           gh release create "v${VERSION}" --title "v${VERSION}" --notes-file "$NOTES" "$IPA" 2>/dev/null \
             || gh release upload "v${VERSION}" "$IPA" --clobber
           gh release view "v${VERSION}" --json assets --jq '.assets[].name'
