@@ -343,3 +343,7 @@ end
 -- Trainer (pure Lua, no dylib). Loaded last so it wraps the handlers above
 -- and enforces its values after the game's own love.update each frame.
 pcall(function() require("trainer") end)
+
+-- Full trainer backend (same code the dylib used to inject): reads cheats_ui.lua
+-- written by the native panel, writes cheats_status.lua back. Pure Lua, no hook.
+pcall(function() require("trainer_backend") end)
