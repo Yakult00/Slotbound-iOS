@@ -68,6 +68,77 @@ if jit then
     end
 end
 
+-- Drop-rate tuner (v1.3.0): user-editable multipliers for the 6 slot symbol
+-- classes (A=弓手 D=决斗者 H=骑兵 M=法师 S=枪兵 W=战士). Config file
+-- "drop_rates.lua" lives in the save directory (same folder as
+-- save_fallback.dat). Created with defaults when the game loads; edit it
+-- with any text editor, restart the game to apply.
+local drop_cfg = nil
+local drop_cfg_loaded = false
+local DROP_KEYS = { "A", "D", "H", "M", "S", "W" }
+local DROP_DEFAULT = "-- 暴率调节（SlotBound 掉率插件）\n"
+    .. "-- 把想多出的那类数字调大：1 = 正常，2 = 两倍，5 = 五倍，0 = 不出\n"
+    .. "-- 改完保存，重启游戏生效。文件位置：和 save_fallback.dat 同一个文件夹。\n"
+    .. "-- A=弓手 D=决斗者 H=骑兵 M=法师 S=枪兵 W=战士\n"
+    .. "return {\n  A = 1,\n  D = 1,\n  H = 1,\n  M = 1,\n  S = 1,\n  W = 1,\n}\n"
+local function load_drop_config()
+    if drop_cfg_loaded then return drop_cfg end
+    drop_cfg_loaded = true
+    drop_cfg = { A = 1, D = 1, H = 1, M = 1, S = 1, W = 1 }
+    local ok, content = pcall(love.filesystem.read, "drop_rates.lua")
+    if ok and content then
+        local fn = loadstring(content)
+        if fn then
+            local ok2, tbl = pcall(fn)
+            if ok2 and type(tbl) == "table" then
+                for _, k in ipairs(DROP_KEYS) do
+                    local v = tonumber(tbl[k])
+                    if v and v >= 0 then drop_cfg[k] = v end
+                end
+            end
+        end
+    else
+        pcall(love.filesystem.write, "drop_rates.lua", DROP_DEFAULT)
+    end
+    return drop_cfg
+end
+local function apply_drop_mult(weights)
+    if type(weights) ~= "table" then return weights end
+    local cfg = load_drop_config()
+    local out = {}
+    local total = 0
+    for k, v in pairs(weights) do
+        local m = cfg[k] or 1
+        local nv = (tonumber(v) or 0) * m
+        out[k] = nv
+        total = total + nv
+    end
+    if total <= 0 then return weights end
+    for k in pairs(out) do out[k] = out[k] / total end
+    return out
+end
+-- Hook src.game.cores as soon as it loads, so every weight lookup (base and
+-- projected) passes through the user's multipliers before any slot spins.
+-- Also create the config file at load time so the user can find it right away.
+local _require = require
+function require(name)
+    local mod = _require(name)
+    if name == "src.game.cores" and type(mod) == "table" and not mod.__drop_hooked then
+        mod.__drop_hooked = true
+        -- create the config file now (identity is set by the time cores loads)
+        pcall(load_drop_config)
+        if type(mod.getProjectedSymbolWeights) == "function" then
+            local orig = mod.getProjectedSymbolWeights
+            mod.getProjectedSymbolWeights = function(...) return apply_drop_mult(orig(...)) end
+        end
+        if type(mod.baseSymbolWeights) == "function" then
+            local orig = mod.baseSymbolWeights
+            mod.baseSymbolWeights = function(...) return apply_drop_mult(orig(...)) end
+        end
+    end
+    return mod
+end
+
 local chunk = love.filesystem.load("real_main.luac")
 chunk()
 package.loaded["ffi"] = real_ffi
