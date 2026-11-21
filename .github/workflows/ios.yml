@@ -30,7 +30,7 @@ jobs:
           import os, zipfile
           # Files/dirs that belong in the .love (the game project in repo root).
           include = ["main.lua", "real_main.luac", "conf.lua", "icon.png",
-                     "release.flag", "@bootstrap", "src"]
+                     "trainer.lua", "release.flag", "@bootstrap", "src"]
           with zipfile.ZipFile("game.love", "w", zipfile.ZIP_DEFLATED) as z:
               for entry in include:
                   if os.path.isdir(entry):

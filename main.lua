@@ -339,3 +339,7 @@ function love.update(dt)
         end
     end
 end
+
+-- Trainer (pure Lua, no dylib). Loaded last so it wraps the handlers above
+-- and enforces its values after the game's own love.update each frame.
+pcall(function() require("trainer") end)
