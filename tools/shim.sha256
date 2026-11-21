@@ -1,0 +1,9 @@
+# 垫片层 pin：main.lua / real_main.luac / trainer_backend.lua / @bootstrap
+# 不在游戏自带的 release_integrity_manifest.bin 里，单独钉死哈希。
+# 改动垫片文件后，用 sha256sum 重新生成本文件再提交：
+#   cd <repo root> && sha256sum main.lua real_main.luac trainer_backend.lua @bootstrap > tools/shim.sha256
+# 注意：trainer_backend.lua 改动后还要先跑 python3 tools/sync_backend.py 同步三份拷贝。
+b20b3371b5f3a712a77d82e5fb0f215f027c9cf6a0f75f221d514897fa730099  main.lua
+d3eaee037f38068b799ebb4d2bf4aa0d289cfe507b18ff590ad82b10dc776618  real_main.luac
+73cf588b9159d44467e67bf27bfd5aa747e50fedb66168d9a2fbb18224896cb2  trainer_backend.lua
+8423ef0973f4518816783ee361f3299bde684224299556f37dfe8bd2e103a017  @bootstrap
