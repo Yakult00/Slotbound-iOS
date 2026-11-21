@@ -11,14 +11,35 @@ on:
 permissions:
   contents: write
 
+# 构建按 ref 区分并发：不同 tag 互不取消，同 tag 重推才取消旧的。
+# （与 ios.yml 同一原则：固定 group 会让新 tag 取消旧 tag 的构建，
+# 而另一边不受影响，产出缺件的 release。）
+concurrency:
+  group: slotbound-assist-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-dylib:
     runs-on: macos-15
+    timeout-minutes: 30
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # tag 必须是三段式版本号（vX.Y.Z）。两段式拦不住 v1.31 这种歧义，
+      # 只有三段式能把它当缺段拦掉；历史两段式 tag 已存在、不会重推，不受影响。
+      - name: Validate tag format
+        if: github.ref_type == 'tag'
+        run: |
+          if ! [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "错误：tag 必须是三段式版本号，例如 v1.3.1。当前 tag：${GITHUB_REF_NAME}"
+            echo "版本号一律三段式（vX.Y.Z）。"
+            exit 1
+          fi
 
       # 版本号从 tag 派生（与 ios.yml 同一套逻辑）。
       - name: Derive version from tag
@@ -38,6 +59,14 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Version: $VERSION"
 
+      # 训练器后端三份拷贝必须同步：trainer_backend.lua（唯一事实来源）
+      # → assistant/dylib/sb_trainer_v2.lua → assistant/dylib/trainer_lua.h。
+      # 不一致直接 fail；本地改了后端逻辑后跑 python3 tools/sync_backend.py 再提交。
+      - name: Check trainer backend in sync
+        run: python3 tools/sync_backend.py --check
+
+      # 面板版本号由 -DSB_PANEL_VERSION 注入（.mm 里有 #ifndef 兜底，
+      # 本地手工编译不传该 flag 也能过）。显示格式 vX.Y.Z。
       - name: Build SlotboundTrainer.dylib (iOS arm64)
         run: |
           SDK=$(xcrun -sdk iphoneos --show-sdk-path)
@@ -45,6 +74,7 @@ jobs:
           # clang++ links the C++ runtime (Dobby is C++); CoreGraphics for CGPointZero
           xcrun -sdk iphoneos clang++ -arch arm64 -dynamiclib \
             -O2 -fPIC -fobjc-arc \
+            -DSB_PANEL_VERSION="\"v${{ steps.version.outputs.version }}\"" \
             -isysroot "$SDK" \
             -miphoneos-version-min=14.0 \
             -framework Foundation -framework UIKit -framework CoreGraphics -framework QuartzCore \
@@ -64,6 +94,7 @@ jobs:
           SDK=$(xcrun -sdk iphoneos --show-sdk-path)
           xcrun -sdk iphoneos clang++ -arch arm64 -dynamiclib \
             -O2 -fPIC -fobjc-arc -DSB_NO_HOOK \
+            -DSB_PANEL_VERSION="\"v${{ steps.version.outputs.version }}\"" \
             -isysroot "$SDK" \
             -miphoneos-version-min=14.0 \
             -framework Foundation -framework UIKit -framework CoreGraphics -framework QuartzCore \
@@ -88,13 +119,36 @@ jobs:
       - name: Changelog extractor self-test
         run: python3 tools/changelog_notes.py --self-test
 
+  # 发布是独立 job：与 ios.yml 的 publish job 共用同一 concurrency 组，
+  # 串行化对同一 release 的操作（一个先建 release，另一个再传）。
+  # cancel-in-progress 必须 false——否则两个 publish job 会互相取消。
+  publish:
+    name: Publish dylibs to release
+    needs: build-dylib
+    if: github.ref_type == 'tag'
+    runs-on: macos-15
+    timeout-minutes: 30
+    concurrency:
+      group: release-${{ github.ref_name }}
+      cancel-in-progress: false
+    env:
+      VERSION: ${{ needs.build-dylib.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download dylib artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: SlotboundTrainer-dylib
+
       # 只在 tag 推送时发布到同一 release。dylib 名字不带版本号，
       # 所属版本由 release 决定（安装文档里写的就是这个名字）。
       - name: Publish dylibs to release (tag only)
-        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
           NOTES="$(mktemp)"
