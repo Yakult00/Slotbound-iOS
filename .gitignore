@@ -1,0 +1,6 @@
+# 本地构建产物不进 git，只走 release assets
+build/
+*.ipa
+game.love
+*.log
+.DS_Store
