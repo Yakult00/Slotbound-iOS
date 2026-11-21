@@ -10,8 +10,11 @@ on:
 permissions:
   contents: write
 
+# 构建按 ref 区分并发：不同 tag 互不取消，同 tag 重推才取消旧的。
+# （旧版用固定 group slotbound-ios，新 tag 会把旧 tag 的构建取消掉，
+# 而 assist 不受影响、照常发一个只有 dylib 的 release——P1-3 的根因。）
 concurrency:
-  group: slotbound-ios
+  group: slotbound-ios-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -22,12 +25,25 @@ jobs:
     env:
       LOVE_VERSION: "11.5"
       BUNDLE_ID: com.yakult00.slotbound
+    outputs:
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # tag 必须是三段式版本号（vX.Y.Z）。两段式拦不住 v1.31 这种歧义，
+      # 只有三段式能把它当缺段拦掉；历史两段式 tag 已存在、不会重推，不受影响。
+      - name: Validate tag format
+        if: github.ref_type == 'tag'
+        run: |
+          if ! [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "错误：tag 必须是三段式版本号，例如 v1.3.1。当前 tag：${GITHUB_REF_NAME}"
+            echo "版本号一律三段式（vX.Y.Z）。"
+            exit 1
+          fi
 
       # 版本号一律从 tag 派生，不许硬编码。
       # tag 推送：v1.3.1 -> 1.3.1；手动 dispatch：取最近的 tag，取不到则用 dev。
@@ -55,8 +71,10 @@ jobs:
           echo "Version: $VERSION (build $BUILD)"
 
       # 游戏完整性校验：用游戏自带的 release_integrity_manifest.bin
-      # 对 2072 个文件逐个比对 SHA-256 + 大小。v1.1.4 黑屏事故（git 把
-      # 13 个文件 CRLF 改成 LF）在这里就会被拦下，不再靠用户真机发现。
+      # 对 2072 个文件逐个比对 SHA-256 + 大小；另按 tools/shim.sha256
+      # 钉死垫片层（main.lua / real_main.luac / trainer_backend.lua / @bootstrap）。
+      # v1.1.4 黑屏事故（git 把 13 个文件 CRLF 改成 LF）在这里就会被拦下，
+      # 不再靠用户真机发现。
       - name: Verify game file integrity
         run: python3 tools/verify_integrity.py .
 
@@ -80,6 +98,44 @@ jobs:
           print("game.love packaged")
           PYEOF
           ls -lh game.love
+
+      # 包内容断言：只看仓库文件不够，verify_integrity 比对的是磁盘上的文件，
+      # 打包时漏了文件它拦不住。这里直接断言打出来的 game.love。
+      # 数字按当前游戏版本（PC v1.0.2）：src/ 2071 个文件
+      # （2069 个 manifest 条目 + release_integrity.lua + manifest 本身），
+      # 总条目 2078 = 2071 + 7 个根文件
+      # （main.lua / real_main.luac / conf.lua / icon.png /
+      #  trainer_backend.lua / release.flag / @bootstrap）。
+      # 游戏更新后数字会变，改这里。
+      - name: Assert game.love contents
+        run: |
+          set -euo pipefail
+          python3 - << 'PYEOF'
+          import sys, zipfile
+          EXPECT_TOTAL = 2078
+          EXPECT_SRC = 2071
+          KEY_FILES = ["main.lua", "real_main.luac", "conf.lua", "icon.png",
+                       "trainer_backend.lua", "release.flag", "@bootstrap"]
+          with zipfile.ZipFile("game.love") as z:
+              names = z.namelist()
+          total = len(names)
+          src_count = sum(1 for n in names if n.startswith("src/"))
+          missing = [k for k in KEY_FILES if k not in names]
+          problems = []
+          if total != EXPECT_TOTAL:
+              problems.append(f"total entries: want {EXPECT_TOTAL}, got {total}")
+          if src_count != EXPECT_SRC:
+              problems.append(f"src/ entries: want {EXPECT_SRC}, got {src_count}")
+          if missing:
+              problems.append(f"missing key files: {', '.join(missing)}")
+          if problems:
+              print("FAIL: game.love contents assertion failed:")
+              for p in problems:
+                  print("  " + p)
+              sys.exit(1)
+          print(f"OK: game.love has {total} entries ({src_count} under src/), "
+                f"all {len(KEY_FILES)} key files present")
+          PYEOF
 
       - name: Validate game package
         run: |
@@ -168,14 +224,37 @@ jobs:
       - name: Changelog extractor self-test
         run: python3 tools/changelog_notes.py --self-test
 
+  # 发布是独立 job：与 assist.yml 的 publish job 共用同一 concurrency 组，
+  # 串行化对同一 release 的操作（一个先建 release，另一个再传）。
+  # cancel-in-progress 必须 false——否则两个 publish job 会互相取消。
+  publish:
+    name: Publish IPA release
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: macos-15
+    timeout-minutes: 15
+    concurrency:
+      group: release-${{ github.ref_name }}
+      cancel-in-progress: false
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download IPA artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Slotbound-unsigned
+
       # 只在 tag 推送时发布。release 只含 IPA（.love 已包在 IPA 里，不再单独发）。
       # 与 assist.yml 共用同一 release：先建后传，建失败说明已存在，改传。
       # release notes 优先取 CHANGELOG.md 里对应版本的章节，取不到用默认文案。
       - name: Publish release (tag only)
-        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
           IPA="Slotbound-v${VERSION}.ipa"
