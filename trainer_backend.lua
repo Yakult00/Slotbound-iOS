@@ -31,6 +31,7 @@ local cfg = {
   spins_set = nil, spins_add = 0, lock_spins = false,
   jungsu_set = nil, lock_jungsu = false,
   originite_set = nil, originite_add = 0, lock_originite = false,
+  core_add = 0, core_add_all = 0,
   jackpot = false, run_lua = nil,
   cmd = nil, arg = nil, arg2 = nil,
 }
@@ -579,6 +580,57 @@ local function cmd_set_passive(field, value)
 end
 
 ----------------------------------------------------------------
+-- 核心添加（老虎机）
+----------------------------------------------------------------
+-- 核心是"本局拥有"的运行时列表（cores.getActive()），不是永久解锁：
+--   getById(id) -> 定义表；select(def, wave) 把核心塞进当前 run；isOwned(def) 查重。
+-- 真机实测：循环 select 后 getActive() 从 0 变成 48，老虎机里立即可用。
+-- duration=0 的核心 expiryWave=inf，传 1 即可；有 duration 的按当前波数算。
+local function current_wave()
+  local w = 1
+  pcall(function()
+    local q = require("src.game.quest")
+    if type(q.currentWave) == "function" then w = tonumber(q.currentWave()) or 1 end
+  end)
+  return w
+end
+
+local function cmd_core_add(id)
+  local ok, cores = pcall(require, "src.game.cores")
+  if not ok or type(cores) ~= "table" or type(cores.getById) ~= "function" then return "no_module" end
+  local d = cores.getById(id)
+  if type(d) ~= "table" then return "no_core" end
+  if type(cores.isOwned) == "function" and cores.isOwned(d) then return "owned" end
+  local ok2, err = pcall(cores.select, d, current_wave())
+  if not ok2 then return "fail:" .. tostring(err) end
+  return "ok"
+end
+
+local function cmd_core_add_all()
+  local ok, cores = pcall(require, "src.game.cores")
+  if not ok or type(cores) ~= "table" or type(cores.getIds) ~= "function" then return "no_module" end
+  local w = current_wave()
+  local n = 0
+  for _, id in ipairs(cores.getIds() or {}) do
+    local d = cores.getById(id)
+    if type(d) == "table" and not (type(cores.isOwned) == "function" and cores.isOwned(d)) then
+      if pcall(cores.select, d, w) then n = n + 1 end
+    end
+  end
+  return "ok:" .. tostring(n)
+end
+
+local function core_count()
+  local n, total = 0, 0
+  pcall(function()
+    local cores = require("src.game.cores")
+    total = #(cores.getIds() or {})
+    n = #(cores.getActive() or {})
+  end)
+  return n, total
+end
+
+----------------------------------------------------------------
 -- 目录写回
 ----------------------------------------------------------------
 local function clean(s)
@@ -612,6 +664,19 @@ local function write_catalog()
       lines[#lines + 1] = id .. "\t" .. clean(loc["item.name." .. id] or d.name or id) .. "\t" .. tostring(math.max(1, math.floor(tonumber(d.maxLevel) or 1)))
     end
   end
+  -- 核心目录：老虎机页的滚轮用（id / 名字 / 稀有度）
+  pcall(function()
+    local cores = require("src.game.cores")
+    if type(cores.getIds) ~= "function" then return end
+    lines[#lines + 1] = "[cores]"
+    for _, id in ipairs(cores.getIds() or {}) do
+      local d = cores.getById(id)
+      if type(d) == "table" then
+        local nm = loc["core.name." .. tostring(id)] or d.name or d.key or tostring(id)
+        lines[#lines + 1] = tostring(id) .. "\t" .. clean(nm) .. "\t" .. clean(d.rarity or "?")
+      end
+    end
+  end)
   -- 觉醒目录是按选中单位的职业来的（GGGLHHH awakening.cpp）：
   -- 本职业候选池 A.pool(u) + 已选的，名字按觉醒版本取本地化。
   pcall(function()
@@ -656,6 +721,7 @@ local function write_status(extra)
     if type(ui) == "table" and type(ui.jungsuBalance) == "number" then jb = ui.jungsuBalance end
   end)
   local orig = get_originite()
+  local core_n, core_total = core_count()
   local lines = {
     "return {",
     "  coins = " .. tostring(type(coins) == "number" and coins or 0) .. ",",
@@ -663,6 +729,8 @@ local function write_status(extra)
     "  jungsu = " .. tostring(type(jungsu) == "number" and jungsu or 0) .. ",",
     "  jungsuBalance = " .. tostring(type(jb) == "number" and jb or 0) .. ",",
     "  originite = " .. tostring(type(orig) == "number" and orig or 0) .. ",",
+    "  cores = " .. tostring(core_n) .. ",",
+    "  coresTotal = " .. tostring(core_total) .. ",",
   }
   local sk = skill_info_string()
   if sk then
@@ -733,6 +801,8 @@ local commands = {
   remove_item = function() return cmd_remove_item(cfg.arg) end,
   replace_item = function() return cmd_replace_item(cfg.arg, cfg.arg2) end,
   items_all = function() return cmd_items_all(cfg.arg) end,
+  core_add = function() return cmd_core_add(cfg.arg) end,
+  core_add_all = function() return cmd_core_add_all() end,
   items_clear = function() return cmd_items_clear() end,
   add_awakening = function() return cmd_add_awakening(cfg.arg) end,
   remove_awakening = function() return cmd_remove_awakening(cfg.arg) end,
@@ -773,6 +843,12 @@ local function apply_once()
   if type(cfg.originite_add) == "number" and cfg.originite_add ~= 0 then
     local cur = get_originite()
     if type(cur) == "number" then set_originite(cur + cfg.originite_add) end
+  end
+  if tonumber(cfg.core_add) and tonumber(cfg.core_add) > 0 then
+    cmd_core_add(math.floor(tonumber(cfg.core_add)))
+  end
+  if tonumber(cfg.core_add_all) and tonumber(cfg.core_add_all) > 0 then
+    cmd_core_add_all()
   end
   if type(cfg.run_lua) == "string" and cfg.run_lua ~= "" then
     local fn = load_chunk(cfg.run_lua)

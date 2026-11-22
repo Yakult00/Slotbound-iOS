@@ -229,6 +229,14 @@ static long long g_lastCoins = 0;
 static long long g_lastSpins = 0;
 static long long g_lastJungsu = 0;
 static long long g_lastOriginite = 0;
+// 老虎机页：核心添加（滚轮选一个 → 添加；或一键全加）
+static UIPickerView *g_corePicker = nil;
+static NSMutableArray *g_cores = nil;      // @{id, name, rarity}
+static UILabel *g_coreLabel = nil;
+static long long g_coreAdd = 0;
+static long long g_coreAddAll = 0;
+static long long g_lastCoreN = 0;
+static long long g_lastCoreTotal = 0;
 static NSString *g_unitSym = nil;
 static NSString *g_unitGrade = nil;
 static long long g_unitRank = 0;
@@ -354,6 +362,8 @@ static void write_cheats(void) {
     [s appendFormat:@"  originite_set = %@,\n", g_originiteSet > 0 ? [NSString stringWithFormat:@"%lld", g_originiteSet] : @"nil"];
     [s appendFormat:@"  originite_add = %lld,\n", g_originiteAdd];
     [s appendFormat:@"  lock_originite = %@,\n", g_lockOriginite ? [NSString stringWithFormat:@"%lld", g_lockOriginiteTarget] : @"false"];
+    [s appendFormat:@"  core_add = %lld,\n", g_coreAdd];
+    [s appendFormat:@"  core_add_all = %lld,\n", g_coreAddAll];
     [s appendFormat:@"  jackpot = %@,\n", g_jackpot ? [NSString stringWithFormat:@"\"%@\"", g_jackpot] : @"false"];
     [s appendFormat:@"  run_lua = %@,\n", g_runLua ? [NSString stringWithFormat:@"\"%@\"", g_runLua] : @"nil"];
     [s appendFormat:@"  cmd = %@,\n", g_cmd ? [NSString stringWithFormat:@"\"%@\"", g_cmd] : @"nil"];
@@ -369,6 +379,8 @@ static void write_cheats(void) {
     g_jungsuSet = 0;
     g_originiteSet = 0;
     g_originiteAdd = 0;
+    g_coreAdd = 0;
+    g_coreAddAll = 0;
     g_runLua = nil;
     g_cmd = nil;
     g_arg = nil;
@@ -442,6 +454,10 @@ static void read_status(void) {
             g_lastJungsu = (long long)[val doubleValue];
         } else if ([key isEqualToString:@"originite"]) {
             g_lastOriginite = (long long)[val doubleValue];
+        } else if ([key isEqualToString:@"cores"]) {
+            g_lastCoreN = (long long)[val doubleValue];
+        } else if ([key isEqualToString:@"coresTotal"]) {
+            g_lastCoreTotal = (long long)[val doubleValue];
         } else if ([key isEqualToString:@"unit"]) {
             g_unitSym = [val stringByReplacingOccurrencesOfString:@"\"" withString:@""];
         } else if ([key isEqualToString:@"unit_grade"]) {
@@ -486,6 +502,11 @@ static void read_status(void) {
     if (g_spinsLabel) g_spinsLabel.text = [NSString stringWithFormat:@"旋转次数：%lld", g_lastSpins];
     if (g_jungsuLabel) g_jungsuLabel.text = [NSString stringWithFormat:@"水晶：%lld", g_lastJungsu];
     if (g_originiteLabel) g_originiteLabel.text = [NSString stringWithFormat:@"升级宝石：%lld", g_lastOriginite];
+    if (g_coreLabel) {
+        g_coreLabel.text = (g_lastCoreTotal > 0)
+            ? [NSString stringWithFormat:@"已拥有核心：%lld / %lld", g_lastCoreN, g_lastCoreTotal]
+            : @"已拥有核心：--";
+    }
     if (g_unitLabel) {
         if (g_unitSym && ![g_unitSym isEqualToString:@"none"]) {
             g_unitLabel.text = [NSString stringWithFormat:@"选中单位：%@（%@） 星%lld 吸收%lld",
@@ -538,10 +559,12 @@ static void read_catalog(void) {
     if (!g_imprints) g_imprints = [NSMutableArray array];
     if (!g_items) g_items = [NSMutableArray array];
     if (!g_awakenings) g_awakenings = [NSMutableArray array];
+    if (!g_cores) g_cores = [NSMutableArray array];
     [g_options removeAllObjects];
     [g_imprints removeAllObjects];
     [g_items removeAllObjects];
     [g_awakenings removeAllObjects];
+    [g_cores removeAllObjects];
     NSMutableArray *cur = nil;
     for (NSString *line in [content componentsSeparatedByString:@"\n"]) {
         NSString *t = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
@@ -551,6 +574,7 @@ static void read_catalog(void) {
             else if ([t isEqualToString:@"[imprints]"]) cur = g_imprints;
             else if ([t isEqualToString:@"[items]"]) cur = g_items;
             else if ([t isEqualToString:@"[awakenings]"]) cur = g_awakenings;
+            else if ([t isEqualToString:@"[cores]"]) cur = g_cores;
             else cur = nil;
             continue;
         }
@@ -565,6 +589,7 @@ static void read_catalog(void) {
         }
     }
     if (g_picker) [g_picker reloadAllComponents];
+    if (g_corePicker) [g_corePicker reloadAllComponents];
 }
 
 // ---- 触控穿透视图 ----
@@ -607,6 +632,9 @@ static void read_catalog(void) {
 + (void)spinsLockChanged:(UISwitch *)sw;
 + (void)jungsuLockChanged:(UISwitch *)sw;
 + (void)jackpotChanged:(UISwitch *)sw;
++ (void)addCoreTapped:(UIButton *)b;
++ (void)addAllCoresTapped:(UIButton *)b;
++ (void)unlockAllStages:(UIButton *)b;
 + (void)symTapped:(UIButton *)b;
 + (void)absorbAction:(UIButton *)b;
 + (void)rankAction:(UIButton *)b;
@@ -899,6 +927,26 @@ static UIView *build_page_res(CGFloat w) {
     g_jungsuField = fields[2];
     g_originiteField = fields[3];
 
+    // ---- 关卡 / 无尽：一键全开（写存档，重进选关界面生效）----
+    UIView *sepS = [[UIView alloc] initWithFrame:CGRectMake(x, y + 6, cw, 1)];
+    sepS.backgroundColor = [accent() colorWithAlphaComponent:0.22];
+    [v addSubview:sepS];
+    y += 18;
+
+    UIButton *stageBtn = makeButton(@"一键解锁全部关卡（含无尽）", @selector(unlockAllStages:));
+    stageBtn.frame = CGRectMake(x, y, cw, 46);
+    stageBtn.backgroundColor = accent();
+    [v addSubview:stageBtn];
+    y += 54;
+
+    UILabel *stageHint = [[UILabel alloc] initWithFrame:CGRectMake(x, y, cw, 34)];
+    stageHint.text = @"写满 6 关 × 3 难度通关记录；退出重进游戏后选关界面全开";
+    stageHint.font = [UIFont systemFontOfSize:12];
+    stageHint.numberOfLines = 2;
+    stageHint.textColor = [UIColor colorWithWhite:0.72 alpha:1];
+    [v addSubview:stageHint];
+    y += 40;
+
     v.frame = CGRectMake(0, 0, w, y);
     return v;
 }
@@ -953,6 +1001,35 @@ static UIView *build_page_slot(CGFloat w) {
     hint.textColor = [UIColor colorWithWhite:0.7 alpha:1];
     [v addSubview:hint];
     y += 66;
+
+    // ---- 核心添加（和单位页的「物品/刻印」一样：滚轮选 → 添加）----
+    UIView *coreDiv = [[UIView alloc] initWithFrame:CGRectMake(x, y, cw, 1)];
+    coreDiv.backgroundColor = [UIColor colorWithWhite:0.32 alpha:1];
+    [v addSubview:coreDiv];
+    y += 10;
+
+    g_coreLabel = [[UILabel alloc] initWithFrame:CGRectMake(x, y, cw, 26)];
+    g_coreLabel.text = @"已拥有核心：--";
+    g_coreLabel.font = [UIFont boldSystemFontOfSize:15];
+    g_coreLabel.textColor = accent();
+    [v addSubview:g_coreLabel];
+    y += 30;
+
+    g_corePicker = [[UIPickerView alloc] initWithFrame:CGRectMake(x, y, cw, 110)];
+    g_corePicker.dataSource = [CheatsOverlay shared];
+    g_corePicker.delegate = [CheatsOverlay shared];
+    [v addSubview:g_corePicker];
+    y += 116;
+
+    CGFloat chalf = (cw - 8) / 2;
+    UIButton *coreAddBtn = makeButton(@"添加选中核心", @selector(addCoreTapped:));
+    coreAddBtn.frame = CGRectMake(x, y, chalf, 44);
+    [v addSubview:coreAddBtn];
+    UIButton *coreAllBtn = makeButton(@"一键全部添加", @selector(addAllCoresTapped:));
+    coreAllBtn.frame = CGRectMake(x + chalf + 8, y, chalf, 44);
+    coreAllBtn.backgroundColor = accent();
+    [v addSubview:coreAllBtn];
+    y += 54;
 
     v.frame = CGRectMake(0, 0, w, y);
     return v;
@@ -1465,6 +1542,40 @@ static UIView *build_panel(CGRect bounds) {
     write_cheats();
 }
 
+// 老虎机页：把滚轮选中的核心加进当前 run（= 老虎机抽到它）
++ (void)addCoreTapped:(UIButton *)b {
+    if (!g_cores || g_cores.count == 0) return;
+    NSInteger row = g_corePicker ? [g_corePicker selectedRowInComponent:0] : 0;
+    if (row < 0 || row >= (NSInteger)g_cores.count) return;
+    NSString *cid = g_cores[row][@"id"];
+    long long v = (long long)[cid integerValue];
+    if (v <= 0) return;
+    g_coreAdd = v;
+    write_cheats();
+}
+
++ (void)addAllCoresTapped:(UIButton *)b {
+    g_coreAddAll = 1;
+    write_cheats();
+}
+
+// 关卡 / 无尽：把 6 关 × 3 难度全部写成已通关（存档层），退出重进后选关界面全开
++ (void)unlockAllStages:(UIButton *)b {
+    g_runLua =
+        @"local S=require('src.save'); local t=S.load(); "
+         "t.unlockedStages=t.unlockedStages or {}; "
+         "t.unlockedDifficulties=t.unlockedDifficulties or {}; "
+         "t.clearedDifficulties=t.clearedDifficulties or {}; "
+         "for i=1,6 do t.unlockedStages[i]=true; "
+         "local u=t.unlockedDifficulties[i] or {}; local c=t.clearedDifficulties[i] or {}; "
+         "for d=1,3 do u[d]=true; c[d]=true end; "
+         "t.unlockedDifficulties[i]=u; t.clearedDifficulties[i]=c end; "
+         "t.newStages={}; "
+         "local ok=pcall(S.save,t); "
+         "if not ok then love.filesystem.write(S._lastSavePath,S.serialize(t)) end";
+    write_cheats();
+}
+
 + (void)jungsuAdd:(UIButton *)b {
     long long add = b.tag;
     g_runLua = [NSString stringWithFormat:
@@ -1647,6 +1758,7 @@ static UIView *build_panel(CGRect bounds) {
 // ---- UIPickerView 数据源 / 代理 ----
 - (NSInteger)numberOfComponentsInPickerView:(UIPickerView *)pv { return 1; }
 - (NSInteger)pickerView:(UIPickerView *)pv numberOfRowsInComponent:(NSInteger)component {
+    if (pv == g_corePicker) return g_cores ? (NSInteger)g_cores.count : 0;
     NSMutableArray *cur = [CheatsOverlay pickerArray];
     return cur ? (NSInteger)cur.count : 0;
 }
@@ -1663,6 +1775,11 @@ static UIView *build_panel(CGRect bounds) {
 }
 
 - (NSString *)pickerView:(UIPickerView *)pv titleForRow:(NSInteger)row forComponent:(NSInteger)component {
+    if (pv == g_corePicker) {
+        if (!g_cores || row < 0 || row >= (NSInteger)g_cores.count) return @"";
+        NSDictionary *c = g_cores[row];
+        return [NSString stringWithFormat:@"%@ %@（%@）", c[@"id"], c[@"name"], c[@"rarity"] ?: @"?"];
+    }
     NSMutableArray *cur = [CheatsOverlay pickerArray];
     if (!cur || row < 0 || row >= (NSInteger)cur.count) return @"";
     NSDictionary *d = cur[row];
