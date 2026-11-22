@@ -30,6 +30,7 @@ local cfg = {
   seq = 0, coins_set = nil, coins_add = 0, lock_coins = false,
   spins_set = nil, spins_add = 0, lock_spins = false,
   jungsu_set = nil, lock_jungsu = false,
+  originite_set = nil, originite_add = 0, lock_originite = false,
   jackpot = false, run_lua = nil,
   cmd = nil, arg = nil, arg2 = nil,
 }
@@ -100,6 +101,26 @@ local function set_jungsu(v)
     if type(ui) == "table" and type(ui.jungsuBalanceTarget) == "number" then ui.jungsuBalanceTarget = v end
     if type(rawget(_G, "jungsuBalanceTarget")) == "number" then rawset(_G, "jungsuBalanceTarget", v) end
   end)
+end
+
+-- 升级宝石（originite）：主菜单模块持有，setOriginiteAmount 直接设值
+local function get_originite()
+  local ok, mm = pcall(require, "src.ui.mainmenu")
+  if ok and type(mm) == "table" and type(mm.getOriginiteAmount) == "function" then
+    local ok2, v = pcall(mm.getOriginiteAmount)
+    if ok2 and type(v) == "number" then return v end
+  end
+  return nil
+end
+
+local function set_originite(v)
+  local ok, mm = pcall(require, "src.ui.mainmenu")
+  if not ok or type(mm) ~= "table" then return false end
+  if type(mm.setOriginiteAmount) == "function" then
+    local ok2 = pcall(mm.setOriginiteAmount, v)
+    return ok2 == true
+  end
+  return false
 end
 
 ----------------------------------------------------------------
@@ -634,12 +655,14 @@ local function write_status(extra)
     local ui = rawget(_G, "ui")
     if type(ui) == "table" and type(ui.jungsuBalance) == "number" then jb = ui.jungsuBalance end
   end)
+  local orig = get_originite()
   local lines = {
     "return {",
     "  coins = " .. tostring(type(coins) == "number" and coins or 0) .. ",",
     "  spins = " .. tostring(type(spins) == "number" and spins or 0) .. ",",
     "  jungsu = " .. tostring(type(jungsu) == "number" and jungsu or 0) .. ",",
     "  jungsuBalance = " .. tostring(type(jb) == "number" and jb or 0) .. ",",
+    "  originite = " .. tostring(type(orig) == "number" and orig or 0) .. ",",
   }
   local sk = skill_info_string()
   if sk then
@@ -746,6 +769,11 @@ local function apply_once()
     rawset(_G, "spinsLeft", (type(cur) == "number" and cur or 0) + cfg.spins_add)
   end
   if type(cfg.jungsu_set) == "number" then set_jungsu(cfg.jungsu_set) end
+  if type(cfg.originite_set) == "number" then set_originite(cfg.originite_set) end
+  if type(cfg.originite_add) == "number" and cfg.originite_add ~= 0 then
+    local cur = get_originite()
+    if type(cur) == "number" then set_originite(cur + cfg.originite_add) end
+  end
   if type(cfg.run_lua) == "string" and cfg.run_lua ~= "" then
     local fn = load_chunk(cfg.run_lua)
     if fn then pcall(fn) end
@@ -765,6 +793,10 @@ local function apply_continuous()
   if type(cfg.lock_jungsu) == "number" then
     local cur = rawget(_G, "jungsu")
     if type(cur) == "number" and cur < cfg.lock_jungsu then set_jungsu(cfg.lock_jungsu) end
+  end
+  if type(cfg.lock_originite) == "number" then
+    local cur = get_originite()
+    if type(cur) == "number" and cur < cfg.lock_originite then set_originite(cfg.lock_originite) end
   end
 end
 

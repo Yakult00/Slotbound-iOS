@@ -206,6 +206,8 @@ static long long g_coinAdd = 0;
 static long long g_spinsSet = 0;
 static long long g_spinsAdd = 0;
 static long long g_jungsuSet = 0;
+static long long g_originiteSet = 0;
+static long long g_originiteAdd = 0;
 static NSString *g_runLua = nil;
 static NSString *g_cmd = nil;     // 命名命令
 static NSString *g_arg = nil;     // 命令参数（Lua 字面量）
@@ -218,12 +220,15 @@ static BOOL g_lockSpins = NO;
 static long long g_lockSpinsTarget = 0;
 static BOOL g_lockJungsu = NO;
 static long long g_lockJungsuTarget = 0;
+static BOOL g_lockOriginite = NO;
+static long long g_lockOriginiteTarget = 0;
 static NSString *g_jackpot = nil;
 
 // 实时状态（游戏写回）
 static long long g_lastCoins = 0;
 static long long g_lastSpins = 0;
 static long long g_lastJungsu = 0;
+static long long g_lastOriginite = 0;
 static NSString *g_unitSym = nil;
 static NSString *g_unitGrade = nil;
 static long long g_unitRank = 0;
@@ -264,6 +269,7 @@ static UILabel *g_coinLabel = nil;
 static UITextField *g_coinField = nil;
 static UITextField *g_spinsField = nil;
 static UITextField *g_jungsuField = nil;
+static UITextField *g_originiteField = nil;
 static UITextField *g_absorbField = nil;
 static UITextField *g_shopLvField = nil;
 static UIView *g_pageShop = nil;
@@ -275,10 +281,12 @@ static UIScrollView *g_scrollUnit = nil;
 static UIScrollView *g_scrollShop = nil;
 static UILabel *g_spinsLabel = nil;
 static UILabel *g_jungsuLabel = nil;
+static UILabel *g_originiteLabel = nil;
 static UILabel *g_unitLabel = nil;
 static UISwitch *g_lockSwitch = nil;
 static UISwitch *g_spinsLockSwitch = nil;
 static UISwitch *g_jungsuLockSwitch = nil;
+static UISwitch *g_originiteLockSwitch = nil;
 static UISwitch *g_jackpotSwitch = nil;
 static UILabel *g_skillLabel = nil;
 static UIView *g_cdRow = nil;
@@ -343,6 +351,9 @@ static void write_cheats(void) {
     [s appendFormat:@"  lock_spins = %@,\n", g_lockSpins ? [NSString stringWithFormat:@"%lld", g_lockSpinsTarget] : @"false"];
     [s appendFormat:@"  jungsu_set = %@,\n", g_jungsuSet > 0 ? [NSString stringWithFormat:@"%lld", g_jungsuSet] : @"nil"];
     [s appendFormat:@"  lock_jungsu = %@,\n", g_lockJungsu ? [NSString stringWithFormat:@"%lld", g_lockJungsuTarget] : @"false"];
+    [s appendFormat:@"  originite_set = %@,\n", g_originiteSet > 0 ? [NSString stringWithFormat:@"%lld", g_originiteSet] : @"nil"];
+    [s appendFormat:@"  originite_add = %lld,\n", g_originiteAdd];
+    [s appendFormat:@"  lock_originite = %@,\n", g_lockOriginite ? [NSString stringWithFormat:@"%lld", g_lockOriginiteTarget] : @"false"];
     [s appendFormat:@"  jackpot = %@,\n", g_jackpot ? [NSString stringWithFormat:@"\"%@\"", g_jackpot] : @"false"];
     [s appendFormat:@"  run_lua = %@,\n", g_runLua ? [NSString stringWithFormat:@"\"%@\"", g_runLua] : @"nil"];
     [s appendFormat:@"  cmd = %@,\n", g_cmd ? [NSString stringWithFormat:@"\"%@\"", g_cmd] : @"nil"];
@@ -356,6 +367,8 @@ static void write_cheats(void) {
     g_spinsSet = 0;
     g_spinsAdd = 0;
     g_jungsuSet = 0;
+    g_originiteSet = 0;
+    g_originiteAdd = 0;
     g_runLua = nil;
     g_cmd = nil;
     g_arg = nil;
@@ -427,6 +440,8 @@ static void read_status(void) {
             g_lastSpins = (long long)[val doubleValue];
         } else if ([key isEqualToString:@"jungsu"]) {
             g_lastJungsu = (long long)[val doubleValue];
+        } else if ([key isEqualToString:@"originite"]) {
+            g_lastOriginite = (long long)[val doubleValue];
         } else if ([key isEqualToString:@"unit"]) {
             g_unitSym = [val stringByReplacingOccurrencesOfString:@"\"" withString:@""];
         } else if ([key isEqualToString:@"unit_grade"]) {
@@ -470,6 +485,7 @@ static void read_status(void) {
     if (g_coinLabel) g_coinLabel.text = [NSString stringWithFormat:@"金币：%lld", g_lastCoins];
     if (g_spinsLabel) g_spinsLabel.text = [NSString stringWithFormat:@"旋转次数：%lld", g_lastSpins];
     if (g_jungsuLabel) g_jungsuLabel.text = [NSString stringWithFormat:@"水晶：%lld", g_lastJungsu];
+    if (g_originiteLabel) g_originiteLabel.text = [NSString stringWithFormat:@"升级宝石：%lld", g_lastOriginite];
     if (g_unitLabel) {
         if (g_unitSym && ![g_unitSym isEqualToString:@"none"]) {
             g_unitLabel.text = [NSString stringWithFormat:@"选中单位：%@（%@） 星%lld 吸收%lld",
@@ -583,6 +599,10 @@ static void read_catalog(void) {
 + (void)spinsSet:(UIButton *)b;
 + (void)jungsuAdd:(UIButton *)b;
 + (void)jungsuSet:(UIButton *)b;
++ (void)originiteAdd:(UIButton *)b;
++ (void)originiteSet:(UIButton *)b;
++ (void)originiteSetText:(id)s;
++ (void)originiteLockChanged:(UISwitch *)sw;
 + (void)lockChanged:(UISwitch *)sw;
 + (void)spinsLockChanged:(UISwitch *)sw;
 + (void)jungsuLockChanged:(UISwitch *)sw;
@@ -815,6 +835,41 @@ static UIView *build_page_res(CGFloat w) {
     [v addSubview:g_jungsuLockSwitch];
     y += 46;
 
+    // ---- 升级宝石（originite）----
+    UIView *sepO = [[UIView alloc] initWithFrame:CGRectMake(x, y, cw, 1)];
+    sepO.backgroundColor = [accent() colorWithAlphaComponent:0.22];
+    [v addSubview:sepO];
+    y += 12;
+
+    g_originiteLabel = [[UILabel alloc] initWithFrame:CGRectMake(x, y, cw, 34)];
+    g_originiteLabel.font = [UIFont boldSystemFontOfSize:24];
+    g_originiteLabel.textColor = [UIColor colorWithRed:0.85 green:0.45 blue:1 alpha:1];
+    g_originiteLabel.text = @"升级宝石：--";
+    [v addSubview:g_originiteLabel];
+    y += 44;
+
+    NSArray *oadds = @[@"+100", @"+1000", @"设9999", @"设99999"];
+    NSArray *oaddVals = @[@100, @1000, @9999, @99999];
+    for (NSInteger i = 0; i < 4; i++) {
+        UIButton *b = (i < 2) ? makeButton(oadds[i], @selector(originiteAdd:)) : makeButton(oadds[i], @selector(originiteSet:));
+        b.tag = [oaddVals[i] longLongValue];
+        b.frame = CGRectMake(x + i * (bw + 8), y, bw, 40);
+        [v addSubview:b];
+    }
+    y += 50;
+
+    UILabel *originiteLockLab = [[UILabel alloc] initWithFrame:CGRectMake(x, y, 210, 30)];
+    originiteLockLab.text = @"锁定宝石（锁到当前值）";
+    originiteLockLab.font = [UIFont systemFontOfSize:15];
+    originiteLockLab.textColor = [UIColor whiteColor];
+    [v addSubview:originiteLockLab];
+    g_originiteLockSwitch = [[UISwitch alloc] initWithFrame:CGRectMake(w - 14 - 51, y, 51, 31)];
+    g_originiteLockSwitch.on = g_lockOriginite;
+    g_originiteLockSwitch.onTintColor = accent();
+    [g_originiteLockSwitch addTarget:[CheatsOverlay class] action:@selector(originiteLockChanged:) forControlEvents:UIControlEventValueChanged];
+    [v addSubview:g_originiteLockSwitch];
+    y += 46;
+
     // ---- 自定义数值：输入多少就设多少 ----
     UIView *sepC = [[UIView alloc] initWithFrame:CGRectMake(x, y, cw, 1)];
     sepC.backgroundColor = [accent() colorWithAlphaComponent:0.22];
@@ -827,10 +882,10 @@ static UIView *build_page_res(CGFloat w) {
     [v addSubview:custLab];
     y += 26;
 
-    NSArray *ph = @[ @"金币", @"旋转次数", @"水晶" ];
-    NSArray *sel = @[ @"coinSetText:", @"spinsSetText:", @"jungsuSetText:" ];
-    NSMutableArray *fields = [NSMutableArray arrayWithCapacity:3];
-    for (NSInteger i = 0; i < 3; i++) {
+    NSArray *ph = @[ @"金币", @"旋转次数", @"水晶", @"升级宝石" ];
+    NSArray *sel = @[ @"coinSetText:", @"spinsSetText:", @"jungsuSetText:", @"originiteSetText:" ];
+    NSMutableArray *fields = [NSMutableArray arrayWithCapacity:4];
+    for (NSInteger i = 0; i < 4; i++) {
         UITextField *f = makeNumField(x, y, cw - bw - 8, ph[i]);
         [v addSubview:f];
         [fields addObject:f];
@@ -842,6 +897,7 @@ static UIView *build_page_res(CGFloat w) {
     g_coinField = fields[0];
     g_spinsField = fields[1];
     g_jungsuField = fields[2];
+    g_originiteField = fields[3];
 
     v.frame = CGRectMake(0, 0, w, y);
     return v;
@@ -1394,6 +1450,20 @@ static UIView *build_panel(CGRect bounds) {
 + (void)spinsAdd:(UIButton *)b { g_spinsAdd = b.tag; write_cheats(); }
 + (void)spinsSet:(UIButton *)b { g_spinsSet = b.tag; write_cheats(); }
 + (void)jungsuSet:(UIButton *)b { g_jungsuSet = b.tag; write_cheats(); }
+
++ (void)originiteAdd:(UIButton *)b { g_originiteAdd = b.tag; write_cheats(); tap_haptic(); }
++ (void)originiteSet:(UIButton *)b { g_originiteSet = b.tag; write_cheats(); tap_haptic(); }
++ (void)originiteSetText:(id)s {
+    long long v = (long long)[g_originiteField.text longLongValue];
+    if (v <= 0) return;
+    g_originiteSet = v;
+    write_cheats();
+}
++ (void)originiteLockChanged:(UISwitch *)sw {
+    g_lockOriginite = sw.isOn;
+    g_lockOriginiteTarget = g_lastOriginite;
+    write_cheats();
+}
 
 + (void)jungsuAdd:(UIButton *)b {
     long long add = b.tag;

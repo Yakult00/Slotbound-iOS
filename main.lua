@@ -172,6 +172,9 @@ local function draw_box(rx, ry, bw, bh, text, color)
 end
 
 love.draw = function()
+    -- iOS 无物理鼠标：关掉游戏自绘光标（cursor.png），否则拖动手势会留下箭头残影
+    local ctl = rawget(_G, "Controller")
+    if ctl then ctl.hideCursor = true end
     if game_draw then game_draw() end
     local bx, by, bw, bh = button_rect()
     draw_box(bx, by, bw, bh, right_mode and "R" or "L",
