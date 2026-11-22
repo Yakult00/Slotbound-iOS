@@ -883,6 +883,14 @@ end
 local function apply_once()
   if type(cfg.seq) ~= "number" then cfg.seq = 0 end
   if cfg.seq == applied_seq then return end
+  -- 首次读取时，磁盘上的旧配置是上一次运行留下的：一次性动作（run_lua/cmd/加核心/大奖）
+  -- 必须丢弃，否则每次启动都会把“一键解锁”这类操作重放一遍
+  if applied_seq == -1 then
+    cfg.run_lua, cfg.cmd, cfg.arg, cfg.arg2 = nil, nil, nil, nil
+    cfg.core_add, cfg.core_add_all, cfg.jackpot = 0, 0, false
+    cfg.coins_set, cfg.coins_add, cfg.spins_set, cfg.spins_add = nil, 0, nil, 0
+    cfg.jungsu_set, cfg.originite_set, cfg.originite_add = nil, nil, 0
+  end
   applied_seq = cfg.seq
 
   if type(cfg.coins_set) == "number" then rawset(_G, "coins", cfg.coins_set) end
