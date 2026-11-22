@@ -102,6 +102,7 @@ local WHEEL_STEP  = 40     -- 列表滚动每多少 px 折一格滚轮
 local EDGE_W_FRAC = 0.05   -- 左边缘宽度（屏幕宽比例）
 local EDGE_SWIPE_FRAC = 0.06
 local EDGE_MAX_MS = 400
+local SECTION_BAR_W = 90    -- 商店右侧 section 切换栏宽度（虚拟 px）：该区域单击切换界面，不走两段式
 
 local game_mousepressed  = love.mousepressed
 local game_mousereleased = love.mousereleased
@@ -235,7 +236,7 @@ end
 
 -- 移动超 slop：按 phase 分派
 local function dispatch_drag(t)
-    if t.dispatched or t.long then return end
+    if t.dispatched then return end  -- 长按后移动仍可拖拽（吸收/拖兵）
     t.dispatched = true
     local kind = drag_kind_for_phase()
     t.drag_kind = kind
@@ -250,20 +251,34 @@ local function dispatch_drag(t)
     end
 end
 
--- 长按：静默悬停（tooltip 出详细）。道具「使用」事件待定位，先统一悬停。
+-- 长按：悬停（tooltip 出详细）+ 右键（使用道具需要右键）。
 local function do_long_press(t)
     if t.long then return end
     t.long = true
     set_hover(t.x, t.y)
-    -- 长按 = 右键（上下文操作）+ 持续悬停（tooltip 看详细）
     fire_right_click(t.x, t.y)
     glog(string.format("long press -> right click + hover @%.0f,%.0f", t.x, t.y))
 end
 
--- 单击：升级树/专职两段式，其余直接 click
+-- 单击：升级树/专职/商店商品槽两段式；商店右侧 section 栏单击切换；其余直接 click
 local function do_tap(x, y)
     local ph = phase_now()
     local two_step = ph == "upgrade" or in_class_select() or in_shop()
+    if in_shop() then
+        -- 商店：右侧 section 切换栏（战场/商店/石头/升级树）单击切换；
+        -- 左上角返回键单击退出（与升级树一致）；其余（商品槽）走两段式购买。
+        local vx, vy = to_virtual(x, y)
+        local u = get_ui()
+        local vw = u and u.virtual and u.virtual.W
+        local in_section = vw and vx >= vw - SECTION_BAR_W
+        local in_back = vx < 130 and vy < 130
+        if in_section or in_back then
+            two_step = false
+            last_tap = nil
+        end
+        glog(string.format("shop tap vx=%.0f vy=%.0f vw=%s sec=%s back=%s two=%s",
+            vx, vy, tostring(vw), tostring(in_section), tostring(in_back), tostring(two_step)))
+    end
     if two_step then
         -- 升级树左上角返回键：单击立即退出，不走两段式
         if ph == "upgrade" then
