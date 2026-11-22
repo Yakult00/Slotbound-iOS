@@ -581,6 +581,15 @@ static void read_catalog(void) {
         if (!cur) continue;
         NSArray *parts = [t componentsSeparatedByString:@"\t"];
         if (parts.count >= 2) {
+            if (cur == g_cores) {   // 核心：id \t 名字 \t 稀有度 \t 是否已拥有
+                NSMutableDictionary *d = [NSMutableDictionary dictionary];
+                d[@"id"] = parts[0];
+                d[@"name"] = parts[1];
+                d[@"rarity"] = parts.count >= 3 ? parts[2] : @"";
+                d[@"owned"] = @(parts.count >= 4 ? [parts[3] intValue] : 0);
+                [cur addObject:d];
+                continue;
+            }
             NSMutableDictionary *d = [NSMutableDictionary dictionary];
             d[@"id"] = parts[0];
             d[@"name"] = parts[1];
@@ -589,7 +598,20 @@ static void read_catalog(void) {
         }
     }
     if (g_picker) [g_picker reloadAllComponents];
-    if (g_corePicker) [g_corePicker reloadAllComponents];
+    if (g_corePicker) {
+        [g_corePicker reloadAllComponents];
+        // 当前选中的已拥有 → 自动跳到第一个未拥有的，避免反复点同一个
+        NSInteger cnt = (NSInteger)g_cores.count;
+        NSInteger cur = [g_corePicker selectedRowInComponent:0];
+        if (cnt > 0 && (cur < 0 || cur >= cnt || [g_cores[cur][@"owned"] intValue])) {
+            for (NSInteger i = 0; i < cnt; i++) {
+                if (![g_cores[i][@"owned"] intValue]) {
+                    [g_corePicker selectRow:i inComponent:0 animated:NO];
+                    break;
+                }
+            }
+        }
+    }
 }
 
 // ---- 触控穿透视图 ----
@@ -652,6 +674,14 @@ static void read_catalog(void) {
 
 // ---- 配色：对齐游戏本体（深紫黑底 + 金色强调）----
 static UIColor *accent(void) { return [UIColor colorWithRed:1.00 green:0.78 blue:0.25 alpha:1.0]; }        // 金
+// 核心稀有度字母 → 中文（C/U/R/L）
+static NSString *zh_rarity(NSString *r) {
+    if ([r isEqualToString:@"C"]) return @"普通";
+    if ([r isEqualToString:@"U"]) return @"精良";
+    if ([r isEqualToString:@"R"]) return @"稀有";
+    if ([r isEqualToString:@"L"]) return @"传说";
+    return (r.length ? r : @"?");
+}
 static UIColor *panelBg(void) { return [UIColor colorWithRed:0.09 green:0.07 blue:0.14 alpha:0.98]; }       // 深紫黑
 static UIColor *panelBg2(void) { return [UIColor colorWithRed:0.04 green:0.03 blue:0.07 alpha:0.98]; }      // 更深的收口
 static UIColor *cardBg(void) { return [UIColor colorWithWhite:1.0 alpha:0.06]; }                            // 卡片底
@@ -1778,7 +1808,8 @@ static UIView *build_panel(CGRect bounds) {
     if (pv == g_corePicker) {
         if (!g_cores || row < 0 || row >= (NSInteger)g_cores.count) return @"";
         NSDictionary *c = g_cores[row];
-        return [NSString stringWithFormat:@"%@ %@（%@）", c[@"id"], c[@"name"], c[@"rarity"] ?: @"?"];
+        NSString *suffix = [c[@"owned"] intValue] ? @"（已拥有）" : @"";
+        return [NSString stringWithFormat:@"%@ %@ · %@%@", c[@"id"], c[@"name"], zh_rarity(c[@"rarity"]), suffix];
     }
     NSMutableArray *cur = [CheatsOverlay pickerArray];
     if (!cur || row < 0 || row >= (NSInteger)cur.count) return @"";

@@ -725,7 +725,12 @@ local function write_catalog()
       local d = cores.getById(id)
       if type(d) == "table" then
         local nm = CORE_ZH[tostring(id)] or loc["core.name." .. tostring(d.key or "")] or d.name or d.key or tostring(id)
-        lines[#lines + 1] = tostring(id) .. "\t" .. clean(nm) .. "\t" .. clean(d.rarity or "?")
+        local owned = 0
+        if type(cores.isOwned) == "function" then
+          local okOwn, o = pcall(cores.isOwned, d)
+          if okOwn and o then owned = 1 end
+        end
+        lines[#lines + 1] = tostring(id) .. "\t" .. clean(nm) .. "\t" .. clean(d.rarity or "?") .. "\t" .. tostring(owned)
       end
     end
   end)
