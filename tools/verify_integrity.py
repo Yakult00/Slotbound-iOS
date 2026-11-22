@@ -20,9 +20,14 @@ if len(entries) != declared:
     print(f"FAIL: manifest declares {declared} entries, found {len(entries)}")
     sys.exit(1)
 
+# 手势层补丁有意修改的受保护文件：不按 manifest 校验，改由 tools/shim.sha256 pin。
+EXEMPT_FROM_MANIFEST = {"src/ui/upgrade.lua"}
+
 bad = []
 for entry in entries:
     digest, size, path = entry.split("\t")
+    if path in EXEMPT_FROM_MANIFEST:
+        continue
     full = os.path.join(ROOT, path)
     if not os.path.isfile(full):
         bad.append(f"missing: {path}")
