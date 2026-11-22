@@ -38,10 +38,10 @@
 #include "dobby.h"
 #include "trainer_lua.h"
 
-// 面板版本号：CI 编译时用 -DSB_PANEL_VERSION="vX.Y.Z" 注入；
-// 本地手工编译不传该 flag 时用这里的兜底值。
+// 面板版本号：CI 编译时用 -DSB_PANEL_VERSION="..." 注入（dylib 独立版本，
+// 不跟 game.love 版本走）；本地手工编译不传该 flag 时用这里的兜底值。
 #ifndef SB_PANEL_VERSION
-#define SB_PANEL_VERSION "v1.3.0"
+#define SB_PANEL_VERSION "panel-dev"
 #endif
 
 #pragma mark - Lua types
