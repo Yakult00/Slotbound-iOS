@@ -397,7 +397,7 @@ function love.touchmoved(id, x, y, dx, dy, pressure)
             elseif t.drag_kind == "drag" then
                 if game_mousemoved then game_mousemoved(x, y, dx, dy) end
             else
-                t.wheel_acc = (t.wheel_acc or 0) - dy
+                t.wheel_acc = (t.wheel_acc or 0) + dy
                 while math.abs(t.wheel_acc) >= WHEEL_STEP do
                     local dir = t.wheel_acc > 0 and 1 or -1
                     t.wheel_acc = t.wheel_acc - dir * WHEEL_STEP
