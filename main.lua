@@ -13,6 +13,20 @@ local function __sb_errh(msg)
 end
 if love and love.errorhandler then love.errorhandler = __sb_errh end
 
+-- 4) Discord 按钮重定向：菜单里的 Discord 邀请链接改跳本项目仓库（只拦这一个 URL）。
+--    语言文件里 menu_discord 的显示文字同步改成 Yakult00。
+do
+    local origOpenURL = love.system and love.system.openURL
+    if origOpenURL then
+        love.system.openURL = function(url)
+            if type(url) == "string" and url:find("discord.com/invite/XthPFC9thw", 1, true) then
+                url = "https://github.com/Yakult00/Slotbound-iOS"
+            end
+            return origOpenURL(url)
+        end
+    end
+end
+
 local real_ffi = require("ffi")
 
 local function SbLuckAbi(pitySize) return 1 end
