@@ -2,7 +2,7 @@
 #  main.lua / real_main.luac / trainer_backend.lua / @bootstrap（不在游戏 manifest）
 #  src/ui/upgrade.lua（手势层补丁）/ src/release_integrity.lua（校验绕过 noop）
 # 改动这些文件后，用 sha256sum 重新生成本文件再提交：
-deff596a3a9fabeb9d4bf4ac4cf0eca06169894a549bf682b8d6b0593a1d3972  main.lua
+98c8c376cd291035c32e0c2a8b4164c33825031eb05686815d8bb604886103b2  main.lua
 d3eaee037f38068b799ebb4d2bf4aa0d289cfe507b18ff590ad82b10dc776618  real_main.luac
 80479d6f0b254ed0f807e14287f12e10ecd39886ef9dfa760da188231eb60f14  trainer_backend.lua
 8423ef0973f4518816783ee361f3299bde684224299556f37dfe8bd2e103a017  @bootstrap
