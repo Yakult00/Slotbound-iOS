@@ -245,12 +245,32 @@ jobs:
             echo "game_sha256=$(shasum -a 256 game.love | awk '{print $1}')"
           } > BUILD-METADATA.txt
 
+      # NoJIT 面板 dylib：随版本一起构建，发布时自动挂到版本 Release 上。
+      # 只产 NoJIT：要 JIT 的 SlotboundTrainer.dylib 已停用
+      # （游戏包内置 trainer_backend.lua 后台，不再需要内存 hook 版）。
+      - name: Build SlotboundTrainer-NoJIT.dylib
+        run: |
+          SDK=$(xcrun -sdk iphoneos --show-sdk-path)
+          xcrun -sdk iphoneos clang++ -arch arm64 -dynamiclib \
+            -O2 -fPIC -fobjc-arc -DSB_NO_HOOK \
+            -DSB_PANEL_VERSION="\"${{ steps.version.outputs.version }}\"" \
+            -isysroot "$SDK" \
+            -miphoneos-version-min=14.0 \
+            -framework Foundation -framework UIKit -framework CoreGraphics -framework QuartzCore \
+            -lc++ \
+            -Iassistant/dylib/dobby \
+            -o SlotboundTrainer-NoJIT.dylib \
+            assistant/dylib/SlotboundTrainer.mm
+          file SlotboundTrainer-NoJIT.dylib
+          ls -la SlotboundTrainer-NoJIT.dylib
+
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: Slotbound-unsigned
           path: |
             Slotbound-v${{ steps.version.outputs.version }}.ipa
+            SlotboundTrainer-NoJIT.dylib
             BUILD-METADATA.txt
             game.love.sha256
 
@@ -284,7 +304,7 @@ jobs:
         with:
           name: Slotbound-unsigned
 
-      # 只在 tag 推送时发布。release 只含 IPA（.love 已包在 IPA 里，不再单独发）。
+      # 只在 tag 推送时发布。release 含 IPA + NoJIT dylib（.love 已包在 IPA 里，不再单独发）。
       # 与 assist.yml 共用同一 release：先建后传，建失败说明已存在，改传。
       # release notes 优先取 CHANGELOG.md 里对应版本的章节，取不到用默认文案。
       - name: Publish release (tag only)
@@ -293,8 +313,9 @@ jobs:
         run: |
           set -euo pipefail
           IPA="Slotbound-v${VERSION}.ipa"
+          DYLIB="SlotboundTrainer-NoJIT.dylib"
           NOTES="$(mktemp)"
           python3 tools/changelog_notes.py --fallback "$VERSION" CHANGELOG.md > "$NOTES"
-          gh release create "v${VERSION}" --title "v${VERSION}" --notes-file "$NOTES" "$IPA" 2>/dev/null \
-            || gh release upload "v${VERSION}" "$IPA" --clobber
+          gh release create "v${VERSION}" --title "v${VERSION}" --notes-file "$NOTES" "$IPA" "$DYLIB" 2>/dev/null \
+            || gh release upload "v${VERSION}" "$IPA" "$DYLIB" --clobber
           gh release view "v${VERSION}" --json assets --jq '.assets[].name'
