@@ -838,6 +838,454 @@ local function cmd_unit_info()
 end
 
 ----------------------------------------------------------------
+-- 抽奖页 / 开关页（14 项）/ 存档页
+----------------------------------------------------------------
+local function CN() return package.loaded["src.data.constants"] end
+local function CO() return package.loaded["src.game.cores"] end
+local function ST() return package.loaded["src.game.stone"] end
+local function UP() return package.loaded["src.ui.upgrade"] end
+
+local SYM_ORDER = { "A", "D", "H", "M", "S", "W" }
+local SYM_ORIG = setmetatable({}, { __mode = "k" })
+local GRADE_ORDER = { "normal", "advanced", "rare", "legendary", "prism" }
+local GRADE_BASE = { normal = 0.80, advanced = 0.15, rare = 0.045, legendary = 0.004, prism = 0.001 }
+local LUCK_MUL = {
+  { normal = 1, advanced = 2, rare = 5, legendary = 12, prism = 30 },
+  { normal = 0.5, advanced = 3, rare = 10, legendary = 35, prism = 120 },
+}
+local prob_snap, spin_snap, spin_cost_orig = nil, nil, nil
+local wrap_mode, joker_applied, jester_on = nil, 0, false
+local last_wave, last_spins_in_wave = nil, nil
+
+-- 符号权重：游戏有两份表，只改一份会被另一份覆盖
+local function sym_tables()
+  local t = {}
+  local c = CN()
+  if c and c.slot and type(c.slot.symbolWeights) == "table" then t[#t + 1] = c.slot.symbolWeights end
+  local co = CO()
+  if co and type(co.MERC_CONTRACT_SYMBOL_WEIGHTS) == "table" then t[#t + 1] = co.MERC_CONTRACT_SYMBOL_WEIGHTS end
+  return t
+end
+
+local function apply_symbol_lock(idx)
+  idx = tonumber(idx) or 0
+  local pick = SYM_ORDER[idx]
+  for _, w in ipairs(sym_tables()) do
+    if not SYM_ORIG[w] then
+      local o = {}
+      for _, k in ipairs(SYM_ORDER) do o[k] = w[k] end
+      SYM_ORIG[w] = o
+    end
+    if pick then
+      for _, k in ipairs(SYM_ORDER) do w[k] = (k == pick) and 1 or 0 end
+    else
+      local o = SYM_ORIG[w]
+      for _, k in ipairs(SYM_ORDER) do w[k] = o[k] end
+    end
+  end
+  return idx
+end
+
+local function prob_table() 
+  local c = CN()
+  return c and c.unitGrades and c.unitGrades.probabilities or nil
+end
+
+local function snapshot_probs()
+  if prob_snap then return prob_snap end
+  local s = { unit = {}, stone = {} }
+  local p = prob_table()
+  if type(p) == "table" then for k, v in pairs(p) do s.unit[k] = v end end
+  local st = ST()
+  if st and type(st.defs) == "table" then
+    for id, d in pairs(st.defs) do
+      if type(d) == "table" and type(d.probs) == "table" then
+        local c = {}
+        for k, v in pairs(d.probs) do c[k] = v end
+        s.stone[id] = c
+      end
+    end
+  end
+  prob_snap = s
+  return s
+end
+
+local function restore_probs()
+  local s = prob_snap
+  if not s then return end
+  local p = prob_table()
+  if type(p) == "table" then for k, v in pairs(s.unit) do p[k] = v end end
+  local st = ST()
+  if st and type(st.defs) == "table" then
+    for id, d in pairs(st.defs) do
+      local c = s.stone[id]
+      if type(d) == "table" and type(c) == "table" and type(d.probs) == "table" then
+        for k, v in pairs(c) do d.probs[k] = v end
+      end
+    end
+  end
+end
+
+local function grade_weights(lock, tier)
+  lock = tonumber(lock) or 0
+  tier = tonumber(tier) or 0
+  local w = {}
+  if lock >= 1 and lock <= 5 then
+    for i, g in ipairs(GRADE_ORDER) do w[g] = (i == lock) and 1 or 0 end
+    return w, "lock"
+  end
+  if tier == 3 then                       -- 均衡：五项等概率
+    for _, g in ipairs(GRADE_ORDER) do w[g] = 0.2 end
+    return w, "even"
+  end
+  if tier >= 1 and tier <= 2 then
+    local mul, sum = LUCK_MUL[tier], 0
+    for _, g in ipairs(GRADE_ORDER) do
+      local v = (GRADE_BASE[g] or 0) * (mul[g] or 1)
+      w[g] = v; sum = sum + v
+    end
+    if sum > 0 then for _, g in ipairs(GRADE_ORDER) do w[g] = w[g] / sum end end
+    return w, "tier"
+  end
+  return nil, "off"
+end
+
+local function apply_grade_lock(lock, tier)
+  local w, mode = grade_weights(lock, tier)
+  if not w then
+    restore_probs()
+    return "off"
+  end
+  snapshot_probs()
+  local p = prob_table()
+  if type(p) == "table" then
+    local total = 0
+    for _, g in ipairs(GRADE_ORDER) do total = total + (w[g] or 0) end
+    for g, v in pairs(w) do p[g] = v end
+    if p.special ~= nil then p.special = 0 end
+  end
+  local st = ST()
+  if st and type(st.defs) == "table" then
+    for _, d in pairs(st.defs) do
+      if type(d) == "table" and type(d.probs) == "table" then
+        for g, v in pairs(w) do d.probs[g] = v end
+      end
+    end
+  end
+  return mode
+end
+
+-- 每波抽奖次数
+local function spin_econ()
+  local c = CN()
+  return c and c.economy and c.economy.spins or nil
+end
+
+local function apply_spin_wave(n)
+  n = tonumber(n) or 0
+  local e = spin_econ()
+  if type(e) == "table" then
+    if not spin_snap then
+      spin_snap = { freePerWave = e.freePerWave, paidMaxPerWave = e.paidMaxPerWave }
+    end
+    if n <= 0 then
+      e.freePerWave = spin_snap.freePerWave
+      e.paidMaxPerWave = spin_snap.paidMaxPerWave
+      last_wave, last_spins_in_wave = nil, nil
+      return 0
+    end
+    local paids = tonumber(spin_snap.paidMaxPerWave) or 3
+    local paid = n < paids and n or paids
+    e.paidMaxPerWave = paid
+    e.freePerWave = n - paid
+  end
+  if n <= 0 then return 0 end
+  -- 换波时把剩余次数抬到目标值（游戏换波只给默认次数）
+  local bf = rawget(_G, "battlefield")
+  local w = (type(bf) == "table" and tonumber(bf.waveId)) or 0
+  local si = tonumber(rawget(_G, "spinsInWave")) or 0
+  local new_wave = (w > 0 and w ~= last_wave) or (last_spins_in_wave and last_spins_in_wave > 0 and si == 0)
+  last_wave, last_spins_in_wave = w, si
+  if new_wave then
+    local left = tonumber(rawget(_G, "spinsLeft")) or 0
+    if left < n then rawset(_G, "spinsLeft", n) end
+  end
+  return 1
+end
+
+-- 小丑核心（bit 1/2/4/8 → 13 种子 / 22 百搭 / 4 黑签 / 29 丑的微笑）
+local JOKER_DEFS = {
+  { bit = 1, id = "13", name = "小丑种子" },
+  { bit = 2, id = "22", name = "百搭小丑" },
+  { bit = 4, id = "4",  name = "黑签" },
+  { bit = 8, id = "29", name = "丑的微笑" },
+}
+
+local function joker_def(id)
+  local co = CO()
+  if not co or type(co.getById) ~= "function" then return nil end
+  local ok, d = pcall(co.getById, id)
+  if ok and type(d) == "table" then return d end
+  return nil
+end
+
+local function has_joker(id)
+  local co = CO()
+  if not co then return false end
+  local list = nil
+  if type(co.getActive) == "function" then
+    local ok, v = pcall(co.getActive)
+    if ok then list = v end
+  end
+  if type(list) ~= "table" then return false end
+  for _, item in pairs(list) do
+    local iid = type(item) == "table" and (item.id or item.coreId or item.key) or item
+    if tostring(iid) == tostring(id) then return true end
+    if type(item) == "table" and item.def and tostring(item.def.id) == tostring(id) then return true end
+  end
+  return false
+end
+
+local function apply_joker(bits)
+  bits = tonumber(bits) or 0
+  local co = CO()
+  if not co then return 0 end
+  for _, d in ipairs(JOKER_DEFS) do
+    local want = (bits % (d.bit * 2)) >= d.bit
+    local have = has_joker(d.id)
+    local def = joker_def(d.id)
+    if want and not have then
+      if def and type(co.select) == "function" then pcall(co.select, def) end
+    elseif (not want) and have then
+      local key = def and def.key or nil
+      if key and type(co.remove) == "function" then pcall(co.remove, key) end
+    end
+  end
+  return bits
+end
+
+-- 直接把战场单位换成小丑（记原值，关掉能还原）
+local JESTER_KEY = "Jester"
+local JESTER_STATS = { hp = 90, atk = 32, distance = 20, aspd = 1.4 }
+
+local function apply_jester(on)
+  local bf = rawget(_G, "battlefield")
+  local r = type(bf) == "table" and bf.rosterUnits or nil
+  if type(r) ~= "table" then return 0 end
+  local n = 0
+  for i = 1, #r do
+    local u = r[i]
+    if type(u) == "table" then
+      if on then
+        if u.subclass ~= JESTER_KEY then
+          u._sbOrigSubclass = u._sbOrigSubclass or u.subclass
+          u.subclass, u.subclassKey, u.subclassName = JESTER_KEY, JESTER_KEY, JESTER_KEY
+          local st = u.stats
+          if type(st) == "table" then
+            if not u._sbOrigStats then
+              u._sbOrigStats = { hp = st.hp, atk = st.atk, distance = st.distance, aspd = st.aspd }
+            end
+            st.hp, st.atk, st.distance, st.aspd = JESTER_STATS.hp, JESTER_STATS.atk, JESTER_STATS.distance, JESTER_STATS.aspd
+          end
+          n = n + 1
+        end
+      elseif u._sbOrigSubclass then
+        local k = u._sbOrigSubclass
+        u.subclass, u.subclassKey, u.subclassName = k, k, k
+        u._sbOrigSubclass = nil
+        local b = u._sbOrigStats
+        if b and type(u.stats) == "table" then
+          u.stats.hp, u.stats.atk, u.stats.distance, u.stats.aspd = b.hp, b.atk, b.distance, b.aspd
+        end
+        u._sbOrigStats = nil
+        n = n + 1
+      end
+    end
+  end
+  return n
+end
+
+-- 升级加成：包 src/ui/upgrade 的取值函数（比直接改数值耐久，换关不丢）
+local WRAP_ORIG = {}
+local function wrap_set(name, fn)
+  local up = UP()
+  if not up or type(up[name]) ~= "function" then return end
+  if not WRAP_ORIG[name] then WRAP_ORIG[name] = up[name] end
+  up[name] = fn or WRAP_ORIG[name]
+end
+
+local function num(x)
+  x = tonumber(x)
+  return x or 0
+end
+
+local function apply_upgrade_wraps(start_bonus, speed, unit_cap, item_cap, shop_free)
+  local mode = table.concat({ start_bonus and 1 or 0, num(speed), num(unit_cap), num(item_cap), shop_free and 1 or 0 }, ":")
+  if mode == wrap_mode then return end
+  wrap_mode = mode
+
+  wrap_set("getStartGoldBonus", start_bonus and function(b, ...)
+    local o = WRAP_ORIG.getStartGoldBonus
+    return (o and (tonumber(o(b, ...)) or 0) or 0) + 500000
+  end or nil)
+
+  wrap_set("getBaseHPBonus", start_bonus and function(b, ...)
+    local o = WRAP_ORIG.getBaseHPBonus
+    return (o and (tonumber(o(b, ...)) or 0) or 0) + 900
+  end or nil)
+
+  wrap_set("getCoreFreeRerollBonus", start_bonus and function(b, ...)
+    local o = WRAP_ORIG.getCoreFreeRerollBonus
+    return (o and (tonumber(o(b, ...)) or 0) or 0) + 99
+  end or nil)
+
+  local sp = num(speed)
+  wrap_set("getBattleSpeedMultiplier", sp > 0 and function(...) return sp end or nil)
+
+  local uc = num(unit_cap)
+  local uc_orig = WRAP_ORIG.getMaxUnitBonus
+  wrap_set("getMaxUnitBonus", uc > 0 and function(b, ...)
+    local v = uc_orig and (tonumber(uc_orig(b, ...)) or 0) or 0
+    return uc > v and uc or v
+  end or nil)
+
+  local ic = num(item_cap)
+  local ic_orig = WRAP_ORIG.getItemInventoryAdd
+  wrap_set("getItemInventoryAdd", ic > 0 and function(b, ...)
+    local v = ic_orig and (tonumber(ic_orig(b, ...)) or 0) or 0
+    return ic > v and ic or v
+  end or nil)
+
+  wrap_set("getShopFirstRerollDiscount", shop_free and function(...) return 99 end or nil)
+  wrap_set("getQuestRerollEnabled", shop_free and function(...) return true end or nil)
+end
+
+-- 开关页 14 项：能锁的每帧补（抗结算扣减），能包的走 wraps
+local function apply_locks()
+  if cfg.coins_lock == 1 then
+    local t = num(cfg.coins_value); if t <= 0 then t = 9999999 end
+    local cur = rawget(_G, "coins")
+    if type(cur) == "number" and cur < t then rawset(_G, "coins", t) end
+  end
+  if cfg.free_spin == 1 then
+    local sc = rawget(_G, "spinCost")
+    if type(sc) == "number" then
+      if spin_cost_orig == nil then spin_cost_orig = sc end
+      if sc ~= 0 then rawset(_G, "spinCost", 0) end
+    end
+  elseif spin_cost_orig then
+    rawset(_G, "spinCost", spin_cost_orig)
+    spin_cost_orig = nil
+  end
+  local slot = rawget(_G, "slot")
+  if (cfg.force_win == 1 or cfg.hero_always == 1) and type(slot) == "table" then
+    if slot.forceWinOnce ~= true then slot.forceWinOnce = true end
+  elseif type(slot) == "table" and slot.forceWinOnce == true then
+    slot.forceWinOnce = false
+  end
+  if cfg.reroll_lock == 1 then
+    local v = rawget(_G, "coreFreeRerollsRemaining")
+    if type(v) == "number" and v < 99 then rawset(_G, "coreFreeRerollsRemaining", 99) end
+  end
+  if cfg.freespin_lock == 1 then
+    local v = rawget(_G, "freeSpinCredits")
+    if type(v) == "number" and v < 99 then rawset(_G, "freeSpinCredits", 99) end
+  end
+  if cfg.basehp_lock == 1 then
+    local bf = rawget(_G, "battlefield")
+    local t = num(cfg.basehp_value); if t <= 0 then t = 999 end
+    if type(bf) == "table" and type(bf.baseHP) == "number" and bf.baseHP < t then bf.baseHP = t end
+  end
+  if cfg.spins_lock == 1 then
+    local t = num(cfg.spins_value); if t <= 0 then t = 99 end
+    local v = rawget(_G, "spinsLeft")
+    if type(v) == "number" and v < t then rawset(_G, "spinsLeft", t) end
+  end
+  if cfg.jungsu_lock == 1 then
+    local v = rawget(_G, "jungsu")
+    if type(v) == "number" and v < 9999 then set_jungsu(9999) end
+  end
+end
+
+-- 抽奖页里需要按配置切换的部分（2Hz 足够，不必每帧）
+local function apply_draw_page()
+  apply_symbol_lock(cfg.sym_lock)
+  if cfg.grade_lock ~= nil or cfg.luck_tier ~= nil then
+    apply_grade_lock(cfg.grade_lock, cfg.luck_tier)
+  end
+  apply_spin_wave(cfg.spins_wave)
+  local jb = tonumber(cfg.joker_bits) or 0
+  if jb ~= joker_applied then
+    joker_applied = jb
+    apply_joker(jb)
+  end
+  local jh = (tonumber(cfg.jester_hero) or 0) ~= 0
+  if jh ~= jester_on then
+    jester_on = jh
+    apply_jester(jh)
+  elseif jh then
+    apply_jester(true)
+  end
+  apply_upgrade_wraps(cfg.start_bonus == 1, cfg.speed_mul, cfg.unit_cap, cfg.item_cap, cfg.shop_free == 1)
+end
+
+----------------------------------------------------------------
+-- 存档页
+----------------------------------------------------------------
+local SAVE_FILES = { "save.dat", "save_fallback.dat" }
+
+local function file_exists(n)
+  local ok, info = pcall(love.filesystem.getInfo, n)
+  return ok and info ~= nil
+end
+
+local function copy_file(a, b)
+  local ok, data = pcall(love.filesystem.read, a)
+  if not ok or not data then return false end
+  return (pcall(love.filesystem.write, b, data))
+end
+
+local function cmd_save_now()
+  local ok = pcall(function() require("src.save").save() end)
+  return ok and "ok" or "fail"
+end
+
+local function cmd_save_backup()
+  local n = 0
+  for _, f in ipairs(SAVE_FILES) do
+    if file_exists(f) and copy_file(f, f .. ".sb_bak") then n = n + 1 end
+  end
+  return n > 0 and ("ok:" .. n) or "fail"
+end
+
+local function cmd_save_restore()
+  local n = 0
+  for _, f in ipairs(SAVE_FILES) do
+    if file_exists(f .. ".sb_bak") and copy_file(f .. ".sb_bak", f) then n = n + 1 end
+  end
+  return n > 0 and ("ok:" .. n) or "fail"
+end
+
+local function cmd_reset_all()
+  cfg.coins_lock, cfg.free_spin, cfg.force_win, cfg.hero_always = 0, 0, 0, 0
+  cfg.basehp_lock, cfg.spins_lock, cfg.reroll_lock, cfg.freespin_lock = 0, 0, 0, 0
+  cfg.jungsu_lock, cfg.start_bonus, cfg.unit_cap, cfg.item_cap = 0, 0, 0, 0
+  cfg.shop_free, cfg.speed_mul = 0, 0
+  cfg.sym_lock, cfg.grade_lock, cfg.luck_tier, cfg.spins_wave = 0, 0, 0, 0
+  cfg.joker_bits, cfg.jester_hero = 0, 0
+  pcall(apply_symbol_lock, 0)
+  pcall(restore_probs)
+  pcall(apply_spin_wave, 0)
+  pcall(apply_jester, false)
+  pcall(apply_upgrade_wraps, false, 0, 0, 0, false)
+  wrap_mode = nil
+  local slot = rawget(_G, "slot")
+  if type(slot) == "table" then slot.forceWinOnce = false end
+  if spin_cost_orig then rawset(_G, "spinCost", spin_cost_orig); spin_cost_orig = nil end
+  return "ok"
+end
+
+----------------------------------------------------------------
 -- 命令分发
 ----------------------------------------------------------------
 local commands = {
@@ -868,6 +1316,10 @@ local commands = {
   set_passive = function() return cmd_set_passive(cfg.arg, cfg.arg2) end,
   catalog = function() write_catalog() return "ok" end,
   unit_info = function() return cmd_unit_info() end,
+  save_now = function() return cmd_save_now() end,
+  save_backup = function() return cmd_save_backup() end,
+  save_restore = function() return cmd_save_restore() end,
+  reset_all = function() return cmd_reset_all() end,
 }
 
 local function run_command()
@@ -939,6 +1391,7 @@ local function apply_continuous()
     local cur = get_originite()
     if type(cur) == "number" and cur < cfg.lock_originite then set_originite(cfg.lock_originite) end
   end
+  apply_locks()
 end
 
 ----------------------------------------------------------------
@@ -989,6 +1442,7 @@ function M.tick(dt)
     -- 这两个原来每帧都调（内部才短路）；降到 2Hz，省每帧的表查找
     install_skill_hooks()
     install_jackpot()
+    apply_draw_page()
   end
 
   apply_once()

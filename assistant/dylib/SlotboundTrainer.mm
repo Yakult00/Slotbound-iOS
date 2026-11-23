@@ -296,6 +296,33 @@ static UISwitch *g_spinsLockSwitch = nil;
 static UISwitch *g_jungsuLockSwitch = nil;
 static UISwitch *g_originiteLockSwitch = nil;
 static UISwitch *g_jackpotSwitch = nil;
+
+// ---- 新三页（抽奖 / 开关 / 存档）----
+static UIScrollView *g_scrollDraw = nil, *g_scrollSw = nil, *g_scrollSave = nil;
+static UIView *g_pageDraw = nil, *g_pageSw = nil, *g_pageSave = nil;
+static UIView *g_symRow = nil, *g_gradeRow = nil, *g_jokerRow = nil;
+static UILabel *g_spinsWaveLabel = nil;
+static NSInteger g_symLock = 0, g_gradeLock = 0, g_luckTier = 0, g_spinsWave = 0;
+static BOOL g_jesterHero = NO;
+static long long g_jokerBits = 0;
+#define kSwCount 14
+static BOOL g_swOn[kSwCount] = { NO };
+static NSString *swKey(int i) {
+    static NSString *k[kSwCount] = {
+        @"coins_lock", @"free_spin", @"force_win", @"hero_always", @"basehp_lock",
+        @"spins_lock", @"reroll_lock", @"freespin_lock", @"jungsu_lock", @"start_bonus",
+        @"unit_cap", @"item_cap", @"shop_free", @"speed_mul"
+    };
+    return (i >= 0 && i < kSwCount) ? k[i] : @"";
+}
+static NSString *swLabel(int i) {
+    static NSString *k[kSwCount] = {
+        @"无限金币", @"免费抽奖", @"必中大奖", @"每次必出英雄", @"基地无敌",
+        @"抽奖次数锁定", @"核心重掷不限", @"无限免费抽", @"精粹锁定", @"开局超级加成",
+        @"单位容量 99", @"物品容量 99", @"商店刷新不限", @"战斗加速 ×2"
+    };
+    return (i >= 0 && i < kSwCount) ? k[i] : @"";
+}
 static UILabel *g_skillLabel = nil;
 static UIView *g_cdRow = nil;
 static NSMutableArray *g_paramRows = nil;   // 3 个被动参数行 UIView
@@ -369,6 +396,23 @@ static void write_cheats(void) {
     [s appendFormat:@"  cmd = %@,\n", g_cmd ? [NSString stringWithFormat:@"\"%@\"", g_cmd] : @"nil"];
     [s appendFormat:@"  arg = %@,\n", g_arg ?: @"nil"];
     [s appendFormat:@"  arg2 = %@,\n", g_arg2 ?: @"nil"];
+    // ---- 抽奖页 ----
+    [s appendFormat:@"  sym_lock = %ld,\n", (long)g_symLock];
+    [s appendFormat:@"  grade_lock = %ld,\n", (long)g_gradeLock];
+    [s appendFormat:@"  luck_tier = %ld,\n", (long)g_luckTier];
+    [s appendFormat:@"  spins_wave = %ld,\n", (long)g_spinsWave];
+    [s appendFormat:@"  joker_bits = %lld,\n", g_jokerBits];
+    [s appendFormat:@"  jester_hero = %d,\n", g_jesterHero ? 1 : 0];
+    // ---- 开关页（14 项）----
+    for (int i = 0; i < kSwCount; i++) {
+        long long v = g_swOn[i] ? 1 : 0;
+        if (i == 9)  v = g_swOn[i] ? 1 : 0;           // start_bonus 开关即可
+        if (i == 10) v = g_swOn[i] ? 99 : 0;          // unit_cap
+        if (i == 11) v = g_swOn[i] ? 99 : 0;          // item_cap
+        if (i == 13) v = g_swOn[i] ? 2 : 0;           // speed_mul
+        [s appendFormat:@"  %@ = %lld,\n", swKey(i), v];
+    }
+    [s appendFormat:@"  coins_value = 9999999,\n  basehp_value = 999,\n  spins_value = 99,\n"];
     [s appendString:@"}\n"];
     [s writeToFile:[dir stringByAppendingPathComponent:@"cheats_ui.lua"]
         atomically:YES encoding:NSUTF8StringEncoding error:nil];
@@ -670,6 +714,19 @@ static void read_catalog(void) {
 + (void)addSelected:(UIButton *)b;
 + (void)replaceFirst:(UIButton *)b;
 + (void)deleteFirst:(UIButton *)b;
+// 抽奖 / 开关 / 存档
++ (void)symLockTapped:(UIButton *)b;
++ (void)gradeLockTapped:(UIButton *)b;
++ (void)luckChanged:(UISegmentedControl *)sc;
++ (void)spinsWaveDelta:(UIButton *)b;
++ (void)jokerTapped:(UIButton *)b;
++ (void)jesterChanged:(UISwitch *)sw;
++ (void)swChanged:(UISwitch *)sw;
++ (void)saveNow:(id)s;
++ (void)saveBackup:(id)s;
++ (void)saveRestore:(id)s;
++ (void)saveDefaults:(id)s;
++ (void)linkTapped:(id)s;
 @end
 
 // ---- 配色：对齐游戏本体（深紫黑底 + 金色强调）----
@@ -702,6 +759,16 @@ static void stylePrimary(UIButton *b) {
     b.titleLabel.font = [UIFont boldSystemFontOfSize:15];
     b.layer.cornerRadius = 10;
 }
+static void restyleRow(UIView *row, int base, NSInteger sel) {
+    if (!row) return;
+    for (UIView *v in row.subviews) {
+        if (![v isKindOfClass:[UIButton class]]) continue;
+        BOOL on = ((NSInteger)v.tag - base) == sel;
+        v.backgroundColor = on ? accent() : [UIColor colorWithWhite:0.22 alpha:1];
+        [(UIButton *)v setTitleColor:on ? inkOnGold() : txtPrimary() forState:UIControlStateNormal];
+    }
+}
+
 static void styleDanger(UIButton *b) {
     b.backgroundColor = dangerRed();
     [b setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
@@ -1316,6 +1383,184 @@ static UIView *build_page_shop(CGFloat w) {
     return v;
 }
 
+// ---- 抽奖页：符号锁定 / 品质锁定 / 概率模式 / 每波次数 / 小丑核心 / 小丑英雄 ----
+static UIView *build_page_draw(CGFloat w) {
+    UIView *v = [[UIView alloc] initWithFrame:CGRectMake(0, 0, w, 620)];
+    v.backgroundColor = [UIColor clearColor];
+    CGFloat x = 14, y = 8, cw = w - 28;
+
+    y = addSectionTitle(v, x, y, cw, @"符号锁定（9 格同一图案）");
+    g_symRow = [[UIView alloc] initWithFrame:CGRectMake(x, y, cw, 100)];
+    [v addSubview:g_symRow];
+    NSArray *symNames = @[ @"关", @"A", @"D", @"H", @"M", @"S", @"W" ];
+    CGFloat bw4 = (cw - 3 * 8) / 4;
+    for (NSInteger i = 0; i < (NSInteger)symNames.count; i++) {
+        UIButton *b = makeButton(symNames[i], @selector(symLockTapped:));
+        b.tag = 100 + i;
+        b.frame = CGRectMake((i % 4) * (bw4 + 8), (i / 4) * 50, bw4, 42);
+        BOOL on = (i == g_symLock);
+        b.backgroundColor = on ? accent() : [UIColor colorWithWhite:0.22 alpha:1];
+        [b setTitleColor:on ? inkOnGold() : txtPrimary() forState:UIControlStateNormal];
+        [g_symRow addSubview:b];
+    }
+    y += 108;
+
+    y = addSectionTitle(v, x, y, cw, @"品质锁定");
+    g_gradeRow = [[UIView alloc] initWithFrame:CGRectMake(x, y, cw, 100)];
+    [v addSubview:g_gradeRow];
+    NSArray *gradeNames = @[ @"关", @"普通", @"高级", @"稀有", @"传说", @"棱彩" ];
+    CGFloat bw3 = (cw - 2 * 8) / 3;
+    for (NSInteger i = 0; i < (NSInteger)gradeNames.count; i++) {
+        UIButton *b = makeButton(gradeNames[i], @selector(gradeLockTapped:));
+        b.tag = 200 + i;
+        b.frame = CGRectMake((i % 3) * (bw3 + 8), (i / 3) * 50, bw3, 42);
+        BOOL on = (i == g_gradeLock);
+        b.backgroundColor = on ? accent() : [UIColor colorWithWhite:0.22 alpha:1];
+        [b setTitleColor:on ? inkOnGold() : txtPrimary() forState:UIControlStateNormal];
+        [g_gradeRow addSubview:b];
+    }
+    y += 108;
+
+    y = addSectionTitle(v, x, y, cw, @"概率模式（关掉品质锁定后生效）");
+    UISegmentedControl *seg = [[UISegmentedControl alloc] initWithItems:@[ @"原版", @"好运", @"逆天", @"均衡" ]];
+    seg.frame = CGRectMake(x, y, cw, 34);
+    seg.selectedSegmentIndex = g_luckTier;
+    styleSegment(seg);
+    [seg addTarget:[CheatsOverlay class] action:@selector(luckChanged:) forControlEvents:UIControlEventValueChanged];
+    [v addSubview:seg];
+    y += 44;
+
+    y = addSectionTitle(v, x, y, cw, @"每波抽奖次数");
+    g_spinsWaveLabel = [[UILabel alloc] initWithFrame:CGRectMake(x, y, cw - 140, 40)];
+    g_spinsWaveLabel.font = [UIFont boldSystemFontOfSize:17];
+    g_spinsWaveLabel.textColor = accent();
+    g_spinsWaveLabel.text = g_spinsWave > 0 ? [NSString stringWithFormat:@"当前：%ld 次/波", (long)g_spinsWave] : @"当前：默认";
+    [v addSubview:g_spinsWaveLabel];
+    UIButton *minus = makeButton(@"－5", @selector(spinsWaveDelta:));
+    minus.tag = -5;
+    minus.frame = CGRectMake(x + cw - 132, y, 60, 40);
+    [v addSubview:minus];
+    UIButton *plus = makeButton(@"＋5", @selector(spinsWaveDelta:));
+    plus.tag = 5;
+    plus.frame = CGRectMake(x + cw - 64, y, 64, 40);
+    plus.backgroundColor = accent();
+    [v addSubview:plus];
+    y += 50;
+
+    y = addSectionTitle(v, x, y, cw, @"小丑核心");
+    g_jokerRow = [[UIView alloc] initWithFrame:CGRectMake(x, y, cw, 100)];
+    [v addSubview:g_jokerRow];
+    NSArray *jokerNames = @[ @"小丑种子", @"百搭小丑", @"黑签", @"丑的微笑" ];
+    for (NSInteger i = 0; i < 4; i++) {
+        UIButton *b = makeButton(jokerNames[i], @selector(jokerTapped:));
+        b.tag = 300 + i;
+        b.frame = CGRectMake((i % 2) * ((cw - 8) / 2 + 8), (i / 2) * 50, (cw - 8) / 2, 42);
+        BOOL on = ((g_jokerBits >> i) & 1) != 0;
+        b.backgroundColor = on ? accent() : [UIColor colorWithWhite:0.22 alpha:1];
+        [b setTitleColor:on ? inkOnGold() : txtPrimary() forState:UIControlStateNormal];
+        [g_jokerRow addSubview:b];
+    }
+    y += 108;
+
+    UILabel *jl = [[UILabel alloc] initWithFrame:CGRectMake(x, y, 220, 31)];
+    jl.text = @"直接把战场单位变成小丑";
+    jl.font = [UIFont systemFontOfSize:15];
+    jl.textColor = txtPrimary();
+    [v addSubview:jl];
+    UISwitch *js = [[UISwitch alloc] initWithFrame:CGRectMake(x + cw - 51, y, 51, 31)];
+    js.on = g_jesterHero;
+    js.onTintColor = accent();
+    [js addTarget:[CheatsOverlay class] action:@selector(jesterChanged:) forControlEvents:UIControlEventValueChanged];
+    [v addSubview:js];
+    y += 44;
+
+    UILabel *hint = [[UILabel alloc] initWithFrame:CGRectMake(x, y, cw, 40)];
+    hint.text = @"符号锁定会同时改两份权重表；关掉立即还原。";
+    hint.numberOfLines = 0;
+    hint.font = [UIFont systemFontOfSize:12];
+    hint.textColor = txtDim();
+    [v addSubview:hint];
+    y += 46;
+
+    v.frame = CGRectMake(0, 0, w, y);
+    return v;
+}
+
+// ---- 开关页：14 项 ----
+static UIView *build_page_sw(CGFloat w) {
+    UIView *v = [[UIView alloc] initWithFrame:CGRectMake(0, 0, w, 560)];
+    v.backgroundColor = [UIColor clearColor];
+    CGFloat x = 14, y = 8, cw = w - 28;
+
+    y = addSectionTitle(v, x, y, cw, @"一键开关（改动实时生效）");
+    for (int i = 0; i < kSwCount; i++) {
+        UILabel *l = [[UILabel alloc] initWithFrame:CGRectMake(x, y + 6, cw - 70, 26)];
+        l.text = swLabel(i);
+        l.font = [UIFont systemFontOfSize:15];
+        l.textColor = txtPrimary();
+        [v addSubview:l];
+        UISwitch *s = [[UISwitch alloc] initWithFrame:CGRectMake(x + cw - 51, y + 4, 51, 31)];
+        s.on = g_swOn[i];
+        s.tag = i;
+        s.onTintColor = accent();
+        [s addTarget:[CheatsOverlay class] action:@selector(swChanged:) forControlEvents:UIControlEventValueChanged];
+        [v addSubview:s];
+        y += 44;
+    }
+    UILabel *hint = [[UILabel alloc] initWithFrame:CGRectMake(x, y + 4, cw, 60)];
+    hint.text = @"金币/血量/次数类是每帧补写；容量与商店类包游戏取值函数，关掉即还原。";
+    hint.numberOfLines = 0;
+    hint.font = [UIFont systemFontOfSize:12];
+    hint.textColor = txtDim();
+    [v addSubview:hint];
+    y += 70;
+
+    v.frame = CGRectMake(0, 0, w, y);
+    return v;
+}
+
+// ---- 存档页 ----
+static UIButton *wideButton(NSString *title, SEL action, CGFloat x, CGFloat y, CGFloat w, BOOL primary) {
+    UIButton *b = makeButton(title, action);
+    b.frame = CGRectMake(x, y, w, 46);
+    if (primary) {
+        b.backgroundColor = accent();
+        [b setTitleColor:inkOnGold() forState:UIControlStateNormal];
+    }
+    return b;
+}
+
+static UIView *build_page_save(CGFloat w) {
+    UIView *v = [[UIView alloc] initWithFrame:CGRectMake(0, 0, w, 320)];
+    v.backgroundColor = [UIColor clearColor];
+    CGFloat x = 14, y = 8, cw = w - 28;
+
+    y = addSectionTitle(v, x, y, cw, @"存档");
+    [v addSubview:wideButton(@"立即存档", @selector(saveNow:), x, y, cw, YES)];
+    y += 56;
+    [v addSubview:wideButton(@"备份当前存档", @selector(saveBackup:), x, y, cw, NO)];
+    y += 56;
+    [v addSubview:wideButton(@"从备份还原", @selector(saveRestore:), x, y, cw, NO)];
+    y += 56;
+
+    UILabel *hint = [[UILabel alloc] initWithFrame:CGRectMake(x, y, cw, 60)];
+    hint.text = @"备份写在 save.dat.sb_bak / save_fallback.dat.sb_bak；\n还原后需要重进一局才看到变化。";
+    hint.numberOfLines = 0;
+    hint.font = [UIFont systemFontOfSize:12];
+    hint.textColor = txtDim();
+    [v addSubview:hint];
+    y += 66;
+
+    y = addSectionTitle(v, x, y, cw, @"重置");
+    UIButton *rst = wideButton(@"恢复默认设置（关掉全部修改）", @selector(saveDefaults:), x, y, cw, NO);
+    styleDanger(rst);
+    [v addSubview:rst];
+    y += 60;
+
+    v.frame = CGRectMake(0, 0, w, y);
+    return v;
+}
+
 // ---- 三页面板 ----
 static UISegmentedControl *g_tab = nil;
 
@@ -1328,6 +1573,12 @@ static void show_page(NSInteger idx) {
     if (g_scrollSlot) g_scrollSlot.hidden = (idx != 1);
     if (g_scrollUnit) g_scrollUnit.hidden = (idx != 2);
     if (g_scrollShop) g_scrollShop.hidden = (idx != 3);
+    if (g_pageDraw) g_pageDraw.hidden = (idx != 4);
+    if (g_pageSw) g_pageSw.hidden = (idx != 5);
+    if (g_pageSave) g_pageSave.hidden = (idx != 6);
+    if (g_scrollDraw) g_scrollDraw.hidden = (idx != 4);
+    if (g_scrollSw) g_scrollSw.hidden = (idx != 5);
+    if (g_scrollSave) g_scrollSave.hidden = (idx != 6);
 }
 
 static void refresh_hook_status(void) {
@@ -1419,7 +1670,7 @@ static UIView *build_panel(CGRect bounds) {
     [panel addSubview:g_hookLabel];
     refresh_hook_status();
 
-    g_tab = [[UISegmentedControl alloc] initWithItems:@[ @"资源", @"老虎机", @"单位", @"商店" ]];
+    g_tab = [[UISegmentedControl alloc] initWithItems:@[ @"资源", @"老虎机", @"单位", @"商店", @"抽奖", @"开关", @"存档" ]];
     g_tab.frame = CGRectMake(16, 74, w - 32, 34);
     g_tab.selectedSegmentIndex = 0;
     styleSegment(g_tab);
@@ -1438,7 +1689,7 @@ static UIView *build_panel(CGRect bounds) {
     [panel addGestureRecognizer:tapBg];
 
     // 四个页面各自一个 UIScrollView：各自独立滚动、独立回弹
-    CGRect srect = CGRectMake(0, 118, w, ph - 118);
+    CGRect srect = CGRectMake(0, 118, w, ph - 118 - 26);
     UIScrollView *(^mkscroll)(void) = ^UIScrollView *{
         UIScrollView *s = [[UIScrollView alloc] initWithFrame:srect];
         s.backgroundColor = [UIColor clearColor];
@@ -1453,6 +1704,9 @@ static UIView *build_panel(CGRect bounds) {
     g_scrollSlot = mkscroll();
     g_scrollUnit = mkscroll();
     g_scrollShop = mkscroll();
+    g_scrollDraw = mkscroll();
+    g_scrollSw = mkscroll();
+    g_scrollSave = mkscroll();
 
     // 每个页面单独 try：某一页写崩了也不至于整个 app 起不来
     @try { g_pageRes = build_page_res(w - 28); }
@@ -1463,14 +1717,36 @@ static UIView *build_panel(CGRect bounds) {
     @catch (NSException *e) { NSLog(@"[SBTrainer] page UNIT: %@", e.reason); g_pageUnit = [[UIView alloc] initWithFrame:CGRectZero]; }
     @try { g_pageShop = build_page_shop(w - 28); }
     @catch (NSException *e) { NSLog(@"[SBTrainer] page SHOP: %@", e.reason); g_pageShop = [[UIView alloc] initWithFrame:CGRectZero]; }
+    @try { g_pageDraw = build_page_draw(w - 28); }
+    @catch (NSException *e) { NSLog(@"[SBTrainer] page DRAW: %@", e.reason); g_pageDraw = [[UIView alloc] initWithFrame:CGRectZero]; }
+    @try { g_pageSw = build_page_sw(w - 28); }
+    @catch (NSException *e) { NSLog(@"[SBTrainer] page SW: %@", e.reason); g_pageSw = [[UIView alloc] initWithFrame:CGRectZero]; }
+    @try { g_pageSave = build_page_save(w - 28); }
+    @catch (NSException *e) { NSLog(@"[SBTrainer] page SAVE: %@", e.reason); g_pageSave = [[UIView alloc] initWithFrame:CGRectZero]; }
     [g_scrollRes addSubview:g_pageRes];
     [g_scrollSlot addSubview:g_pageSlot];
     [g_scrollUnit addSubview:g_pageUnit];
     [g_scrollShop addSubview:g_pageShop];
+    [g_scrollDraw addSubview:g_pageDraw];
+    [g_scrollSw addSubview:g_pageSw];
+    [g_scrollSave addSubview:g_pageSave];
     g_scrollRes.contentSize = g_pageRes.frame.size;
     g_scrollSlot.contentSize = g_pageSlot.frame.size;
     g_scrollUnit.contentSize = g_pageUnit.frame.size;
     g_scrollShop.contentSize = g_pageShop.frame.size;
+    g_scrollDraw.contentSize = g_pageDraw.frame.size;
+    g_scrollSw.contentSize = g_pageSw.frame.size;
+    g_scrollSave.contentSize = g_pageSave.frame.size;
+
+    // 左下角：项目主页（点一下开浏览器）
+    UIButton *link = [UIButton buttonWithType:UIButtonTypeSystem];
+    link.frame = CGRectMake(14, ph - 24, w - 28, 22);
+    link.contentHorizontalAlignment = UIControlContentHorizontalAlignmentLeft;
+    [link setTitle:@"项目主页 · github.com/Yakult00/Slotbound-iOS" forState:UIControlStateNormal];
+    [link setTitleColor:[accent() colorWithAlphaComponent:0.85] forState:UIControlStateNormal];
+    link.titleLabel.font = [UIFont systemFontOfSize:11];
+    [link addTarget:[CheatsOverlay class] action:@selector(linkTapped:) forControlEvents:UIControlEventTouchUpInside];
+    [panel addSubview:link];
 
     show_page(0);
     return panel;
@@ -1782,6 +2058,91 @@ static UIView *build_panel(CGRect bounds) {
         send_command(@"remove_item", idStr, nil);
     } else {
         send_command(@"remove_awakening", @"1", nil);
+    }
+}
+
+// ---- 抽奖 / 开关 / 存档 交互 ----
++ (void)symLockTapped:(UIButton *)b {
+    g_symLock = (NSInteger)b.tag - 100;
+    restyleRow(g_symRow, 100, g_symLock);
+    write_cheats();
+    tap_haptic();
+}
+
++ (void)gradeLockTapped:(UIButton *)b {
+    g_gradeLock = (NSInteger)b.tag - 200;
+    restyleRow(g_gradeRow, 200, g_gradeLock);
+    write_cheats();
+    tap_haptic();
+}
+
++ (void)luckChanged:(UISegmentedControl *)sc {
+    g_luckTier = sc.selectedSegmentIndex;
+    if (g_luckTier < 0) g_luckTier = 0;
+    write_cheats();
+    tap_haptic();
+}
+
++ (void)spinsWaveDelta:(UIButton *)b {
+    NSInteger v = g_spinsWave + (NSInteger)b.tag;
+    if (v < 0) v = 0;
+    if (v > 99) v = 99;
+    g_spinsWave = v;
+    g_spinsWaveLabel.text = v > 0 ? [NSString stringWithFormat:@"当前：%ld 次/波", (long)v] : @"当前：默认";
+    write_cheats();
+    tap_haptic();
+}
+
++ (void)jokerTapped:(UIButton *)b {
+    NSInteger i = (NSInteger)b.tag - 300;
+    if (i < 0 || i > 3) return;
+    g_jokerBits ^= (1LL << i);
+    restyleRow(g_jokerRow, 300, -1);
+    for (UIView *v in g_jokerRow.subviews) {
+        if (![v isKindOfClass:[UIButton class]]) continue;
+        NSInteger k = (NSInteger)v.tag - 300;
+        BOOL on = ((g_jokerBits >> k) & 1) != 0;
+        v.backgroundColor = on ? accent() : [UIColor colorWithWhite:0.22 alpha:1];
+        [(UIButton *)v setTitleColor:on ? inkOnGold() : txtPrimary() forState:UIControlStateNormal];
+    }
+    write_cheats();
+    tap_haptic();
+}
+
++ (void)jesterChanged:(UISwitch *)sw {
+    g_jesterHero = sw.isOn;
+    write_cheats();
+    tap_haptic();
+}
+
++ (void)swChanged:(UISwitch *)sw {
+    NSInteger i = (NSInteger)sw.tag;
+    if (i < 0 || i >= kSwCount) return;
+    g_swOn[i] = sw.isOn;
+    write_cheats();
+    tap_haptic();
+}
+
++ (void)saveNow:(id)s { send_command(@"save_now", nil, nil); }
++ (void)saveBackup:(id)s { send_command(@"save_backup", nil, nil); }
++ (void)saveRestore:(id)s { send_command(@"save_restore", nil, nil); }
+
++ (void)saveDefaults:(id)s {
+    for (int i = 0; i < kSwCount; i++) g_swOn[i] = NO;
+    g_symLock = g_gradeLock = g_luckTier = g_spinsWave = 0;
+    g_jokerBits = 0;
+    g_jesterHero = NO;
+    send_command(@"reset_all", nil, nil);
+    show_toast(@"✓ 已恢复默认，重开面板后生效");
+}
+
++ (void)linkTapped:(id)s {
+    NSURL *u = [NSURL URLWithString:@"https://github.com/Yakult00/Slotbound-iOS"];
+    UIApplication *app = [UIApplication sharedApplication];
+    if ([app respondsToSelector:@selector(openURL:options:completionHandler:)]) {
+        [app openURL:u options:@{} completionHandler:nil];
+    } else {
+        [app openURL:u];
     }
 }
 
