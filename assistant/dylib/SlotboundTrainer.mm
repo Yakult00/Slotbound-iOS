@@ -24,6 +24,7 @@
 //        SlotboundTrainer.mm dobby/libdobby.a
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import <objc/runtime.h>
 #import <mach-o/dyld.h>
 #import <mach-o/nlist.h>
 #import <dlfcn.h>
@@ -2495,6 +2496,62 @@ static void *delayed_init_thread(void *arg) {
     return NULL;
 }
 
+// ---- 外部链接兜底：容器/沙盒里 -[UIApplication openURL:] 会同步返回 NO（实测
+//      love.system.openURL 返回 false，浏览器不弹）。失败时改用应用内 Safari 打开，
+//      保证「点一下能看到页面」。
+static void sb_present_safari(NSURL *url) {
+    if (!url) return;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        static dispatch_once_t once;
+        dispatch_once(&once, ^{
+            dlopen("/System/Library/Frameworks/SafariServices.framework/SafariServices", RTLD_LAZY);
+        });
+        Class sf = NSClassFromString(@"SFSafariViewController");
+        if (!sf) return;
+        UIViewController *root = g_win ? g_win.rootViewController : nil;
+        if (!root) {
+            for (UIWindow *w in [UIApplication sharedApplication].windows) {
+                if (w.isKeyWindow) { root = w.rootViewController; break; }
+            }
+        }
+        if (!root) return;
+        while (root.presentedViewController) root = root.presentedViewController;
+        if ([root isKindOfClass:sf]) return;          // 已经是 Safari 页，别叠
+        id vc = [[sf alloc] initWithURL:url];
+        if (!vc) return;
+        [root presentViewController:vc animated:YES completion:nil];
+    });
+}
+
+static BOOL (*sb_orig_openURL)(id, SEL, NSURL *, NSDictionary *, void (^)(BOOL)) = NULL;
+static BOOL sb_openURL_hook(id self, SEL _cmd, NSURL *url, NSDictionary *opts, void (^completion)(BOOL)) {
+    static NSURL *lastURL = nil;
+    static NSTimeInterval lastAt = 0;
+    BOOL ok = sb_orig_openURL(self, _cmd, url, opts, ^(BOOL success) {
+        if (!success && !(lastURL == url && [NSDate timeIntervalSinceReferenceDate] - lastAt < 1.0)) {
+            lastURL = url; lastAt = [NSDate timeIntervalSinceReferenceDate];
+            sb_present_safari(url);
+        }
+        if (completion) completion(success);
+    });
+    if (!ok) {
+        NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+        if (!(lastURL == url && now - lastAt < 1.0)) {
+            lastURL = url; lastAt = now;
+            sb_present_safari(url);
+        }
+    }
+    return ok;
+}
+
+static void sb_install_openurl_fallback(void) {
+    if (sb_orig_openURL) return;
+    Method m = class_getInstanceMethod([UIApplication class], @selector(openURL:options:completionHandler:));
+    if (!m) return;
+    sb_orig_openURL = (BOOL (*)(id, SEL, NSURL *, NSDictionary *, void (^)(BOOL)))method_getImplementation(m);
+    method_setImplementation(m, (IMP)sb_openURL_hook);
+}
+
 __attribute__((constructor))
 static void trainer_init(void) {
     // constructor 里只起延迟线程，不做任何实际工作。
@@ -2503,4 +2560,6 @@ static void trainer_init(void) {
     pthread_t th;
     pthread_create(&th, NULL, delayed_init_thread, NULL);
     pthread_detach(th);
+    // 主队列起来后装 openURL 兜底（早于用户点击即可）。
+    dispatch_async(dispatch_get_main_queue(), ^{ sb_install_openurl_fallback(); });
 }
