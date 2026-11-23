@@ -2292,7 +2292,9 @@ static void *delayed_init_thread(void *arg) {
         }
         STEP("step2 image list done");
     }
-#ifndef SB_NO_HOOK
+#if 0   // 纯 Lua 后端：后端在 game.love 里，面板只做文件桥。DobbyHook 会改写
+        // lua_pushnumber 所在 __TEXT 页（mprotect 被拒 errno=13，Dobby 仍返回 0），
+        // 之后游戏一调 pushnumber 就 SIGBUS，日志停在 step4 —— 故整段不编译。
     // 解析 Lua 符号并钩 lua_pushnumber
     g_luaL_loadbuffer = (luaL_loadbuffer_t)resolve_sym("_luaL_loadbuffer");
     g_lua_pcall = (lua_pcall_t)resolve_sym("_lua_pcall");
@@ -2325,8 +2327,8 @@ static void *delayed_init_thread(void *arg) {
         if (dbg) { fprintf(dbg, "symbol resolve FAILED\n"); }
         NSLog(@"[SBTrainer] symbol resolve failed: push=%p loadbuffer=%p", pushnumber, g_luaL_loadbuffer);
     }
-    g_hookReady = YES;   // 纯 Lua 后端：后端在 game.love 里，面板只做文件桥
 #endif
+    g_hookReady = YES;   // 纯 Lua 后端：后端在 game.love 里，面板只做文件桥
     if (dbg) { fflush(dbg); }
     // 建面板（主队列，UIKit 已就绪）。dbg 保持打开直到这里也写完，
     // 否则崩在 setup_ui 里就什么线索都没有（文件只剩 0 字节）。
