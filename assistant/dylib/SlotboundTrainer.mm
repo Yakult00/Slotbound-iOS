@@ -1898,7 +1898,7 @@ static UIView *build_panel(CGRect bounds) {
     long long maxL = [d[@"maxLevel"] longLongValue];
     if (maxL < 1) maxL = 1;
     if (lv > maxL) lv = maxL;
-    send_command(@"add_item", idStr, [NSString stringWithFormat:@"%lld", lv]);
+    send_command(@"add_item", [NSString stringWithFormat:@"\"%@\"", idStr], [NSString stringWithFormat:@"%lld", lv]);
     show_toast([NSString stringWithFormat:@"✓ 已加入 %@ Lv%lld", idStr, lv]);
 }
 
@@ -2096,13 +2096,13 @@ static UIView *build_panel(CGRect bounds) {
     NSInteger maxL = [d[@"maxLevel"] integerValue];
     if (maxL < 1) maxL = 1;
     if (g_pickerKind == 0) {
-        send_command(@"add_option", idStr, nil);
+        send_command(@"add_option", [NSString stringWithFormat:@"\"%@\"", idStr], nil);
     } else if (g_pickerKind == 1) {
-        send_command(@"add_imprint", idStr, [NSString stringWithFormat:@"%ld", (long)maxL]);
+        send_command(@"add_imprint", [NSString stringWithFormat:@"\"%@\"", idStr], [NSString stringWithFormat:@"%ld", (long)maxL]);
     } else if (g_pickerKind == 2) {
-        send_command(@"add_item", idStr, [NSString stringWithFormat:@"%ld", (long)maxL]);
+        send_command(@"add_item", [NSString stringWithFormat:@"\"%@\"", idStr], [NSString stringWithFormat:@"%ld", (long)maxL]);
     } else {
-        send_command(@"add_awakening", idStr, nil);
+        send_command(@"add_awakening", [NSString stringWithFormat:@"\"%@\"", idStr], nil);
     }
 }
 
@@ -2116,13 +2116,13 @@ static UIView *build_panel(CGRect bounds) {
     NSInteger maxL = [d[@"maxLevel"] integerValue];
     if (maxL < 1) maxL = 1;
     if (g_pickerKind == 0) {
-        send_command(@"replace_option", idStr, @"1");
+        send_command(@"replace_option", [NSString stringWithFormat:@"\"%@\"", idStr], @"1");
     } else if (g_pickerKind == 1) {
-        send_command(@"replace_imprint", idStr, @"1");
+        send_command(@"replace_imprint", [NSString stringWithFormat:@"\"%@\"", idStr], @"1");
     } else if (g_pickerKind == 2) {
-        send_command(@"replace_item", idStr, [NSString stringWithFormat:@"%ld", (long)maxL]);
+        send_command(@"replace_item", [NSString stringWithFormat:@"\"%@\"", idStr], [NSString stringWithFormat:@"%ld", (long)maxL]);
     } else {
-        send_command(@"replace_awakening", idStr, @"1");
+        send_command(@"replace_awakening", [NSString stringWithFormat:@"\"%@\"", idStr], @"1");
     }
 }
 
@@ -2138,7 +2138,7 @@ static UIView *build_panel(CGRect bounds) {
     } else if (g_pickerKind == 1) {
         send_command(@"remove_imprint", @"1", nil);
     } else if (g_pickerKind == 2) {
-        send_command(@"remove_item", idStr, nil);
+        send_command(@"remove_item", [NSString stringWithFormat:@"\"%@\"", idStr], nil);
     } else {
         send_command(@"remove_awakening", @"1", nil);
     }
@@ -2263,8 +2263,10 @@ static UIView *build_panel(CGRect bounds) {
     [ac addAction:[UIAlertAction actionWithTitle:@"全部清除" style:UIAlertActionStyleDestructive
                                         handler:^(UIAlertAction *a) {
                                             send_command(@"cores_clear", nil, nil);
-                                            // 清完刷一次目录，把「已拥有」标记同步回来
-                                            send_command(@"catalog", nil, nil);
+                                            // 命令槽只有一个：catalog 必须延后发，否则会顶掉 cores_clear
+                                            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                                                send_command(@"catalog", nil, nil);
+                                            });
                                             show_toast(@"✓ 已清除所有核心");
                                         }]];
     UIViewController *vc = g_win ? g_win.rootViewController : nil;

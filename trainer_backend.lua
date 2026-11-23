@@ -310,6 +310,13 @@ local injected_guard = nil
 local injected_base = nil
 local injected_busy = false
 local injected_loaded = false
+-- 「一键清除所有核心」后持续压制：游戏会用存档/准备界面把 loadout 重新灌回来
+local cores_wiped = false
+
+local function dlog(msg)
+  pcall(love.filesystem.append, "sbtrainer_backend.log",
+    os.date("%H:%M:%S ") .. tostring(msg) .. "\n")
+end
 
 local function injected_save()
   local lines = {}
@@ -364,6 +371,24 @@ local function injected_apply()
     end
   end
   injected_busy = false
+end
+
+-- 廉价检查：面板加的物品是否已经全在 _itemPurchased 里且等级一致
+local function injected_need()
+  local ui = rawget(_G, "ui")
+  if type(ui) ~= "table" or type(ui._itemPurchased) ~= "table" then return true end
+  for id, lv in pairs(injected_items) do
+    local hit = false
+    for _, o in ipairs(ui._itemPurchased) do
+      if tostring(o.id) == tostring(id) then
+        if tonumber(o.level) ~= tonumber(lv) then return true end
+        hit = true
+        break
+      end
+    end
+    if not hit then return true end
+  end
+  return false
 end
 
 local function injected_hook()
@@ -736,6 +761,7 @@ local function cmd_core_add(id)
   if type(cores.isOwned) == "function" and cores.isOwned(d) then return "owned" end
   local ok2, err = pcall(cores.select, d, current_wave())
   if not ok2 then return "fail:" .. tostring(err) end
+  cores_wiped = false
   return "ok"
 end
 
@@ -750,22 +776,30 @@ local function cmd_core_add_all()
       if pcall(cores.select, d, w) then n = n + 1 end
     end
   end
+  cores_wiped = false
   return "ok:" .. tostring(n)
 end
 
 -- 一键清除所有核心：逐个 remove 当前已激活的核心
-local function cmd_cores_clear()
+local function cores_remove_all()
   local ok, cores = pcall(require, "src.game.cores")
-  if not ok or type(cores) ~= "table" then return "no_module" end
-  if type(cores.getActive) ~= "function" then return "no_api" end
+  if not ok or type(cores) ~= "table" or type(cores.getActive) ~= "function" then return -1 end
   local snapshot = {}
   for _, c in ipairs(cores.getActive() or {}) do snapshot[#snapshot + 1] = c end
   local removed = 0
   for _, c in ipairs(snapshot) do
-    if type(cores.remove) == "function" then
-      if pcall(cores.remove, c) then removed = removed + 1 end
-    end
+    if type(cores.remove) == "function" and pcall(cores.remove, c) then removed = removed + 1 end
   end
+  return removed
+end
+
+local function cmd_cores_clear()
+  local ok, cores = pcall(require, "src.game.cores")
+  if not ok or type(cores) ~= "table" then return "no_module" end
+  if type(cores.getActive) ~= "function" then return "no_api" end
+  local removed = cores_remove_all()
+  if removed < 0 then return "no_module" end
+  cores_wiped = true   -- 之后 2Hz 持续压制，直到「添加核心」或「一键恢复」
   if removed == 0 and type(cores.reset) == "function" then
     pcall(cores.reset)
     return "reset"
@@ -1380,6 +1414,7 @@ local function cmd_reset_all()
   pcall(apply_jester, false)
   pcall(apply_upgrade_wraps, false, 0, 0, 0, false)
   wrap_mode = nil
+  cores_wiped = false
   -- 面板加过的物品也一并撤掉（含落盘记录）
   injected_items = {}
   pcall(injected_save)
@@ -1431,7 +1466,13 @@ local function run_command()
   local c = cfg.cmd
   if type(c) ~= "string" or c == "" then return end
   local fn = commands[c]
-  if fn then pcall(fn) end
+  if fn then
+    local ok, ret = pcall(fn)
+    dlog("cmd " .. c .. " arg=" .. tostring(cfg.arg) .. " arg2=" .. tostring(cfg.arg2)
+      .. " -> " .. (ok and tostring(ret) or ("ERR " .. tostring(ret))))
+  else
+    dlog("cmd " .. c .. " -> unknown")
+  end
 end
 
 ----------------------------------------------------------------
@@ -1555,6 +1596,13 @@ function M.tick(dt)
     install_skill_hooks()
     install_jackpot()
     apply_draw_page()
+    -- 面板加的物品每 0.5s 检查一次：游戏重建 _itemPurchased 后立刻补回
+    if next(injected_items) ~= nil and injected_need() then pcall(injected_apply) end
+    -- 「一键清除所有核心」之后持续压制，游戏重新灌 loadout 也会被清掉
+    if cores_wiped then
+      local r = cores_remove_all()
+      if r and r > 0 then dlog("core wipe again " .. r) end
+    end
   end
 
   apply_once()
