@@ -44,8 +44,6 @@
 
 面板左上角显示的版本号（vX.Y.Z）由编译时注入，和 release 版本一致。`trainer_backend.lua` 是面板的后端逻辑（纯 Lua），已随 game.love 打进 IPA，不用另外装。
 
-越狱设备也可以用 `SlotboundTrainer.dylib`（Dobby hook 版），装法见 `assistant/` 里的说明。
-
 ## 版本对照
 
 | 移植版 | 基于 PC 版 | 说明 |
