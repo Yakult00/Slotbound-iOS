@@ -11,58 +11,58 @@ local var_0_5 = require("src.ui.config")
 local var_0_6 = require("src.ui.widgets").count_impact
 local var_0_7 = {}
 local var_0_8 = {
-	noviceshield = "src/sprites/icons/menu/upgrade/12noviceshield.png",
-	firstcorespin = "src/sprites/icons/menu/upgrade/29firstcorespin.png",
-	maxhp2 = "src/sprites/icons/menu/upgrade/18heartII.png",
-	corereroll = "src/sprites/icons/menu/upgrade/22corereroll.png",
-	maxhp = "src/sprites/icons/menu/upgrade/02heart.png",
 	slotrare = "src/sprites/icons/menu/upgrade/21rareresearch1.png",
-	maxunit3 = "src/sprites/icons/menu/upgrade/11maxunit3.png",
-	slotadvanced3 = "src/sprites/icons/menu/upgrade/20advancedresearch3.png",
-	maxunit2 = "src/sprites/icons/menu/upgrade/10maxunit2.png",
-	startingmerccontract = "src/sprites/icons/menu/upgrade/31merccontract.png",
-	maxunit = "src/sprites/icons/menu/upgrade/03maxunit.png",
-	startgold = "src/sprites/icons/menu/upgrade/13startgold.png",
-	shoppin = "src/sprites/icons/menu/upgrade/28shoppin.png",
-	slotodds = "src/sprites/icons/menu/upgrade/01slotodds.png",
-	itemresearch = "src/sprites/icons/menu/upgrade/27debuffitemresearch.png",
-	slotprism = "src/sprites/icons/menu/upgrade/36prismresearch1.png",
-	iteminventory2 = "src/sprites/icons/menu/upgrade/26iteminventory2.png",
-	slotprism2 = "src/sprites/icons/menu/upgrade/36prismresearch2.png",
-	slotprism3 = "src/sprites/icons/menu/upgrade/36prismresearch3.png",
-	fatestone = "src/sprites/icons/menu/upgrade/36fatestone.png",
-	stonetwin = "src/sprites/icons/menu/upgrade/37stonetwin.png",
-	stonebreeze = "src/sprites/icons/menu/upgrade/38stonebreeze.png",
-	stoneomen = "src/sprites/icons/menu/upgrade/39stoneomen.png",
-	stonespecial = "src/sprites/icons/menu/upgrade/40stonespecial.png",
-	stonemastery = "src/sprites/icons/menu/upgrade/41stonemastery.png",
-	stonerift = "src/sprites/icons/menu/upgrade/42stonerift.png",
-	stoneconstellation = "src/sprites/icons/menu/upgrade/43stoneconstellation.png",
-	stonesanctum = "src/sprites/icons/menu/upgrade/44stonesanctum.png",
-	stonegambit = "src/sprites/icons/menu/upgrade/45stonegambit.png",
-	preptime2 = "src/sprites/icons/menu/upgrade/08prephourglass2.png",
-	slotlegend3 = "src/sprites/icons/menu/upgrade/35legendresearch3.png",
-	preptimerdisabled = "src/sprites/icons/menu/upgrade/09prephourglass3.png",
-	slotlegend2 = "src/sprites/icons/menu/upgrade/35legendresearch2.png",
-	slotlegend = "src/sprites/icons/menu/upgrade/35legendresearch1.png",
-	slotrare3 = "src/sprites/icons/menu/upgrade/21rareresearch3.png",
 	slotrare2 = "src/sprites/icons/menu/upgrade/21rareresearch2.png",
-	factionsynergy = "src/sprites/icons/menu/upgrade/34factionsynergy.png",
-	growthbranch = "src/sprites/icons/menu/upgrade/33growthbranch.png",
-	dormantpower = "src/sprites/icons/menu/upgrade/32dormantpower.png",
-	interest = "src/sprites/icons/menu/upgrade/07InterestBonus.png",
-	preptime = "src/sprites/icons/menu/upgrade/06prephourglass.png",
-	slotnudge = "src/sprites/icons/menu/upgrade/05nudge.png",
-	startgold2 = "src/sprites/icons/menu/upgrade/17startgold2.png",
-	comebackgold = "src/sprites/icons/menu/upgrade/16comebackgold.png",
-	gateheal = "src/sprites/icons/menu/upgrade/15regenhp.png",
-	itemrefund = "src/sprites/icons/menu/upgrade/25refundbook.png",
-	comebackspin = "src/sprites/icons/menu/upgrade/14emergencygrant.png",
-	iteminventory = "src/sprites/icons/menu/upgrade/24iteminventory.png",
+	slotadvanced3 = "src/sprites/icons/menu/upgrade/20advancedresearch3.png",
+	slotrare3 = "src/sprites/icons/menu/upgrade/21rareresearch3.png",
 	slotadvanced2 = "src/sprites/icons/menu/upgrade/19advancedresearch2.png",
-	shopreroll = "src/sprites/icons/menu/upgrade/23shopreroll.png",
+	slotlegend = "src/sprites/icons/menu/upgrade/35legendresearch1.png",
 	slotadvanced = "src/sprites/icons/menu/upgrade/04advancedresearch1.png",
-	firstcoreuncommon = "src/sprites/icons/menu/upgrade/30corechoice.png"
+	slotlegend2 = "src/sprites/icons/menu/upgrade/35legendresearch2.png",
+	slotodds = "src/sprites/icons/menu/upgrade/01slotodds.png",
+	slotlegend3 = "src/sprites/icons/menu/upgrade/35legendresearch3.png",
+	factionsynergy = "src/sprites/icons/menu/upgrade/34factionsynergy.png",
+	slotprism = "src/sprites/icons/menu/upgrade/36prismresearch1.png",
+	growthbranch = "src/sprites/icons/menu/upgrade/33growthbranch.png",
+	slotprism2 = "src/sprites/icons/menu/upgrade/36prismresearch2.png",
+	dormantpower = "src/sprites/icons/menu/upgrade/32dormantpower.png",
+	slotprism3 = "src/sprites/icons/menu/upgrade/36prismresearch3.png",
+	interest = "src/sprites/icons/menu/upgrade/07InterestBonus.png",
+	fatestone = "src/sprites/icons/menu/upgrade/36fatestone.png",
+	preptime = "src/sprites/icons/menu/upgrade/06prephourglass.png",
+	stonetwin = "src/sprites/icons/menu/upgrade/37stonetwin.png",
+	slotnudge = "src/sprites/icons/menu/upgrade/05nudge.png",
+	stonebreeze = "src/sprites/icons/menu/upgrade/38stonebreeze.png",
+	startgold2 = "src/sprites/icons/menu/upgrade/17startgold2.png",
+	stoneomen = "src/sprites/icons/menu/upgrade/39stoneomen.png",
+	comebackgold = "src/sprites/icons/menu/upgrade/16comebackgold.png",
+	stonespecial = "src/sprites/icons/menu/upgrade/40stonespecial.png",
+	gateheal = "src/sprites/icons/menu/upgrade/15regenhp.png",
+	stonemastery = "src/sprites/icons/menu/upgrade/41stonemastery.png",
+	comebackspin = "src/sprites/icons/menu/upgrade/14emergencygrant.png",
+	stonerift = "src/sprites/icons/menu/upgrade/42stonerift.png",
+	startingmerccontract = "src/sprites/icons/menu/upgrade/31merccontract.png",
+	stoneconstellation = "src/sprites/icons/menu/upgrade/43stoneconstellation.png",
+	startgold = "src/sprites/icons/menu/upgrade/13startgold.png",
+	stonesanctum = "src/sprites/icons/menu/upgrade/44stonesanctum.png",
+	noviceshield = "src/sprites/icons/menu/upgrade/12noviceshield.png",
+	stonegambit = "src/sprites/icons/menu/upgrade/45stonegambit.png",
+	maxhp2 = "src/sprites/icons/menu/upgrade/18heartII.png",
+	preptime2 = "src/sprites/icons/menu/upgrade/08prephourglass2.png",
+	maxhp = "src/sprites/icons/menu/upgrade/02heart.png",
+	preptimerdisabled = "src/sprites/icons/menu/upgrade/09prephourglass3.png",
+	maxunit3 = "src/sprites/icons/menu/upgrade/11maxunit3.png",
+	maxunit2 = "src/sprites/icons/menu/upgrade/10maxunit2.png",
+	maxunit = "src/sprites/icons/menu/upgrade/03maxunit.png",
+	shoppin = "src/sprites/icons/menu/upgrade/28shoppin.png",
+	itemresearch = "src/sprites/icons/menu/upgrade/27debuffitemresearch.png",
+	iteminventory2 = "src/sprites/icons/menu/upgrade/26iteminventory2.png",
+	itemrefund = "src/sprites/icons/menu/upgrade/25refundbook.png",
+	iteminventory = "src/sprites/icons/menu/upgrade/24iteminventory.png",
+	shopreroll = "src/sprites/icons/menu/upgrade/23shopreroll.png",
+	firstcoreuncommon = "src/sprites/icons/menu/upgrade/30corechoice.png",
+	firstcorespin = "src/sprites/icons/menu/upgrade/29firstcorespin.png",
+	corereroll = "src/sprites/icons/menu/upgrade/22corereroll.png"
 }
 local var_0_9
 local var_0_10
@@ -363,7 +363,6 @@ local var_0_71 = {}
 local function var_0_72(arg_16_0)
 	if not var_0_71[arg_16_0] then
 		var_0_71[arg_16_0] = {
-			flashT = 0,
 			pulseT = 0,
 			shakeAmp = 0,
 			shakeDur = 0,
@@ -371,15 +370,16 @@ local function var_0_72(arg_16_0)
 			pressTimer = 0,
 			scaleY = 1,
 			scaleX = 1,
-			revealed = false,
+			pressed = false,
 			disappearTimer = 0,
 			isDisappearing = false,
 			appearTimer = 0,
 			isAppearing = false,
-			pressed = false,
+			revealed = false,
 			unlockLineProgress = 0,
 			popTimer = 0,
 			isPopping = false,
+			flashT = 0,
 			shineT = love.math.random() * -2,
 			energyParticles = {}
 		}
@@ -766,8 +766,8 @@ local var_0_91 = {
 		cost = 12,
 		nameKey = "upgrade_startingmerccontract_name",
 		nodeId = "A07",
-		unlockCoreKey = "MercContract",
 		stat = "startingmerccontract 0 -> 1",
+		unlockCoreKey = "MercContract",
 		descKey = "upgrade_startingmerccontract_desc"
 	},
 	comebackspin = {
@@ -876,14 +876,14 @@ local var_0_91 = {
 	},
 	slotrare = {
 		statKey = "upgrade_slotrare_stat",
+		cost = 70,
+		stat = "Rare 0% -> 2%",
+		descKey = "upgrade_slotrare_desc",
 		nameKey = "upgrade_slotrare_name",
 		nodeId = "R04",
 		reqFull = true,
 		reqDiff = 2,
-		reqStage = 2,
-		cost = 70,
-		stat = "Rare 0% -> 2%",
-		descKey = "upgrade_slotrare_desc"
+		reqStage = 2
 	},
 	corereroll = {
 		descKey = "upgrade_corereroll_desc",
@@ -944,18 +944,18 @@ local var_0_91 = {
 	itemresearch = {
 		statKey = "upgrade_itemresearch_stat",
 		nameKey = "upgrade_itemresearch_name",
-		cost = 24,
-		nodeId = "M05",
 		stat = "2 specialist items added",
+		nodeId = "M05",
+		cost = 24,
 		hidden = true,
 		descKey = "upgrade_itemresearch_desc"
 	},
 	shoppin = {
 		statKey = "upgrade_shoppin_stat",
 		nameKey = "upgrade_shoppin_name",
-		cost = 30,
-		nodeId = "M02",
 		stat = "Pin product",
+		nodeId = "M02",
+		cost = 30,
 		hidden = true,
 		descKey = "upgrade_shoppin_desc"
 	},
@@ -1016,12 +1016,12 @@ var_0_92("slotrare3", "R06", "slotrare2", 140, -200, -360, {
 	value = "4.5%"
 })
 var_0_92("slotlegend", "R07", "slotrare", 120, -80, -320, {
-	reqStage = 4,
-	grade = "legendary",
-	value = "0.1%",
-	stat = "Legendary 0% -> 0.1%",
 	reqFull = true,
-	reqDiff = 1
+	value = "0.1%",
+	grade = "legendary",
+	stat = "Legendary 0% -> 0.1%",
+	reqDiff = 1,
+	reqStage = 4
 })
 var_0_92("slotlegend2", "R08", "slotlegend", 170, -140, -380, {
 	grade = "legendary",
@@ -1034,12 +1034,12 @@ var_0_92("slotlegend3", "R09", "slotlegend2", 230, -200, -440, {
 	value = "0.4%"
 })
 var_0_92("slotprism", "R10", "slotlegend", 200, -80, -400, {
-	reqStage = 5,
-	grade = "prism",
-	value = "0.02%",
-	stat = "Prism 0% -> 0.02%",
 	reqFull = true,
-	reqDiff = 1
+	value = "0.02%",
+	grade = "prism",
+	stat = "Prism 0% -> 0.02%",
+	reqDiff = 1,
+	reqStage = 5
 })
 var_0_92("slotprism2", "R11", "slotprism", 280, -140, -460, {
 	grade = "prism",
@@ -1058,40 +1058,40 @@ var_0_92("stonetwin", "F02", "fatestone", 45, 60, -460, {
 	stat = "Locked -> Unlocked"
 })
 var_0_92("stonebreeze", "F03", "stonetwin", 90, 120, -520, {
-	reqStage = 5,
 	stat = "Locked -> Unlocked",
-	reqDiff = 2
+	reqDiff = 2,
+	reqStage = 5
 })
 var_0_92("stoneomen", "F04", "stonebreeze", 120, 180, -580, {
-	reqStage = 5,
 	stat = "Locked -> Unlocked",
-	reqDiff = 2
+	reqDiff = 2,
+	reqStage = 5
 })
 var_0_92("stonespecial", "F05", "fatestone", 70, 80, -400, {
 	stat = "Locked -> Unlocked"
 })
 var_0_92("stonemastery", "F06", "stonespecial", 130, 140, -460, {
-	reqStage = 5,
 	stat = "Locked -> Unlocked",
-	reqDiff = 2
+	reqDiff = 2,
+	reqStage = 5
 })
 var_0_92("stonerift", "F07", "stonemastery", 170, 200, -520, {
-	reqStage = 5,
 	stat = "Locked -> Unlocked",
-	reqDiff = 2
+	reqDiff = 2,
+	reqStage = 5
 })
 var_0_92("stoneconstellation", "F08", "fatestone", 110, 0, -480, {
 	stat = "Locked -> Unlocked"
 })
 var_0_92("stonesanctum", "F09", "stoneconstellation", 180, 60, -540, {
-	reqStage = 5,
 	stat = "Locked -> Unlocked",
-	reqDiff = 2
+	reqDiff = 2,
+	reqStage = 5
 })
 var_0_92("stonegambit", "F10", "stonesanctum", 230, 120, -600, {
-	reqStage = 5,
 	stat = "Locked -> Unlocked",
-	reqDiff = 2
+	reqDiff = 2,
+	reqStage = 5
 })
 
 for iter_0_1, iter_0_2 in pairs(var_0_91) do
@@ -1118,9 +1118,9 @@ local var_0_93 = {
 	end
 }
 local var_0_94 = {
-	core = "upgrade_unlock_label",
 	item = "upgrade_unlock_item_label",
-	trait = "upgrade_unlock_trait_label"
+	trait = "upgrade_unlock_trait_label",
+	core = "upgrade_unlock_label"
 }
 
 local function var_0_95(arg_34_0, arg_34_1, arg_34_2, arg_34_3, arg_34_4, arg_34_5, arg_34_6, arg_34_7)
@@ -1142,7 +1142,11 @@ local function var_0_95(arg_34_0, arg_34_1, arg_34_2, arg_34_3, arg_34_4, arg_34
 		end
 	end
 
-	if arg_34_7 then
+	if not arg_34_7 then
+		var_34_0.nameKey = "upgrade_" .. arg_34_0 .. "_name"
+		var_34_0.descKey = "upgrade_" .. arg_34_0 .. "_desc"
+		var_34_0.statKey = "upgrade_" .. arg_34_0 .. "_stat"
+	else
 		var_34_0.unlock = arg_34_7
 		var_34_0.wideTooltip = true
 		var_34_0.nameKey, var_34_0.descKey = var_0_93[arg_34_7.kind](arg_34_7)
@@ -1167,10 +1171,6 @@ local function var_0_95(arg_34_0, arg_34_1, arg_34_2, arg_34_3, arg_34_4, arg_34
 			}
 			var_34_0.descKey = "upgrade_unlock_" .. arg_34_7.kind .. "_desc"
 		end
-	else
-		var_34_0.nameKey = "upgrade_" .. arg_34_0 .. "_name"
-		var_34_0.descKey = "upgrade_" .. arg_34_0 .. "_desc"
-		var_34_0.statKey = "upgrade_" .. arg_34_0 .. "_stat"
 	end
 
 	var_0_91[arg_34_0] = var_34_0
@@ -1184,103 +1184,103 @@ var_0_95("corereroll2", "K04", "corereroll", 24, -80, -160, {
 	2
 }, nil)
 var_0_95("unlock_core_31", "C31", "corereroll", 8, -160, -80, nil, {
-	kind = "core",
 	id = "31",
+	kind = "core",
 	key = "GoldTooth"
 })
 var_0_95("unlock_core_28", "C28", "unlock_core_31", 8, -220, -140, nil, {
-	kind = "core",
 	id = "28",
+	kind = "core",
 	key = "ChaliceGreed"
 })
 var_0_95("unlock_core_29", "C29", "unlock_core_28", 12, -280, -200, {
 	1,
 	2
 }, {
-	kind = "core",
 	id = "29",
+	kind = "core",
 	key = "JokerGrin"
 })
 var_0_95("unlock_core_27", "C27", "unlock_core_29", 14, -340, -260, {
 	1,
 	2
 }, {
-	kind = "core",
 	id = "27",
+	kind = "core",
 	key = "WitchTorch"
 })
 var_0_95("unlock_core_19", "C19", "unlock_core_31", 12, -240, -80, nil, {
-	kind = "core",
 	id = "19",
+	kind = "core",
 	key = "BlackNote"
 })
 var_0_95("unlock_core_20", "C20", "unlock_core_19", 12, -300, -140, nil, {
-	kind = "core",
 	id = "20",
+	kind = "core",
 	key = "ResonantAnvil"
 })
 var_0_95("unlock_core_21", "C21", "unlock_core_20", 20, -360, -200, {
 	1,
 	2
 }, {
-	kind = "core",
 	id = "21",
+	kind = "core",
 	key = "CrookedFang"
 })
 var_0_95("unlock_core_25", "C25", "unlock_core_21", 40, -420, -260, {
 	2,
 	2
 }, {
-	kind = "core",
 	id = "25",
+	kind = "core",
 	key = "TricksterCube"
 })
 var_0_95("unlock_core_24", "C24", "unlock_core_25", 40, -480, -320, {
 	2,
 	2
 }, {
-	kind = "core",
 	id = "24",
+	kind = "core",
 	key = "MagicLamp"
 })
 var_0_95("unlock_core_30", "C30", "unlock_core_24", 45, -540, -380, {
 	2,
 	2
 }, {
-	kind = "core",
 	id = "30",
+	kind = "core",
 	key = "FourLeafClover"
 })
 var_0_95("unlock_core_26", "C26", "unlock_core_30", 60, -600, -440, {
 	3,
 	2
 }, {
-	kind = "core",
 	id = "26",
+	kind = "core",
 	key = "HammerOfFate"
 })
 var_0_95("unlock_core_22", "C22", "unlock_core_19", 40, -320, -80, {
 	1,
 	2
 }, {
-	kind = "core",
 	id = "22",
+	kind = "core",
 	key = "Wildcard"
 })
 var_0_95("unlock_core_23", "C23", "unlock_core_22", 45, -380, -140, {
 	1,
 	2
 }, {
-	kind = "core",
 	id = "23",
+	kind = "core",
 	key = "GoldenLever"
 })
 var_0_95("unlock_core_32", "C32", "unlock_core_23", 150, -440, -200, {
 	4,
 	2
 }, {
-	kind = "core",
 	id = "32",
+	kind = "core",
 	key = "EchoShell"
 })
 var_0_95("secondcoreuncommon", "K05", "firstcoreuncommon", 80, -300, -20, {
@@ -1404,48 +1404,48 @@ var_0_95("shopdiscount", "M06", "itemrefund", 50, 280, -200, {
 	2
 }, nil)
 var_0_95("unlock_core_38", "C38", "slotnudge", 5, -280, 40, nil, {
-	kind = "core",
 	id = "38",
+	kind = "core",
 	key = "GreedyPearl"
 })
 var_0_95("unlock_core_36", "C36", "unlock_core_38", 10, -360, 40, {
 	1,
 	2
 }, {
-	kind = "core",
 	id = "36",
+	kind = "core",
 	key = "ReverseAxis"
 })
 var_0_95("unlock_core_37", "C37", "unlock_core_36", 12, -440, 40, {
 	1,
 	2
 }, {
-	kind = "core",
 	id = "37",
+	kind = "core",
 	key = "CycleBell"
 })
 var_0_95("unlock_core_39", "C39", "unlock_core_35", 36, -580, 100, {
 	2,
 	2
 }, {
-	kind = "core",
 	id = "39",
+	kind = "core",
 	key = "JesterCandle"
 })
 var_0_95("unlock_core_40", "C40", "unlock_core_39", 110, -660, 100, {
 	3,
 	2
 }, {
-	kind = "core",
 	id = "40",
+	kind = "core",
 	key = "GoldenCrest"
 })
 var_0_95("unlock_core_35", "C35", "unlock_core_37", 16, -500, 100, {
 	1,
 	2
 }, {
-	kind = "core",
 	id = "35",
+	kind = "core",
 	key = "ReboundAxis"
 })
 var_0_95("blastmachine", "X01", "slotodds", 60, 80, 0, {
@@ -1459,48 +1459,48 @@ var_0_95("unlock_core_43", "C43", "blastmachine", 20, 160, 0, {
 	2,
 	2
 }, {
-	kind = "core",
 	id = "43",
+	kind = "core",
 	key = "BlastCart"
 })
 var_0_95("unlock_core_44", "C44", "unlock_core_43", 20, 240, 0, {
 	2,
 	2
 }, {
-	kind = "core",
 	id = "44",
+	kind = "core",
 	key = "UpdraftFeather"
 })
 var_0_95("unlock_core_45", "C45", "unlock_core_44", 22, 320, 0, {
 	2,
 	2
 }, {
-	kind = "core",
 	id = "45",
+	kind = "core",
 	key = "SporeShroom"
 })
 var_0_95("unlock_core_46", "C46", "unlock_core_45", 50, 380, 60, {
 	3,
 	2
 }, {
-	kind = "core",
 	id = "46",
+	kind = "core",
 	key = "ArsonistLighter"
 })
 var_0_95("unlock_core_47", "C47", "unlock_core_46", 55, 460, 60, {
 	3,
 	2
 }, {
-	kind = "core",
 	id = "47",
+	kind = "core",
 	key = "PowderKeg"
 })
 var_0_95("unlock_core_48", "C48", "unlock_core_47", 150, 540, 60, {
 	4,
 	2
 }, {
-	kind = "core",
 	id = "48",
+	kind = "core",
 	key = "Burstberry"
 })
 var_0_95("blastmastery", "X02", "blastmachine", 30, 140, 60, {
@@ -1613,31 +1613,31 @@ var_0_8.unlock_faction_celestial = "src/sprites/icons/menu/upgrade/56factioncele
 
 for iter_0_3, iter_0_4 in pairs({
 	["32"] = "70coreechoshell",
-	["31"] = "69coregoldtooth",
-	["29"] = "67corejokergrin",
+	["19"] = "57coreblacknote",
 	["28"] = "66corechalicegreed",
-	["23"] = "61coregoldenlever",
+	["36"] = "72corereverseaxis",
+	["29"] = "67corejokergrin",
+	["27"] = "65corewitchtorch",
 	["25"] = "63coretrickstercube",
-	["40"] = "76coregoldencrest",
-	["22"] = "60corewildcard",
+	["38"] = "74coregreedypearl",
+	["24"] = "62coremagiclamp",
+	["26"] = "64corehammeroffate",
+	["44"] = "78coreupdraftfeather",
 	["37"] = "73corecyclebell",
+	["48"] = "82coreburstberry",
+	["30"] = "68corefourleafclover",
+	["43"] = "77coreblastcart",
+	["22"] = "60corewildcard",
+	["45"] = "79coresporeshroom",
+	["31"] = "69coregoldtooth",
+	["46"] = "80corearsonistlighter",
+	["23"] = "61coregoldenlever",
+	["35"] = "71corereboundaxis",
+	["40"] = "76coregoldencrest",
 	["21"] = "59corecrookedfang",
 	["39"] = "75corejestercandle",
-	["24"] = "62coremagiclamp",
-	["45"] = "79coresporeshroom",
 	["20"] = "58coreresonantanvil",
-	["46"] = "80corearsonistlighter",
-	["47"] = "81corepowderkeg",
-	["44"] = "78coreupdraftfeather",
-	["19"] = "57coreblacknote",
-	["36"] = "72corereverseaxis",
-	["43"] = "77coreblastcart",
-	["27"] = "65corewitchtorch",
-	["38"] = "74coregreedypearl",
-	["26"] = "64corehammeroffate",
-	["35"] = "71corereboundaxis",
-	["48"] = "82coreburstberry",
-	["30"] = "68corefourleafclover"
+	["47"] = "81corepowderkeg"
 }) do
 	var_0_8["unlock_core_" .. iter_0_3] = "src/sprites/icons/menu/upgrade/" .. iter_0_4 .. ".png"
 end
@@ -2096,6 +2096,22 @@ function var_0_0.applyUpgradeEffects()
 		var_47_0.legendary = var_47_4
 		var_47_0.prism = var_47_5
 		var_47_0.normal = 1 - var_47_0.advanced - var_47_3 - var_47_4 - var_47_5
+
+		local var_47_6, var_47_7 = pcall(require, "src.game.luck")
+
+		if var_47_6 and type(var_47_7) == "table" and type(var_47_7.grade) == "table" and var_47_7.grade.setResearch then
+			local var_47_8 = 0
+
+			if var_47_2 and var_47_1("slotrare") and var_47_1("slotlegend") then
+				var_47_8 = var_47_1("slotlegend3") and 3 or var_47_1("slotlegend2") and 2 or 1
+			end
+
+			var_47_7.grade.setResearch({
+				full = var_47_2,
+				rare = var_47_2 and var_47_1("slotrare"),
+				legendaryTier = var_47_8
+			})
+		end
 	end
 end
 
@@ -2180,10 +2196,10 @@ function var_0_0.setUpgradeState(arg_50_0)
 	end
 
 	for iter_50_3, iter_50_4 in pairs(var_0_91) do
-		if arg_50_0[iter_50_3] then
-			iter_50_4.maxed = true
-		else
+		if not arg_50_0[iter_50_3] then
 			iter_50_4.maxed = false
+		else
+			iter_50_4.maxed = true
 		end
 	end
 
@@ -2197,204 +2213,303 @@ function var_0_0.setUpgradeState(arg_50_0)
 		end
 	end
 
-	if var_0_91.slotodds.maxed then
+	if not var_0_91.slotodds.maxed then
 		local var_50_4 = var_0_72("maxunit")
 
-		var_50_4.revealed = true
-		var_50_4.unlockLineProgress = 1
+		var_50_4.revealed = false
+		var_50_4.unlockLineProgress = 0
 		var_50_4.isAppearing = false
-		var_50_4.scaleX = 1
-		var_50_4.scaleY = 1
+		var_50_4.isDisappearing = false
+		var_50_4.scaleX = 0
+		var_50_4.scaleY = 0
 
 		local var_50_5 = var_0_72("maxhp")
 
-		var_50_5.revealed = true
-		var_50_5.unlockLineProgress = 1
+		var_50_5.revealed = false
+		var_50_5.unlockLineProgress = 0
 		var_50_5.isAppearing = false
-		var_50_5.scaleX = 1
-		var_50_5.scaleY = 1
+		var_50_5.isDisappearing = false
+		var_50_5.scaleX = 0
+		var_50_5.scaleY = 0
 
 		local var_50_6 = var_0_72("noviceshield")
-		local var_50_7 = var_0_91.maxhp and var_0_91.maxhp.maxed == true
 
-		var_50_6.revealed = var_50_7
-		var_50_6.unlockLineProgress = var_50_7 and 1 or 0
+		var_50_6.revealed = false
+		var_50_6.unlockLineProgress = 0
 		var_50_6.isAppearing = false
-		var_50_6.scaleX = var_50_7 and 1 or 0
-		var_50_6.scaleY = var_50_7 and 1 or 0
+		var_50_6.isDisappearing = false
+		var_50_6.scaleX = 0
+		var_50_6.scaleY = 0
 
-		local var_50_8 = var_0_72("startgold")
+		local var_50_7 = var_0_72("startgold")
 
-		var_50_8.revealed = var_50_7
-		var_50_8.unlockLineProgress = var_50_7 and 1 or 0
+		var_50_7.revealed = false
+		var_50_7.unlockLineProgress = 0
+		var_50_7.isAppearing = false
+		var_50_7.isDisappearing = false
+		var_50_7.scaleX = 0
+		var_50_7.scaleY = 0
+
+		local var_50_8 = var_0_72("comebackspin")
+
+		var_50_8.revealed = false
+		var_50_8.unlockLineProgress = 0
 		var_50_8.isAppearing = false
-		var_50_8.scaleX = var_50_7 and 1 or 0
-		var_50_8.scaleY = var_50_7 and 1 or 0
+		var_50_8.isDisappearing = false
+		var_50_8.scaleX = 0
+		var_50_8.scaleY = 0
 
-		local var_50_9 = var_0_72("comebackspin")
-		local var_50_10 = var_0_91.noviceshield and var_0_91.noviceshield.maxed == true
+		local var_50_9 = var_0_72("gateheal")
 
-		var_50_9.revealed = var_50_10
-		var_50_9.unlockLineProgress = var_50_10 and 1 or 0
+		var_50_9.revealed = false
+		var_50_9.unlockLineProgress = 0
 		var_50_9.isAppearing = false
-		var_50_9.scaleX = var_50_10 and 1 or 0
-		var_50_9.scaleY = var_50_10 and 1 or 0
+		var_50_9.isDisappearing = false
+		var_50_9.scaleX = 0
+		var_50_9.scaleY = 0
 
-		local var_50_11 = var_0_72("gateheal")
-		local var_50_12 = var_0_91.comebackspin and var_0_91.comebackspin.maxed == true
+		local var_50_10 = var_0_72("comebackgold")
 
-		var_50_11.revealed = var_50_12
-		var_50_11.unlockLineProgress = var_50_12 and 1 or 0
+		var_50_10.revealed = false
+		var_50_10.unlockLineProgress = 0
+		var_50_10.isAppearing = false
+		var_50_10.isDisappearing = false
+		var_50_10.scaleX = 0
+		var_50_10.scaleY = 0
+
+		local var_50_11 = var_0_72("maxhp2")
+
+		var_50_11.revealed = false
+		var_50_11.unlockLineProgress = 0
 		var_50_11.isAppearing = false
-		var_50_11.scaleX = var_50_12 and 1 or 0
-		var_50_11.scaleY = var_50_12 and 1 or 0
+		var_50_11.isDisappearing = false
+		var_50_11.scaleX = 0
+		var_50_11.scaleY = 0
 
-		local var_50_13 = var_0_72("comebackgold")
-		local var_50_14 = var_0_91.startgold and var_0_91.startgold.maxed == true
+		local var_50_12 = var_0_72("startgold2")
 
-		var_50_13.revealed = var_50_14
-		var_50_13.unlockLineProgress = var_50_14 and 1 or 0
+		var_50_12.revealed = false
+		var_50_12.unlockLineProgress = 0
+		var_50_12.isAppearing = false
+		var_50_12.isDisappearing = false
+		var_50_12.scaleX = 0
+		var_50_12.scaleY = 0
+
+		local var_50_13 = var_0_72("slotnudge")
+
+		var_50_13.revealed = false
+		var_50_13.unlockLineProgress = 0
 		var_50_13.isAppearing = false
-		var_50_13.scaleX = var_50_14 and 1 or 0
-		var_50_13.scaleY = var_50_14 and 1 or 0
+		var_50_13.isDisappearing = false
+		var_50_13.scaleX = 0
+		var_50_13.scaleY = 0
 
-		local var_50_15 = var_0_72("maxhp2")
-		local var_50_16 = var_0_91.comebackgold and var_0_91.comebackgold.maxed == true
+		local var_50_14 = var_0_72("preptime")
 
-		var_50_15.revealed = var_50_16
-		var_50_15.unlockLineProgress = var_50_16 and 1 or 0
+		var_50_14.revealed = false
+		var_50_14.unlockLineProgress = 0
+		var_50_14.isAppearing = false
+		var_50_14.isDisappearing = false
+		var_50_14.scaleX = 0
+		var_50_14.scaleY = 0
+
+		local var_50_15 = var_0_72("maxunit2")
+
+		var_50_15.revealed = false
+		var_50_15.unlockLineProgress = 0
 		var_50_15.isAppearing = false
-		var_50_15.scaleX = var_50_16 and 1 or 0
-		var_50_15.scaleY = var_50_16 and 1 or 0
+		var_50_15.isDisappearing = false
+		var_50_15.scaleX = 0
+		var_50_15.scaleY = 0
 
-		local var_50_17 = var_0_72("startgold2")
+		local var_50_16 = var_0_72("maxunit3")
 
-		var_50_17.revealed = var_50_14
-		var_50_17.unlockLineProgress = var_50_14 and 1 or 0
+		var_50_16.revealed = false
+		var_50_16.unlockLineProgress = 0
+		var_50_16.isAppearing = false
+		var_50_16.isDisappearing = false
+		var_50_16.scaleX = 0
+		var_50_16.scaleY = 0
+
+		local var_50_17 = var_0_72("interest")
+
+		var_50_17.revealed = false
+		var_50_17.unlockLineProgress = 0
 		var_50_17.isAppearing = false
-		var_50_17.scaleX = var_50_14 and 1 or 0
-		var_50_17.scaleY = var_50_14 and 1 or 0
+		var_50_17.isDisappearing = false
+		var_50_17.scaleX = 0
+		var_50_17.scaleY = 0
 
-		local var_50_18 = var_0_72("slotnudge")
-		local var_50_19 = var_0_91.maxunit and var_0_91.maxunit.maxed == true
+		local var_50_18 = var_0_72("preptime2")
 
-		var_50_18.revealed = var_50_19
-		var_50_18.unlockLineProgress = var_50_19 and 1 or 0
+		var_50_18.revealed = false
+		var_50_18.unlockLineProgress = 0
 		var_50_18.isAppearing = false
-		var_50_18.scaleX = var_50_19 and 1 or 0
-		var_50_18.scaleY = var_50_19 and 1 or 0
+		var_50_18.isDisappearing = false
+		var_50_18.scaleX = 0
+		var_50_18.scaleY = 0
 
-		local var_50_20 = var_0_72("preptime")
+		local var_50_19 = var_0_72("preptimerdisabled")
+
+		var_50_19.revealed = false
+		var_50_19.unlockLineProgress = 0
+		var_50_19.isAppearing = false
+		var_50_19.isDisappearing = false
+		var_50_19.scaleX = 0
+		var_50_19.scaleY = 0
+
+		local var_50_20 = var_0_72("slotadvanced")
 
 		var_50_20.revealed = false
 		var_50_20.unlockLineProgress = 0
 		var_50_20.isAppearing = false
+		var_50_20.isDisappearing = false
 		var_50_20.scaleX = 0
 		var_50_20.scaleY = 0
 
-		local var_50_21 = var_0_72("maxunit2")
+		local var_50_21 = var_0_72("slotadvanced2")
 
-		var_50_21.revealed = var_50_19
-		var_50_21.unlockLineProgress = var_50_19 and 1 or 0
+		var_50_21.revealed = false
+		var_50_21.unlockLineProgress = 0
 		var_50_21.isAppearing = false
-		var_50_21.scaleX = var_50_19 and 1 or 0
-		var_50_21.scaleY = var_50_19 and 1 or 0
+		var_50_21.isDisappearing = false
+		var_50_21.scaleX = 0
+		var_50_21.scaleY = 0
 
-		local var_50_22 = var_0_72("maxunit3")
-		local var_50_23 = var_0_91.maxunit2 and var_0_91.maxunit2.maxed == true
+		local var_50_22 = var_0_72("corereroll")
 
-		var_50_22.revealed = var_50_23
-		var_50_22.unlockLineProgress = var_50_23 and 1 or 0
+		var_50_22.revealed = false
+		var_50_22.unlockLineProgress = 0
 		var_50_22.isAppearing = false
-		var_50_22.scaleX = var_50_23 and 1 or 0
-		var_50_22.scaleY = var_50_23 and 1 or 0
+		var_50_22.isDisappearing = false
+		var_50_22.scaleX = 0
+		var_50_22.scaleY = 0
 
-		local var_50_24 = var_0_72("interest")
+		local var_50_23 = var_0_72("firstcorespin")
 
-		var_50_24.revealed = var_50_19
-		var_50_24.unlockLineProgress = var_50_19 and 1 or 0
+		var_50_23.revealed = false
+		var_50_23.unlockLineProgress = 0
+		var_50_23.isAppearing = false
+		var_50_23.isDisappearing = false
+		var_50_23.scaleX = 0
+		var_50_23.scaleY = 0
+
+		local var_50_24 = var_0_72("firstcoreuncommon")
+
+		var_50_24.revealed = false
+		var_50_24.unlockLineProgress = 0
 		var_50_24.isAppearing = false
-		var_50_24.scaleX = var_50_19 and 1 or 0
-		var_50_24.scaleY = var_50_19 and 1 or 0
+		var_50_24.isDisappearing = false
+		var_50_24.scaleX = 0
+		var_50_24.scaleY = 0
 
-		local var_50_25 = var_0_72("preptime2")
+		local var_50_25 = var_0_72("shopreroll")
 
 		var_50_25.revealed = false
 		var_50_25.unlockLineProgress = 0
 		var_50_25.isAppearing = false
+		var_50_25.isDisappearing = false
 		var_50_25.scaleX = 0
 		var_50_25.scaleY = 0
 
-		local var_50_26 = var_0_72("preptimerdisabled")
+		local var_50_26 = var_0_72("iteminventory")
 
 		var_50_26.revealed = false
 		var_50_26.unlockLineProgress = 0
 		var_50_26.isAppearing = false
+		var_50_26.isDisappearing = false
 		var_50_26.scaleX = 0
 		var_50_26.scaleY = 0
 
-		local var_50_27 = var_0_72("slotadvanced")
+		local var_50_27 = var_0_72("itemrefund")
 
-		var_50_27.revealed = true
-		var_50_27.unlockLineProgress = 1
+		var_50_27.revealed = false
+		var_50_27.unlockLineProgress = 0
 		var_50_27.isAppearing = false
-		var_50_27.scaleX = 1
-		var_50_27.scaleY = 1
+		var_50_27.isDisappearing = false
+		var_50_27.scaleX = 0
+		var_50_27.scaleY = 0
 
-		local var_50_28 = var_0_72("slotadvanced2")
-		local var_50_29 = var_0_91.slotadvanced and var_0_91.slotadvanced.maxed == true
+		local var_50_28 = var_0_72("iteminventory2")
 
-		var_50_28.revealed = var_50_29
-		var_50_28.unlockLineProgress = var_50_29 and 1 or 0
+		var_50_28.revealed = false
+		var_50_28.unlockLineProgress = 0
 		var_50_28.isAppearing = false
-		var_50_28.scaleX = var_50_29 and 1 or 0
-		var_50_28.scaleY = var_50_29 and 1 or 0
+		var_50_28.isDisappearing = false
+		var_50_28.scaleX = 0
+		var_50_28.scaleY = 0
 
-		local var_50_30 = var_0_72("corereroll")
+		local var_50_29 = var_0_72("itemresearch")
 
-		var_50_30.revealed = var_50_29
-		var_50_30.unlockLineProgress = var_50_29 and 1 or 0
+		var_50_29.revealed = false
+		var_50_29.unlockLineProgress = 0
+		var_50_29.isAppearing = false
+		var_50_29.isDisappearing = false
+		var_50_29.scaleX = 0
+		var_50_29.scaleY = 0
+
+		local var_50_30 = var_0_72("shoppin")
+
+		var_50_30.revealed = false
+		var_50_30.unlockLineProgress = 0
 		var_50_30.isAppearing = false
-		var_50_30.scaleX = var_50_29 and 1 or 0
-		var_50_30.scaleY = var_50_29 and 1 or 0
+		var_50_30.isDisappearing = false
+		var_50_30.scaleX = 0
+		var_50_30.scaleY = 0
 
-		local var_50_31 = var_0_72("firstcorespin")
-		local var_50_32 = var_0_91.corereroll and var_0_91.corereroll.maxed == true
+		local var_50_31 = var_0_72("slotadvanced3")
 
-		var_50_31.revealed = var_50_32
-		var_50_31.unlockLineProgress = var_50_32 and 1 or 0
+		var_50_31.revealed = false
+		var_50_31.unlockLineProgress = 0
 		var_50_31.isAppearing = false
-		var_50_31.scaleX = var_50_32 and 1 or 0
-		var_50_31.scaleY = var_50_32 and 1 or 0
+		var_50_31.isDisappearing = false
+		var_50_31.scaleX = 0
+		var_50_31.scaleY = 0
 
-		local var_50_33 = var_0_72("firstcoreuncommon")
-		local var_50_34 = var_0_91.firstcorespin and var_0_91.firstcorespin.maxed == true
+		local var_50_32 = var_0_72("slotrare")
 
-		var_50_33.revealed = var_50_34
-		var_50_33.unlockLineProgress = var_50_34 and 1 or 0
+		var_50_32.revealed = false
+		var_50_32.unlockLineProgress = 0
+		var_50_32.isAppearing = false
+		var_50_32.isDisappearing = false
+		var_50_32.scaleX = 0
+		var_50_32.scaleY = 0
+	else
+		local var_50_33 = var_0_72("maxunit")
+
+		var_50_33.revealed = true
+		var_50_33.unlockLineProgress = 1
 		var_50_33.isAppearing = false
-		var_50_33.scaleX = var_50_34 and 1 or 0
-		var_50_33.scaleY = var_50_34 and 1 or 0
+		var_50_33.scaleX = 1
+		var_50_33.scaleY = 1
 
-		local var_50_35 = var_0_72("shopreroll")
+		local var_50_34 = var_0_72("maxhp")
 
-		var_50_35.revealed = var_50_29
-		var_50_35.unlockLineProgress = var_50_29 and 1 or 0
+		var_50_34.revealed = true
+		var_50_34.unlockLineProgress = 1
+		var_50_34.isAppearing = false
+		var_50_34.scaleX = 1
+		var_50_34.scaleY = 1
+
+		local var_50_35 = var_0_72("noviceshield")
+		local var_50_36 = var_0_91.maxhp and var_0_91.maxhp.maxed == true
+
+		var_50_35.revealed = var_50_36
+		var_50_35.unlockLineProgress = var_50_36 and 1 or 0
 		var_50_35.isAppearing = false
-		var_50_35.scaleX = var_50_29 and 1 or 0
-		var_50_35.scaleY = var_50_29 and 1 or 0
+		var_50_35.scaleX = var_50_36 and 1 or 0
+		var_50_35.scaleY = var_50_36 and 1 or 0
 
-		local var_50_36 = var_0_72("iteminventory")
-		local var_50_37 = var_0_91.shopreroll and var_0_91.shopreroll.maxed == true
+		local var_50_37 = var_0_72("startgold")
 
-		var_50_36.revealed = var_50_37
-		var_50_36.unlockLineProgress = var_50_37 and 1 or 0
-		var_50_36.isAppearing = false
-		var_50_36.scaleX = var_50_37 and 1 or 0
-		var_50_36.scaleY = var_50_37 and 1 or 0
+		var_50_37.revealed = var_50_36
+		var_50_37.unlockLineProgress = var_50_36 and 1 or 0
+		var_50_37.isAppearing = false
+		var_50_37.scaleX = var_50_36 and 1 or 0
+		var_50_37.scaleY = var_50_36 and 1 or 0
 
-		local var_50_38 = var_0_72("itemrefund")
-		local var_50_39 = var_0_91.iteminventory and var_0_91.iteminventory.maxed == true
+		local var_50_38 = var_0_72("comebackspin")
+		local var_50_39 = var_0_91.noviceshield and var_0_91.noviceshield.maxed == true
 
 		var_50_38.revealed = var_50_39
 		var_50_38.unlockLineProgress = var_50_39 and 1 or 0
@@ -2402,308 +2517,209 @@ function var_0_0.setUpgradeState(arg_50_0)
 		var_50_38.scaleX = var_50_39 and 1 or 0
 		var_50_38.scaleY = var_50_39 and 1 or 0
 
-		local var_50_40 = var_0_72("iteminventory2")
+		local var_50_40 = var_0_72("gateheal")
+		local var_50_41 = var_0_91.comebackspin and var_0_91.comebackspin.maxed == true
 
-		var_50_40.revealed = var_50_39
-		var_50_40.unlockLineProgress = var_50_39 and 1 or 0
+		var_50_40.revealed = var_50_41
+		var_50_40.unlockLineProgress = var_50_41 and 1 or 0
 		var_50_40.isAppearing = false
-		var_50_40.scaleX = var_50_39 and 1 or 0
-		var_50_40.scaleY = var_50_39 and 1 or 0
+		var_50_40.scaleX = var_50_41 and 1 or 0
+		var_50_40.scaleY = var_50_41 and 1 or 0
 
-		local var_50_41 = var_0_72("itemresearch")
+		local var_50_42 = var_0_72("comebackgold")
+		local var_50_43 = var_0_91.startgold and var_0_91.startgold.maxed == true
 
-		var_50_41.revealed = var_50_37
-		var_50_41.unlockLineProgress = var_50_37 and 1 or 0
-		var_50_41.isAppearing = false
-		var_50_41.scaleX = var_50_37 and 1 or 0
-		var_50_41.scaleY = var_50_37 and 1 or 0
-
-		local var_50_42 = var_0_72("shoppin")
-
-		var_50_42.revealed = var_50_37
-		var_50_42.unlockLineProgress = var_50_37 and 1 or 0
+		var_50_42.revealed = var_50_43
+		var_50_42.unlockLineProgress = var_50_43 and 1 or 0
 		var_50_42.isAppearing = false
-		var_50_42.scaleX = var_50_37 and 1 or 0
-		var_50_42.scaleY = var_50_37 and 1 or 0
+		var_50_42.scaleX = var_50_43 and 1 or 0
+		var_50_42.scaleY = var_50_43 and 1 or 0
 
-		local var_50_43 = var_0_72("slotadvanced3")
-		local var_50_44 = var_0_91.slotadvanced2 and var_0_91.slotadvanced2.maxed == true
+		local var_50_44 = var_0_72("maxhp2")
+		local var_50_45 = var_0_91.comebackgold and var_0_91.comebackgold.maxed == true
 
-		var_50_43.revealed = var_50_44
-		var_50_43.unlockLineProgress = var_50_44 and 1 or 0
-		var_50_43.isAppearing = false
-		var_50_43.scaleX = var_50_44 and 1 or 0
-		var_50_43.scaleY = var_50_44 and 1 or 0
+		var_50_44.revealed = var_50_45
+		var_50_44.unlockLineProgress = var_50_45 and 1 or 0
+		var_50_44.isAppearing = false
+		var_50_44.scaleX = var_50_45 and 1 or 0
+		var_50_44.scaleY = var_50_45 and 1 or 0
 
-		local var_50_45 = var_0_72("slotrare")
-		local var_50_46 = var_0_91.slotadvanced3 and var_0_91.slotadvanced3.maxed == true
+		local var_50_46 = var_0_72("startgold2")
 
-		var_50_45.revealed = var_50_46
-		var_50_45.unlockLineProgress = var_50_46 and 1 or 0
-		var_50_45.isAppearing = false
-		var_50_45.scaleX = var_50_46 and 1 or 0
-		var_50_45.scaleY = var_50_46 and 1 or 0
-	else
-		local var_50_47 = var_0_72("maxunit")
+		var_50_46.revealed = var_50_43
+		var_50_46.unlockLineProgress = var_50_43 and 1 or 0
+		var_50_46.isAppearing = false
+		var_50_46.scaleX = var_50_43 and 1 or 0
+		var_50_46.scaleY = var_50_43 and 1 or 0
 
-		var_50_47.revealed = false
-		var_50_47.unlockLineProgress = 0
+		local var_50_47 = var_0_72("slotnudge")
+		local var_50_48 = var_0_91.maxunit and var_0_91.maxunit.maxed == true
+
+		var_50_47.revealed = var_50_48
+		var_50_47.unlockLineProgress = var_50_48 and 1 or 0
 		var_50_47.isAppearing = false
-		var_50_47.isDisappearing = false
-		var_50_47.scaleX = 0
-		var_50_47.scaleY = 0
+		var_50_47.scaleX = var_50_48 and 1 or 0
+		var_50_47.scaleY = var_50_48 and 1 or 0
 
-		local var_50_48 = var_0_72("maxhp")
-
-		var_50_48.revealed = false
-		var_50_48.unlockLineProgress = 0
-		var_50_48.isAppearing = false
-		var_50_48.isDisappearing = false
-		var_50_48.scaleX = 0
-		var_50_48.scaleY = 0
-
-		local var_50_49 = var_0_72("noviceshield")
+		local var_50_49 = var_0_72("preptime")
 
 		var_50_49.revealed = false
 		var_50_49.unlockLineProgress = 0
 		var_50_49.isAppearing = false
-		var_50_49.isDisappearing = false
 		var_50_49.scaleX = 0
 		var_50_49.scaleY = 0
 
-		local var_50_50 = var_0_72("startgold")
+		local var_50_50 = var_0_72("maxunit2")
 
-		var_50_50.revealed = false
-		var_50_50.unlockLineProgress = 0
+		var_50_50.revealed = var_50_48
+		var_50_50.unlockLineProgress = var_50_48 and 1 or 0
 		var_50_50.isAppearing = false
-		var_50_50.isDisappearing = false
-		var_50_50.scaleX = 0
-		var_50_50.scaleY = 0
+		var_50_50.scaleX = var_50_48 and 1 or 0
+		var_50_50.scaleY = var_50_48 and 1 or 0
 
-		local var_50_51 = var_0_72("comebackspin")
+		local var_50_51 = var_0_72("maxunit3")
+		local var_50_52 = var_0_91.maxunit2 and var_0_91.maxunit2.maxed == true
 
-		var_50_51.revealed = false
-		var_50_51.unlockLineProgress = 0
+		var_50_51.revealed = var_50_52
+		var_50_51.unlockLineProgress = var_50_52 and 1 or 0
 		var_50_51.isAppearing = false
-		var_50_51.isDisappearing = false
-		var_50_51.scaleX = 0
-		var_50_51.scaleY = 0
+		var_50_51.scaleX = var_50_52 and 1 or 0
+		var_50_51.scaleY = var_50_52 and 1 or 0
 
-		local var_50_52 = var_0_72("gateheal")
+		local var_50_53 = var_0_72("interest")
 
-		var_50_52.revealed = false
-		var_50_52.unlockLineProgress = 0
-		var_50_52.isAppearing = false
-		var_50_52.isDisappearing = false
-		var_50_52.scaleX = 0
-		var_50_52.scaleY = 0
-
-		local var_50_53 = var_0_72("comebackgold")
-
-		var_50_53.revealed = false
-		var_50_53.unlockLineProgress = 0
+		var_50_53.revealed = var_50_48
+		var_50_53.unlockLineProgress = var_50_48 and 1 or 0
 		var_50_53.isAppearing = false
-		var_50_53.isDisappearing = false
-		var_50_53.scaleX = 0
-		var_50_53.scaleY = 0
+		var_50_53.scaleX = var_50_48 and 1 or 0
+		var_50_53.scaleY = var_50_48 and 1 or 0
 
-		local var_50_54 = var_0_72("maxhp2")
+		local var_50_54 = var_0_72("preptime2")
 
 		var_50_54.revealed = false
 		var_50_54.unlockLineProgress = 0
 		var_50_54.isAppearing = false
-		var_50_54.isDisappearing = false
 		var_50_54.scaleX = 0
 		var_50_54.scaleY = 0
 
-		local var_50_55 = var_0_72("startgold2")
+		local var_50_55 = var_0_72("preptimerdisabled")
 
 		var_50_55.revealed = false
 		var_50_55.unlockLineProgress = 0
 		var_50_55.isAppearing = false
-		var_50_55.isDisappearing = false
 		var_50_55.scaleX = 0
 		var_50_55.scaleY = 0
 
-		local var_50_56 = var_0_72("slotnudge")
+		local var_50_56 = var_0_72("slotadvanced")
 
-		var_50_56.revealed = false
-		var_50_56.unlockLineProgress = 0
+		var_50_56.revealed = true
+		var_50_56.unlockLineProgress = 1
 		var_50_56.isAppearing = false
-		var_50_56.isDisappearing = false
-		var_50_56.scaleX = 0
-		var_50_56.scaleY = 0
+		var_50_56.scaleX = 1
+		var_50_56.scaleY = 1
 
-		local var_50_57 = var_0_72("preptime")
+		local var_50_57 = var_0_72("slotadvanced2")
+		local var_50_58 = var_0_91.slotadvanced and var_0_91.slotadvanced.maxed == true
 
-		var_50_57.revealed = false
-		var_50_57.unlockLineProgress = 0
+		var_50_57.revealed = var_50_58
+		var_50_57.unlockLineProgress = var_50_58 and 1 or 0
 		var_50_57.isAppearing = false
-		var_50_57.isDisappearing = false
-		var_50_57.scaleX = 0
-		var_50_57.scaleY = 0
+		var_50_57.scaleX = var_50_58 and 1 or 0
+		var_50_57.scaleY = var_50_58 and 1 or 0
 
-		local var_50_58 = var_0_72("maxunit2")
+		local var_50_59 = var_0_72("corereroll")
 
-		var_50_58.revealed = false
-		var_50_58.unlockLineProgress = 0
-		var_50_58.isAppearing = false
-		var_50_58.isDisappearing = false
-		var_50_58.scaleX = 0
-		var_50_58.scaleY = 0
-
-		local var_50_59 = var_0_72("maxunit3")
-
-		var_50_59.revealed = false
-		var_50_59.unlockLineProgress = 0
+		var_50_59.revealed = var_50_58
+		var_50_59.unlockLineProgress = var_50_58 and 1 or 0
 		var_50_59.isAppearing = false
-		var_50_59.isDisappearing = false
-		var_50_59.scaleX = 0
-		var_50_59.scaleY = 0
+		var_50_59.scaleX = var_50_58 and 1 or 0
+		var_50_59.scaleY = var_50_58 and 1 or 0
 
-		local var_50_60 = var_0_72("interest")
+		local var_50_60 = var_0_72("firstcorespin")
+		local var_50_61 = var_0_91.corereroll and var_0_91.corereroll.maxed == true
 
-		var_50_60.revealed = false
-		var_50_60.unlockLineProgress = 0
+		var_50_60.revealed = var_50_61
+		var_50_60.unlockLineProgress = var_50_61 and 1 or 0
 		var_50_60.isAppearing = false
-		var_50_60.isDisappearing = false
-		var_50_60.scaleX = 0
-		var_50_60.scaleY = 0
+		var_50_60.scaleX = var_50_61 and 1 or 0
+		var_50_60.scaleY = var_50_61 and 1 or 0
 
-		local var_50_61 = var_0_72("preptime2")
+		local var_50_62 = var_0_72("firstcoreuncommon")
+		local var_50_63 = var_0_91.firstcorespin and var_0_91.firstcorespin.maxed == true
 
-		var_50_61.revealed = false
-		var_50_61.unlockLineProgress = 0
-		var_50_61.isAppearing = false
-		var_50_61.isDisappearing = false
-		var_50_61.scaleX = 0
-		var_50_61.scaleY = 0
-
-		local var_50_62 = var_0_72("preptimerdisabled")
-
-		var_50_62.revealed = false
-		var_50_62.unlockLineProgress = 0
+		var_50_62.revealed = var_50_63
+		var_50_62.unlockLineProgress = var_50_63 and 1 or 0
 		var_50_62.isAppearing = false
-		var_50_62.isDisappearing = false
-		var_50_62.scaleX = 0
-		var_50_62.scaleY = 0
+		var_50_62.scaleX = var_50_63 and 1 or 0
+		var_50_62.scaleY = var_50_63 and 1 or 0
 
-		local var_50_63 = var_0_72("slotadvanced")
+		local var_50_64 = var_0_72("shopreroll")
 
-		var_50_63.revealed = false
-		var_50_63.unlockLineProgress = 0
-		var_50_63.isAppearing = false
-		var_50_63.isDisappearing = false
-		var_50_63.scaleX = 0
-		var_50_63.scaleY = 0
-
-		local var_50_64 = var_0_72("slotadvanced2")
-
-		var_50_64.revealed = false
-		var_50_64.unlockLineProgress = 0
+		var_50_64.revealed = var_50_58
+		var_50_64.unlockLineProgress = var_50_58 and 1 or 0
 		var_50_64.isAppearing = false
-		var_50_64.isDisappearing = false
-		var_50_64.scaleX = 0
-		var_50_64.scaleY = 0
+		var_50_64.scaleX = var_50_58 and 1 or 0
+		var_50_64.scaleY = var_50_58 and 1 or 0
 
-		local var_50_65 = var_0_72("corereroll")
+		local var_50_65 = var_0_72("iteminventory")
+		local var_50_66 = var_0_91.shopreroll and var_0_91.shopreroll.maxed == true
 
-		var_50_65.revealed = false
-		var_50_65.unlockLineProgress = 0
+		var_50_65.revealed = var_50_66
+		var_50_65.unlockLineProgress = var_50_66 and 1 or 0
 		var_50_65.isAppearing = false
-		var_50_65.isDisappearing = false
-		var_50_65.scaleX = 0
-		var_50_65.scaleY = 0
+		var_50_65.scaleX = var_50_66 and 1 or 0
+		var_50_65.scaleY = var_50_66 and 1 or 0
 
-		local var_50_66 = var_0_72("firstcorespin")
+		local var_50_67 = var_0_72("itemrefund")
+		local var_50_68 = var_0_91.iteminventory and var_0_91.iteminventory.maxed == true
 
-		var_50_66.revealed = false
-		var_50_66.unlockLineProgress = 0
-		var_50_66.isAppearing = false
-		var_50_66.isDisappearing = false
-		var_50_66.scaleX = 0
-		var_50_66.scaleY = 0
-
-		local var_50_67 = var_0_72("firstcoreuncommon")
-
-		var_50_67.revealed = false
-		var_50_67.unlockLineProgress = 0
+		var_50_67.revealed = var_50_68
+		var_50_67.unlockLineProgress = var_50_68 and 1 or 0
 		var_50_67.isAppearing = false
-		var_50_67.isDisappearing = false
-		var_50_67.scaleX = 0
-		var_50_67.scaleY = 0
+		var_50_67.scaleX = var_50_68 and 1 or 0
+		var_50_67.scaleY = var_50_68 and 1 or 0
 
-		local var_50_68 = var_0_72("shopreroll")
+		local var_50_69 = var_0_72("iteminventory2")
 
-		var_50_68.revealed = false
-		var_50_68.unlockLineProgress = 0
-		var_50_68.isAppearing = false
-		var_50_68.isDisappearing = false
-		var_50_68.scaleX = 0
-		var_50_68.scaleY = 0
-
-		local var_50_69 = var_0_72("iteminventory")
-
-		var_50_69.revealed = false
-		var_50_69.unlockLineProgress = 0
+		var_50_69.revealed = var_50_68
+		var_50_69.unlockLineProgress = var_50_68 and 1 or 0
 		var_50_69.isAppearing = false
-		var_50_69.isDisappearing = false
-		var_50_69.scaleX = 0
-		var_50_69.scaleY = 0
+		var_50_69.scaleX = var_50_68 and 1 or 0
+		var_50_69.scaleY = var_50_68 and 1 or 0
 
-		local var_50_70 = var_0_72("itemrefund")
+		local var_50_70 = var_0_72("itemresearch")
 
-		var_50_70.revealed = false
-		var_50_70.unlockLineProgress = 0
+		var_50_70.revealed = var_50_66
+		var_50_70.unlockLineProgress = var_50_66 and 1 or 0
 		var_50_70.isAppearing = false
-		var_50_70.isDisappearing = false
-		var_50_70.scaleX = 0
-		var_50_70.scaleY = 0
+		var_50_70.scaleX = var_50_66 and 1 or 0
+		var_50_70.scaleY = var_50_66 and 1 or 0
 
-		local var_50_71 = var_0_72("iteminventory2")
+		local var_50_71 = var_0_72("shoppin")
 
-		var_50_71.revealed = false
-		var_50_71.unlockLineProgress = 0
+		var_50_71.revealed = var_50_66
+		var_50_71.unlockLineProgress = var_50_66 and 1 or 0
 		var_50_71.isAppearing = false
-		var_50_71.isDisappearing = false
-		var_50_71.scaleX = 0
-		var_50_71.scaleY = 0
+		var_50_71.scaleX = var_50_66 and 1 or 0
+		var_50_71.scaleY = var_50_66 and 1 or 0
 
-		local var_50_72 = var_0_72("itemresearch")
+		local var_50_72 = var_0_72("slotadvanced3")
+		local var_50_73 = var_0_91.slotadvanced2 and var_0_91.slotadvanced2.maxed == true
 
-		var_50_72.revealed = false
-		var_50_72.unlockLineProgress = 0
+		var_50_72.revealed = var_50_73
+		var_50_72.unlockLineProgress = var_50_73 and 1 or 0
 		var_50_72.isAppearing = false
-		var_50_72.isDisappearing = false
-		var_50_72.scaleX = 0
-		var_50_72.scaleY = 0
+		var_50_72.scaleX = var_50_73 and 1 or 0
+		var_50_72.scaleY = var_50_73 and 1 or 0
 
-		local var_50_73 = var_0_72("shoppin")
+		local var_50_74 = var_0_72("slotrare")
+		local var_50_75 = var_0_91.slotadvanced3 and var_0_91.slotadvanced3.maxed == true
 
-		var_50_73.revealed = false
-		var_50_73.unlockLineProgress = 0
-		var_50_73.isAppearing = false
-		var_50_73.isDisappearing = false
-		var_50_73.scaleX = 0
-		var_50_73.scaleY = 0
-
-		local var_50_74 = var_0_72("slotadvanced3")
-
-		var_50_74.revealed = false
-		var_50_74.unlockLineProgress = 0
+		var_50_74.revealed = var_50_75
+		var_50_74.unlockLineProgress = var_50_75 and 1 or 0
 		var_50_74.isAppearing = false
-		var_50_74.isDisappearing = false
-		var_50_74.scaleX = 0
-		var_50_74.scaleY = 0
-
-		local var_50_75 = var_0_72("slotrare")
-
-		var_50_75.revealed = false
-		var_50_75.unlockLineProgress = 0
-		var_50_75.isAppearing = false
-		var_50_75.isDisappearing = false
-		var_50_75.scaleX = 0
-		var_50_75.scaleY = 0
+		var_50_74.scaleX = var_50_75 and 1 or 0
+		var_50_74.scaleY = var_50_75 and 1 or 0
 	end
 
 	local var_50_76 = var_0_72("startingmerccontract")
@@ -2740,9 +2756,7 @@ function var_0_0.toggleSandboxUnlockAll()
 
 	local var_51_0 = var_0_0._sandboxUnlockRestore
 
-	if var_51_0 then
-		var_0_0.setUpgradeState(var_51_0)
-	else
+	if not var_51_0 then
 		local var_51_1 = var_0_0.getUpgradeState()
 		local var_51_2 = var_0_0.getUpgradeState()
 
@@ -2753,6 +2767,8 @@ function var_0_0.toggleSandboxUnlockAll()
 		var_0_0.setUpgradeState(var_51_2)
 
 		var_0_0._sandboxUnlockRestore = var_51_1
+	else
+		var_0_0.setUpgradeState(var_51_0)
 	end
 
 	for iter_51_1, iter_51_2 in pairs(var_0_71) do
@@ -2906,7 +2922,15 @@ local function var_0_108(arg_54_0, arg_54_1, arg_54_2, arg_54_3)
 			local var_54_14 = arg_54_0:sub(var_54_11)
 			local var_54_15, var_54_16 = var_54_14:match("^(%s*)(%S+)")
 
-			if var_54_16 then
+			if not var_54_16 then
+				table.insert(var_54_0, {
+					type = "icon",
+					fallback = "G",
+					icon = var_0_13
+				})
+
+				var_54_1 = var_54_11
+			else
 				local var_54_17, var_54_18 = var_54_16:match("^(%d+)(.*)$")
 				local var_54_19 = 0
 
@@ -2929,14 +2953,6 @@ local function var_0_108(arg_54_0, arg_54_1, arg_54_2, arg_54_3)
 				})
 
 				var_54_1 = var_54_11 + #var_54_15 + #var_54_16 + var_54_19
-			else
-				table.insert(var_54_0, {
-					type = "icon",
-					fallback = "G",
-					icon = var_0_13
-				})
-
-				var_54_1 = var_54_11
 			end
 		end
 	end
@@ -3066,12 +3082,12 @@ local function var_0_111(arg_60_0, arg_60_1, arg_60_2, arg_60_3)
 
 			var_60_0 = var_60_0 + var_60_4 * arg_60_3 + var_60_6
 
-			if not iter_60_1.number then
-				var_60_0 = var_60_0 + var_0_110(iter_60_1.word or "", arg_60_1, arg_60_2)
-			else
+			if iter_60_1.number then
 				local var_60_7 = iter_60_1.suffix and iter_60_1.suffix ~= "" and " " .. iter_60_1.suffix or ""
 
 				var_60_0 = var_60_0 + var_0_110(iter_60_1.number, arg_60_1, arg_60_2) + var_0_110(var_60_7, arg_60_1, arg_60_2)
+			else
+				var_60_0 = var_60_0 + var_0_110(iter_60_1.word or "", arg_60_1, arg_60_2)
 			end
 
 			var_60_1 = math.max(var_60_1, var_60_5 * arg_60_3)
@@ -3267,10 +3283,10 @@ local function var_0_113(arg_63_0, arg_63_1, arg_63_2, arg_63_3, arg_63_4, arg_6
 	end
 
 	for iter_63_0, iter_63_1 in ipairs(arg_63_0 or {}) do
-		if not not ((iter_63_1.type == "icon" or iter_63_1.type == "iconword") and iter_63_1.icon or iter_63_1.type == "infinity") then
-			var_63_3()
-		else
+		if not ((iter_63_1.type == "icon" or iter_63_1.type == "iconword") and iter_63_1.icon or iter_63_1.type == "infinity") then
 			var_63_2 = var_63_2 .. tostring(iter_63_1.text or iter_63_1.fallback or "")
+		else
+			var_63_3()
 		end
 
 		if iter_63_1.type == "icon" and iter_63_1.icon then
@@ -3305,20 +3321,7 @@ local function var_0_113(arg_63_0, arg_63_1, arg_63_2, arg_63_3, arg_63_4, arg_6
 
 			var_63_0 = var_63_0 + var_63_7 * arg_63_5 + var_63_9
 
-			if not iter_63_1.number then
-				love.graphics.setColor(arg_63_6 or {
-					1,
-					1,
-					1,
-					1
-				})
-
-				local var_63_11 = iter_63_1.word or ""
-
-				love.graphics.print(var_63_11, math.floor(var_63_0), math.floor(arg_63_2), 0, arg_63_4, arg_63_4)
-
-				var_63_0 = var_63_0 + var_0_110(var_63_11, arg_63_3, arg_63_4)
-			else
+			if iter_63_1.number then
 				love.graphics.setColor(arg_63_8 or arg_63_6 or {
 					1,
 					1,
@@ -3330,7 +3333,7 @@ local function var_0_113(arg_63_0, arg_63_1, arg_63_2, arg_63_3, arg_63_4, arg_6
 				var_63_0 = var_63_0 + var_0_110(iter_63_1.number, arg_63_3, arg_63_4)
 
 				if iter_63_1.suffix and iter_63_1.suffix ~= "" then
-					local var_63_12 = " " .. iter_63_1.suffix
+					local var_63_11 = " " .. iter_63_1.suffix
 
 					love.graphics.setColor(arg_63_6 or {
 						1,
@@ -3338,10 +3341,23 @@ local function var_0_113(arg_63_0, arg_63_1, arg_63_2, arg_63_3, arg_63_4, arg_6
 						1,
 						1
 					})
-					love.graphics.print(var_63_12, math.floor(var_63_0), math.floor(arg_63_2), 0, arg_63_4, arg_63_4)
+					love.graphics.print(var_63_11, math.floor(var_63_0), math.floor(arg_63_2), 0, arg_63_4, arg_63_4)
 
-					var_63_0 = var_63_0 + var_0_110(var_63_12, arg_63_3, arg_63_4)
+					var_63_0 = var_63_0 + var_0_110(var_63_11, arg_63_3, arg_63_4)
 				end
+			else
+				love.graphics.setColor(arg_63_6 or {
+					1,
+					1,
+					1,
+					1
+				})
+
+				local var_63_12 = iter_63_1.word or ""
+
+				love.graphics.print(var_63_12, math.floor(var_63_0), math.floor(arg_63_2), 0, arg_63_4, arg_63_4)
+
+				var_63_0 = var_63_0 + var_0_110(var_63_12, arg_63_3, arg_63_4)
 			end
 		elseif iter_63_1.type == "infinity" then
 			local var_63_13 = var_0_88()
@@ -3578,18 +3594,18 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 
 	love.graphics.setColor(1, 1, 1, 1)
 
-	if not var_0_42 then
-		love.graphics.setColor(0.1, 0.08, 0.15, 1)
-		love.graphics.rectangle("fill", 0, 0, var_71_0, var_71_1)
-	else
+	if var_0_42 then
 		var_0_42:send("time", love.timer.getTime() % 100)
 
 		local var_71_2 = _G.Render2 and _G.Render2.getCurrentTargetDPIScale and _G.Render2.getCurrentTargetDPIScale() or 1
 
 		var_0_42:send("scale", love.graphics.getHeight() / 720 * var_71_2)
 		love.graphics.setShader(var_0_42)
-		love.graphics.rectangle("fill", 0, 0, var_71_0, var_71_1)
+		love.graphics.rectangle("fill", 0, 0, var_71_0 + 1, var_71_1 + 1)
 		love.graphics.setShader()
+	else
+		love.graphics.setColor(0.1, 0.08, 0.15, 1)
+		love.graphics.rectangle("fill", 0, 0, var_71_0 + 1, var_71_1 + 1)
 	end
 
 	love.graphics.setColor(1, 1, 1, 1)
@@ -3654,12 +3670,12 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 		if var_0_7[iter_71_4] == nil then
 			local var_71_13, var_71_14 = pcall(love.graphics.newImage, iter_71_5)
 
-			if var_71_13 and var_71_14 then
+			if not var_71_13 or not var_71_14 then
+				var_0_7[iter_71_4] = false
+			else
 				var_71_14:setFilter("nearest", "nearest")
 
 				var_0_7[iter_71_4] = var_71_14
-			else
-				var_0_7[iter_71_4] = false
 			end
 		end
 	end
@@ -3711,10 +3727,10 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 			return love.graphics.newImage(love.image.newImageData(1, 1))
 		end)
 
-		if var_71_15 and var_71_16 then
-			var_0_11 = var_71_16
-		else
+		if not var_71_15 or not var_71_16 then
 			_G.__slotUpgradeLazyFailed.whitePixel = true
+		else
+			var_0_11 = var_71_16
 		end
 	end
 
@@ -5625,25 +5641,25 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 				if var_73_20.type == "sparkle" then
 					var_73_20.life = var_73_20.life - var_73_18
 
-					if not (var_73_20.life <= 0) then
+					if var_73_20.life <= 0 then
+						table.remove(var_73_0.energyParticles, iter_73_0)
+					else
 						local var_73_21 = math.sin(var_73_20.life / 0.6 * math.pi)
 
 						love.graphics.setColor(1, 1, 1, var_73_21)
 
 						local var_73_22 = math.floor(var_73_20.size)
 
-						if not (var_73_22 < 2) then
+						if var_73_22 < 2 then
+							love.graphics.rectangle("fill", math.floor(var_73_9 + var_73_20.x), math.floor(arg_73_3 + var_73_20.y), 1, 1)
+						else
 							local var_73_23 = math.floor(var_73_9 + var_73_20.x)
 							local var_73_24 = math.floor(arg_73_3 + var_73_20.y)
 							local var_73_25 = math.floor(var_73_22 / 2)
 
 							love.graphics.rectangle("fill", var_73_23 - var_73_25, var_73_24, var_73_22, 1)
 							love.graphics.rectangle("fill", var_73_23, var_73_24 - var_73_25, 1, var_73_22)
-						else
-							love.graphics.rectangle("fill", math.floor(var_73_9 + var_73_20.x), math.floor(arg_73_3 + var_73_20.y), 1, 1)
 						end
-					else
-						table.remove(var_73_0.energyParticles, iter_73_0)
 					end
 				end
 			end
@@ -5996,7 +6012,9 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 			love.graphics.print(var_71_647, math.floor(var_71_665), math.floor(var_71_666), 0, var_71_656, var_71_657)
 		end
 
-		if var_0_69 then
+		if not var_0_69 then
+			var_0_70 = {}
+		else
 			local var_71_667 = 20
 			local var_71_668 = 5
 			local var_71_669 = var_71_660 + (var_71_643 * var_71_644 - var_71_667) / 2
@@ -6027,8 +6045,6 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 				w = var_71_667,
 				h = var_71_667
 			}
-		else
-			var_0_70 = {}
 		end
 	end
 
@@ -6330,16 +6346,16 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 		if var_0_109(var_71_763) then
 			local var_71_782, var_71_783 = var_71_763:match("^(.*%->%s*)(.*)$")
 
-			if var_71_782 and var_71_783 then
-				local var_71_784 = var_0_108(var_71_782, var_71_744, var_71_750, var_71_751)
-				local var_71_785 = var_0_111(var_71_784, var_71_744, var_71_750, var_71_751)
-				local var_71_786 = var_0_108(var_71_783, var_71_744, var_71_750, var_71_751)
+			if not var_71_782 or not var_71_783 then
+				local var_71_784 = var_0_108(var_71_763, var_71_744, var_71_750, var_71_751)
 
-				var_71_781 = var_71_785 + var_0_111(var_71_786, var_71_744, var_71_750, var_71_751)
+				var_71_781 = var_0_111(var_71_784, var_71_744, var_71_750, var_71_751)
 			else
-				local var_71_787 = var_0_108(var_71_763, var_71_744, var_71_750, var_71_751)
+				local var_71_785 = var_0_108(var_71_782, var_71_744, var_71_750, var_71_751)
+				local var_71_786 = var_0_111(var_71_785, var_71_744, var_71_750, var_71_751)
+				local var_71_787 = var_0_108(var_71_783, var_71_744, var_71_750, var_71_751)
 
-				var_71_781 = var_0_111(var_71_787, var_71_744, var_71_750, var_71_751)
+				var_71_781 = var_71_786 + var_0_111(var_71_787, var_71_744, var_71_750, var_71_751)
 			end
 		end
 
@@ -6384,9 +6400,7 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 			if var_71_794 then
 				local var_71_803 = 0
 
-				if not var_71_795 then
-					var_71_803 = var_0_110(var_71_794, var_71_744, var_71_750)
-				else
+				if var_71_795 then
 					local var_71_804 = var_0_110(" ", var_71_744, var_71_750)
 
 					for iter_71_45, iter_71_46 in ipairs(var_71_795) do
@@ -6396,6 +6410,8 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 							var_71_803 = var_71_803 + var_71_804
 						end
 					end
+				else
+					var_71_803 = var_0_110(var_71_794, var_71_744, var_71_750)
 				end
 
 				var_71_798 = var_71_803
@@ -6467,10 +6483,10 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 		local var_71_834
 		local var_71_835
 
-		if var_0_77 == "left" then
-			var_71_834 = var_71_832 - var_71_824 - 10
-		else
+		if var_0_77 ~= "left" then
 			var_71_834 = var_71_832 + var_71_830 + 10
+		else
+			var_71_834 = var_71_832 - var_71_824 - 10
 		end
 
 		local var_71_836 = var_71_833 + (var_71_831 - var_71_823) / 2
@@ -6590,7 +6606,125 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 
 		local var_71_855 = var_71_854 + var_71_749 + var_71_748
 
-		if var_71_761 then
+		if not var_71_761 then
+			local var_71_856 = var_71_840 + var_71_747 + (var_71_809 - var_71_788) / 2
+
+			if var_71_856 < var_71_840 + var_71_747 then
+				var_71_856 = var_71_840 + var_71_747
+			end
+
+			local var_71_857, var_71_858 = var_71_763:match("^(.*%->%s*)(.*)$")
+
+			if not var_71_857 or not var_71_858 then
+				if var_0_109(var_71_763) then
+					local var_71_859 = var_0_108(var_71_763, var_71_744, var_71_750, var_71_751)
+
+					var_0_113(var_71_859, math.floor(var_71_856), math.floor(var_71_855 + var_71_845) - 2, var_71_744, var_71_750, var_71_751, {
+						0.2,
+						1,
+						0.2,
+						1
+					}, {
+						1,
+						1,
+						1,
+						1
+					}, nil, {
+						lang = var_71_752
+					})
+				else
+					love.graphics.setColor(0.2, 1, 0.2, 1)
+					require("src.ui.widgets").text_color.drawRich(var_71_763, math.floor(var_71_856), math.floor(var_71_855 + var_71_845) - 2, {
+						font = var_71_744,
+						scale = var_71_750,
+						color = {
+							0.2,
+							1,
+							0.2,
+							1
+						},
+						lang = var_71_752,
+						measure = function(arg_78_0)
+							return var_0_110(arg_78_0, var_71_744, var_71_750)
+						end
+					})
+				end
+			else
+				local var_71_860 = var_0_110(var_71_857, var_71_744, var_71_750)
+
+				if var_0_109(var_71_857) then
+					local var_71_861 = var_0_108(var_71_857, var_71_744, var_71_750, var_71_751)
+
+					var_71_860 = var_0_111(var_71_861, var_71_744, var_71_750, var_71_751)
+
+					var_0_113(var_71_861, math.floor(var_71_856), math.floor(var_71_855 + var_71_845) - 2, var_71_744, var_71_750, var_71_751, {
+						1,
+						1,
+						1,
+						1
+					}, {
+						1,
+						1,
+						1,
+						1
+					}, nil, {
+						lang = var_71_752
+					})
+				else
+					love.graphics.setColor(1, 1, 1, 1)
+					require("src.ui.widgets").text_color.drawRich(var_71_857, math.floor(var_71_856), math.floor(var_71_855 + var_71_845) - 2, {
+						font = var_71_744,
+						scale = var_71_750,
+						color = {
+							1,
+							1,
+							1,
+							1
+						},
+						lang = var_71_752,
+						measure = function(arg_79_0)
+							return var_0_110(arg_79_0, var_71_744, var_71_750)
+						end
+					})
+				end
+
+				if var_0_109(var_71_858) then
+					local var_71_862 = var_0_108(var_71_858, var_71_744, var_71_750, var_71_751)
+
+					var_0_113(var_71_862, math.floor(var_71_856 + var_71_860), math.floor(var_71_855 + var_71_845) - 2, var_71_744, var_71_750, var_71_751, {
+						0.2,
+						1,
+						0.2,
+						1
+					}, {
+						1,
+						1,
+						1,
+						1
+					}, nil, {
+						lang = var_71_752
+					})
+				else
+					love.graphics.setColor(0.2, 1, 0.2, 1)
+					require("src.ui.widgets").text_color.drawRich(var_71_858, math.floor(var_71_856 + var_71_860), math.floor(var_71_855 + var_71_845) - 2, {
+						font = var_71_744,
+						scale = var_71_750,
+						color = {
+							0.2,
+							1,
+							0.2,
+							1
+						},
+						lang = var_71_752,
+						measure = function(arg_80_0)
+							return var_0_110(arg_80_0, var_71_744, var_71_750)
+						end
+					})
+				end
+			end
+
+			var_71_855 = var_71_855 + var_71_811 + var_71_748
+		else
 			var_71_855 = var_71_855 - var_71_817
 
 			love.graphics.setColor(0.2, 1, 0.2, 1)
@@ -6605,9 +6739,9 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 
 			love.graphics.setColor(1, 0.8, 0.2, 1)
 
-			local var_71_856 = var_71_840 + var_71_747 + (var_71_809 - var_71_778) / 2
+			local var_71_863 = var_71_840 + var_71_747 + (var_71_809 - var_71_778) / 2
 
-			love.graphics.print(var_71_757, math.floor(var_71_856), math.floor(var_71_855 + var_71_845), 0, var_71_750, var_71_750)
+			love.graphics.print(var_71_757, math.floor(var_71_863), math.floor(var_71_855 + var_71_845), 0, var_71_750, var_71_750)
 
 			if var_71_759 then
 				var_71_855 = var_71_855 + math.floor(var_71_811 * 1.4 + 0.5)
@@ -6630,13 +6764,13 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 
 			var_71_744:setLineHeight(1.4)
 
-			local var_71_857 = var_71_745:getHeight() * var_71_744:getLineHeight() * var_71_750
+			local var_71_864 = var_71_745:getHeight() * var_71_744:getLineHeight() * var_71_750
 
 			for iter_71_49, iter_71_50 in ipairs(var_71_775 or {}) do
-				local var_71_858 = var_0_111(iter_71_50, var_71_744, var_71_750, var_71_751)
-				local var_71_859 = var_71_840 + var_71_747 + (var_71_809 - var_71_858) / 2
+				local var_71_865 = var_0_111(iter_71_50, var_71_744, var_71_750, var_71_751)
+				local var_71_866 = var_71_840 + var_71_747 + (var_71_809 - var_71_865) / 2
 
-				var_0_113(iter_71_50, math.floor(var_71_859), math.floor(var_71_855 + var_71_845 + (iter_71_49 - 1) * var_71_857), var_71_744, var_71_750, var_71_751, {
+				var_0_113(iter_71_50, math.floor(var_71_866), math.floor(var_71_855 + var_71_845 + (iter_71_49 - 1) * var_71_864), var_71_744, var_71_750, var_71_751, {
 					0.9,
 					0.9,
 					0.9,
@@ -6659,124 +6793,6 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 			var_71_744:setLineHeight(1)
 
 			var_71_855 = var_71_855 + var_71_776 + var_71_748
-		else
-			local var_71_860 = var_71_840 + var_71_747 + (var_71_809 - var_71_788) / 2
-
-			if var_71_860 < var_71_840 + var_71_747 then
-				var_71_860 = var_71_840 + var_71_747
-			end
-
-			local var_71_861, var_71_862 = var_71_763:match("^(.*%->%s*)(.*)$")
-
-			if not var_71_861 or not var_71_862 then
-				if not var_0_109(var_71_763) then
-					love.graphics.setColor(0.2, 1, 0.2, 1)
-					require("src.ui.widgets").text_color.drawRich(var_71_763, math.floor(var_71_860), math.floor(var_71_855 + var_71_845) - 2, {
-						font = var_71_744,
-						scale = var_71_750,
-						color = {
-							0.2,
-							1,
-							0.2,
-							1
-						},
-						lang = var_71_752,
-						measure = function(arg_78_0)
-							return var_0_110(arg_78_0, var_71_744, var_71_750)
-						end
-					})
-				else
-					local var_71_863 = var_0_108(var_71_763, var_71_744, var_71_750, var_71_751)
-
-					var_0_113(var_71_863, math.floor(var_71_860), math.floor(var_71_855 + var_71_845) - 2, var_71_744, var_71_750, var_71_751, {
-						0.2,
-						1,
-						0.2,
-						1
-					}, {
-						1,
-						1,
-						1,
-						1
-					}, nil, {
-						lang = var_71_752
-					})
-				end
-			else
-				local var_71_864 = var_0_110(var_71_861, var_71_744, var_71_750)
-
-				if var_0_109(var_71_861) then
-					local var_71_865 = var_0_108(var_71_861, var_71_744, var_71_750, var_71_751)
-
-					var_71_864 = var_0_111(var_71_865, var_71_744, var_71_750, var_71_751)
-
-					var_0_113(var_71_865, math.floor(var_71_860), math.floor(var_71_855 + var_71_845) - 2, var_71_744, var_71_750, var_71_751, {
-						1,
-						1,
-						1,
-						1
-					}, {
-						1,
-						1,
-						1,
-						1
-					}, nil, {
-						lang = var_71_752
-					})
-				else
-					love.graphics.setColor(1, 1, 1, 1)
-					require("src.ui.widgets").text_color.drawRich(var_71_861, math.floor(var_71_860), math.floor(var_71_855 + var_71_845) - 2, {
-						font = var_71_744,
-						scale = var_71_750,
-						color = {
-							1,
-							1,
-							1,
-							1
-						},
-						lang = var_71_752,
-						measure = function(arg_79_0)
-							return var_0_110(arg_79_0, var_71_744, var_71_750)
-						end
-					})
-				end
-
-				if not var_0_109(var_71_862) then
-					love.graphics.setColor(0.2, 1, 0.2, 1)
-					require("src.ui.widgets").text_color.drawRich(var_71_862, math.floor(var_71_860 + var_71_864), math.floor(var_71_855 + var_71_845) - 2, {
-						font = var_71_744,
-						scale = var_71_750,
-						color = {
-							0.2,
-							1,
-							0.2,
-							1
-						},
-						lang = var_71_752,
-						measure = function(arg_80_0)
-							return var_0_110(arg_80_0, var_71_744, var_71_750)
-						end
-					})
-				else
-					local var_71_866 = var_0_108(var_71_862, var_71_744, var_71_750, var_71_751)
-
-					var_0_113(var_71_866, math.floor(var_71_860 + var_71_864), math.floor(var_71_855 + var_71_845) - 2, var_71_744, var_71_750, var_71_751, {
-						0.2,
-						1,
-						0.2,
-						1
-					}, {
-						1,
-						1,
-						1,
-						1
-					}, nil, {
-						lang = var_71_752
-					})
-				end
-			end
-
-			var_71_855 = var_71_855 + var_71_811 + var_71_748
 		end
 
 		love.graphics.setColor(var_0_86.separator)
@@ -6898,7 +6914,10 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 				var_71_890 = var_71_890 + var_71_800 + var_71_801
 			end
 
-			if var_71_795 then
+			if not var_71_795 then
+				love.graphics.setColor(var_71_878[1], var_71_878[2], var_71_878[3], 1)
+				love.graphics.print(var_71_794, math.floor(var_71_890), math.floor(var_71_884), 0, var_71_750, var_71_750)
+			else
 				local var_71_891 = var_0_110(" ", var_71_744, var_71_750)
 
 				for iter_71_51, iter_71_52 in ipairs(var_71_795) do
@@ -6913,9 +6932,6 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 						var_71_890 = var_71_890 + var_71_891
 					end
 				end
-			else
-				love.graphics.setColor(var_71_878[1], var_71_878[2], var_71_878[3], 1)
-				love.graphics.print(var_71_794, math.floor(var_71_890), math.floor(var_71_884), 0, var_71_750, var_71_750)
 			end
 		end
 
@@ -7042,10 +7058,10 @@ function var_0_0.update(arg_82_0, arg_82_1, arg_82_2)
 			var_0_56 = 0
 		end
 
-		if var_0_51 then
-			var_0_49, var_0_50 = var_0_66(var_0_49 + var_82_18, var_0_50 + var_82_19, var_0_48)
-		else
+		if not var_0_51 then
 			var_0_49, var_0_50 = var_0_44, var_0_45
+		else
+			var_0_49, var_0_50 = var_0_66(var_0_49 + var_82_18, var_0_50 + var_82_19, var_0_48)
 		end
 	end
 
@@ -8515,10 +8531,10 @@ function var_0_0.wheelmoved(arg_85_0, arg_85_1, arg_85_2, arg_85_3)
 		end
 	end
 
-	if var_85_0 > 0 then
-		var_85_1 = math.min(#var_0_47, var_85_1 + 1)
-	else
+	if not (var_85_0 > 0) then
 		var_85_1 = math.max(1, var_85_1 - 1)
+	else
+		var_85_1 = math.min(#var_0_47, var_85_1 + 1)
 	end
 
 	local var_85_4 = var_0_47[var_85_1]
@@ -8821,8 +8837,8 @@ local var_0_119 = var_0_116({
 
 var_0_0.SECTION_REWARDS = {
 	corefav = {
-		need = 5,
 		labelKey = "corefav_req_cores",
+		need = 5,
 		nodes = var_0_117
 	},
 	corefav2 = {
@@ -8833,8 +8849,8 @@ var_0_0.SECTION_REWARDS = {
 		}, var_0_115("unlock_core_", 43, 44, 45, 46, 47, 48))
 	},
 	iteminventory = {
-		need = 8,
 		labelKey = "upgrade_section_req_shop_progress",
+		need = 8,
 		nodes = var_0_118
 	},
 	iteminventory2 = {
@@ -8870,8 +8886,8 @@ var_0_0.SECTION_REWARDS = {
 		}
 	},
 	stoneshop = {
-		need = 16,
 		labelKey = "upgrade_section_req_stones_progress",
+		need = 16,
 		nodes = var_0_119
 	},
 	stoneshop2 = {
@@ -8924,18 +8940,18 @@ end
 
 local var_0_120 = "src/sprites/mainmenu/upgrade_sections/"
 local var_0_121 = {
-	de = "german",
-	en = "english",
 	it = "italian",
-	pt = "portuguese_brazil",
+	ko = "korean",
 	fr = "french",
-	tr = "turkish",
+	pt = "portuguese_brazil",
 	["zh-Hant"] = "chinese_traditional",
+	tr = "turkish",
 	zh = "chinese",
 	pl = "polish",
-	ko = "korean",
+	en = "english",
 	ru = "russian",
 	es = "spanish",
+	de = "german",
 	ja = "japanese"
 }
 local var_0_122 = {
@@ -8947,12 +8963,12 @@ local var_0_122 = {
 	"supply"
 }
 local var_0_123 = {
-	supply = "maxhp",
 	units = "maxunit",
-	research = "slotadvanced",
+	blast = "blastmachine",
 	core = "corereroll",
+	research = "slotadvanced",
 	shop = "shopreroll",
-	blast = "blastmachine"
+	supply = "maxhp"
 }
 local var_0_124 = {
 	"blastmachine",
@@ -8965,28 +8981,28 @@ local var_0_124 = {
 	"unlock_core_48"
 }
 local var_0_125 = {
-	noviceshield = "maxhp",
-	firstcorespin = "corereroll",
-	maxhp2 = "comebackgold",
-	corereroll = "slotadvanced",
-	maxhp = "slotodds",
-	slotrare = "slotadvanced3",
-	maxunit3 = "maxunit2",
-	slotadvanced3 = "slotadvanced2",
-	maxunit2 = "maxunit",
-	startingmerccontract = "startgold",
-	maxunit = "slotodds",
 	startgold = "maxhp",
-	iteminventory2 = "iteminventory",
-	startgold2 = "startgold",
-	comebackgold = "startgold",
-	gateheal = "comebackspin",
+	corereroll = "slotadvanced",
+	noviceshield = "maxhp",
 	comebackspin = "noviceshield",
-	iteminventory = "shopreroll",
 	slotadvanced2 = "slotadvanced",
-	shopreroll = "slotadvanced",
+	maxhp = "slotodds",
 	slotadvanced = "slotodds",
-	firstcoreuncommon = "firstcorespin"
+	firstcoreuncommon = "firstcorespin",
+	maxunit3 = "maxunit2",
+	slotrare = "slotadvanced3",
+	maxunit2 = "maxunit",
+	startgold2 = "startgold",
+	maxunit = "slotodds",
+	maxhp2 = "comebackgold",
+	comebackgold = "startgold",
+	slotadvanced3 = "slotadvanced2",
+	iteminventory2 = "iteminventory",
+	iteminventory = "shopreroll",
+	shopreroll = "slotadvanced",
+	gateheal = "comebackspin",
+	firstcorespin = "corereroll",
+	startingmerccontract = "startgold"
 }
 local var_0_126 = 6
 local var_0_127 = 1
@@ -9178,20 +9194,20 @@ local function var_0_141(arg_124_0, arg_124_1, arg_124_2)
 
 	local var_124_7 = {
 		core = {
-			y = -60,
-			x = -72
+			x = -72,
+			y = -60
 		},
 		shop = {
-			y = -60,
-			x = 72
+			x = 72,
+			y = -60
 		},
 		blast = {
-			y = 36,
-			x = 210
+			x = 210,
+			y = 36
 		},
 		research = {
-			y = -150,
-			x = 62
+			x = 62,
+			y = -150
 		}
 	}
 	local var_124_8 = {
@@ -9326,10 +9342,10 @@ local function var_0_141(arg_124_0, arg_124_1, arg_124_2)
 		for iter_129_0, iter_129_1 in pairs(arg_124_0) do
 			local var_129_1
 
-			if arg_129_1 then
-				var_129_1 = math.abs(iter_129_1.x) == 72
-			else
+			if not arg_129_1 then
 				var_129_1 = iter_129_1.x ~= 0 and math.abs(math.abs(iter_129_1.x * var_124_18) - arg_129_0) <= var_124_29 / 2 + var_0_127 + var_124_19
+			else
+				var_129_1 = math.abs(iter_129_1.x) == 72
 			end
 
 			if var_129_1 then
@@ -9471,17 +9487,17 @@ local function var_0_144(arg_134_0, arg_134_1, arg_134_2, arg_134_3, arg_134_4)
 		return
 	end
 
-	if arg_134_0.x and not arg_134_4.snap then
+	if not arg_134_0.x or arg_134_4.snap then
+		arg_134_0.x, arg_134_0.y = arg_134_1.x, arg_134_1.y
+	else
 		local var_134_0 = arg_134_1.x - arg_134_0.x
 		local var_134_1 = arg_134_1.y - arg_134_0.y
 
-		if not (var_134_0 * var_134_0 + var_134_1 * var_134_1 > 0.25) then
-			arg_134_0.x, arg_134_0.y = arg_134_1.x, arg_134_1.y
-		else
+		if var_134_0 * var_134_0 + var_134_1 * var_134_1 > 0.25 then
 			arg_134_0.x, arg_134_0.y = arg_134_0.x + var_134_0 * arg_134_4.ease, arg_134_0.y + var_134_1 * arg_134_4.ease
+		else
+			arg_134_0.x, arg_134_0.y = arg_134_1.x, arg_134_1.y
 		end
-	else
-		arg_134_0.x, arg_134_0.y = arg_134_1.x, arg_134_1.y
 	end
 
 	local var_134_2 = arg_134_4.rootX + arg_134_0.x * arg_134_4.zoom - arg_134_3.w / 2
@@ -9564,9 +9580,7 @@ function var_0_0.drawSectionTitles(arg_135_0, arg_135_1, arg_135_2, arg_135_3)
 	for iter_135_3, iter_135_4 in ipairs(var_0_122) do
 		local var_135_10 = var_135_5[iter_135_4]
 
-		if not var_135_10 then
-			var_0_147[iter_135_4] = nil
-		else
+		if not not var_135_10 then
 			local var_135_11 = var_0_147[iter_135_4]
 
 			if not var_135_11 then
@@ -9585,6 +9599,8 @@ function var_0_0.drawSectionTitles(arg_135_0, arg_135_1, arg_135_2, arg_135_3)
 
 			var_0_144(var_135_11.close, var_135_10.near, var_135_12, var_135_10, var_0_150)
 			var_0_144(var_135_11.wide, var_135_10.far, not var_135_12, var_135_10, var_0_150)
+		else
+			var_0_147[iter_135_4] = nil
 		end
 	end
 

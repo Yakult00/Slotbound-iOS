@@ -3,8 +3,8 @@
 #  src/ui/upgrade.lua（手势层补丁）/ src/release_integrity.lua（校验绕过 noop）
 # 改动这些文件后，用 sha256sum 重新生成本文件再提交：
 8328ccb0cc7125aa1b7cbdcb7f320a5251316c8981f2499bfcce983bd82660f2  main.lua
-d3eaee037f38068b799ebb4d2bf4aa0d289cfe507b18ff590ad82b10dc776618  real_main.luac
+67bcd6ced1233bb7f6cdf2c2c5843a60690e56d2ed66304bc8c15095fcbd6bff  real_main.luac
 80479d6f0b254ed0f807e14287f12e10ecd39886ef9dfa760da188231eb60f14  trainer_backend.lua
 8423ef0973f4518816783ee361f3299bde684224299556f37dfe8bd2e103a017  @bootstrap
-c646dd3c793376d7dcae12b1604e635a2d4b30c36bedea6f71983153fbb1ba33  src/ui/upgrade.lua
+3a5f17f870787af47f7c7e726140c8c8382875165db6e6ee7419a17ed781feb0  src/ui/upgrade.lua
 7619998f72a9cc51c657531cf62e119df8d5e4a73bbc79e7b52755faa38baf93  src/release_integrity.lua
