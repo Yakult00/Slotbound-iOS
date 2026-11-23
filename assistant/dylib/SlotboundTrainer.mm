@@ -2524,15 +2524,15 @@ static void sb_present_safari(NSURL *url) {
             sb_log("[sb] dlopen SafariServices ok=%d", h != NULL);
         });
         Class sf = NSClassFromString(@"SFSafariViewController");
-        UIViewController *root = g_win ? g_win.rootViewController : nil;
-        if (!root) {
-            for (UIWindow *w in [UIApplication sharedApplication].windows) {
-                if (w.isKeyWindow) { root = w.rootViewController; break; }
-            }
+        UIViewController *root = nil;
+        UIWindow *host = nil;
+        for (UIWindow *w in [UIApplication sharedApplication].windows) {
+            if (w == g_win || !w.rootViewController) continue;
+            if (w.isKeyWindow) { host = w; break; }
+            if (!host) host = w;
         }
-        if (!root) {
-            for (UIWindow *w in [UIApplication sharedApplication].windows) { root = w.rootViewController; break; }
-        }
+        if (host) root = host.rootViewController;
+        if (!root && g_win) root = g_win.rootViewController;
         while (root.presentedViewController) root = root.presentedViewController;
         sb_log("[sb] present url=%s sf=%d root=%s", url.absoluteString.UTF8String, sf != Nil, root ? NSStringFromClass(root.class).UTF8String : "nil");
         if (!sf || !root || [root isKindOfClass:sf]) return;
