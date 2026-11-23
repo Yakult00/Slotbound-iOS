@@ -25,6 +25,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <objc/runtime.h>
+#import <stdarg.h>
 #import <mach-o/dyld.h>
 #import <mach-o/nlist.h>
 #import <dlfcn.h>
@@ -2499,27 +2500,47 @@ static void *delayed_init_thread(void *arg) {
 // ---- 外部链接兜底：容器/沙盒里 -[UIApplication openURL:] 会同步返回 NO（实测
 //      love.system.openURL 返回 false，浏览器不弹）。失败时改用应用内 Safari 打开，
 //      保证「点一下能看到页面」。
+static void sb_log(const char *fmt, ...) {
+    static NSString *path = nil;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        NSString *dir = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Application Support/slotbound_full"];
+        [[NSFileManager defaultManager] createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:nil];
+        path = [dir stringByAppendingPathComponent:@"sb_openurl.log"];
+    });
+    va_list ap; va_start(ap, fmt);
+    NSString *msg = [[NSString alloc] initWithFormat:[NSString stringWithUTF8String:fmt] arguments:ap];
+    va_end(ap);
+    FILE *f = fopen(path.UTF8String, "a");
+    if (f) { fprintf(f, "%s\n", msg.UTF8String); fclose(f); }
+}
+
 static void sb_present_safari(NSURL *url) {
     if (!url) return;
     dispatch_async(dispatch_get_main_queue(), ^{
         static dispatch_once_t once;
         dispatch_once(&once, ^{
-            dlopen("/System/Library/Frameworks/SafariServices.framework/SafariServices", RTLD_LAZY);
+            void *h = dlopen("/System/Library/Frameworks/SafariServices.framework/SafariServices", RTLD_LAZY);
+            sb_log("[sb] dlopen SafariServices ok=%d", h != NULL);
         });
         Class sf = NSClassFromString(@"SFSafariViewController");
-        if (!sf) return;
         UIViewController *root = g_win ? g_win.rootViewController : nil;
         if (!root) {
             for (UIWindow *w in [UIApplication sharedApplication].windows) {
                 if (w.isKeyWindow) { root = w.rootViewController; break; }
             }
         }
-        if (!root) return;
+        if (!root) {
+            for (UIWindow *w in [UIApplication sharedApplication].windows) { root = w.rootViewController; break; }
+        }
         while (root.presentedViewController) root = root.presentedViewController;
-        if ([root isKindOfClass:sf]) return;          // 已经是 Safari 页，别叠
+        sb_log("[sb] present url=%s sf=%d root=%s", url.absoluteString.UTF8String, sf != Nil, root ? NSStringFromClass(root.class).UTF8String : "nil");
+        if (!sf || !root || [root isKindOfClass:sf]) return;
         id vc = [[sf alloc] initWithURL:url];
-        if (!vc) return;
-        [root presentViewController:vc animated:YES completion:nil];
+        if (!vc) { sb_log("[sb] vc alloc failed"); return; }
+        [root presentViewController:vc animated:YES completion:^{
+            sb_log("[sb] presented");
+        }];
     });
 }
 
@@ -2528,12 +2549,14 @@ static BOOL sb_openURL_hook(id self, SEL _cmd, NSURL *url, NSDictionary *opts, v
     static NSURL *lastURL = nil;
     static NSTimeInterval lastAt = 0;
     BOOL ok = sb_orig_openURL(self, _cmd, url, opts, ^(BOOL success) {
+        sb_log("[sb] completion success=%d url=%s", success, url.absoluteString.UTF8String);
         if (!success && !(lastURL == url && [NSDate timeIntervalSinceReferenceDate] - lastAt < 1.0)) {
             lastURL = url; lastAt = [NSDate timeIntervalSinceReferenceDate];
             sb_present_safari(url);
         }
         if (completion) completion(success);
     });
+    sb_log("[sb] openURL3 ret=%d url=%s", ok, url.absoluteString.UTF8String);
     if (!ok) {
         NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
         if (!(lastURL == url && now - lastAt < 1.0)) {
@@ -2544,12 +2567,27 @@ static BOOL sb_openURL_hook(id self, SEL _cmd, NSURL *url, NSDictionary *opts, v
     return ok;
 }
 
+static BOOL (*sb_orig_openURL1)(id, SEL, NSURL *) = NULL;
+static BOOL sb_openURL1_hook(id self, SEL _cmd, NSURL *url) {
+    BOOL ok = sb_orig_openURL1(self, _cmd, url);
+    sb_log("[sb] openURL1 ret=%d url=%s", ok, url.absoluteString.UTF8String);
+    if (!ok) sb_present_safari(url);
+    return ok;
+}
+
 static void sb_install_openurl_fallback(void) {
-    if (sb_orig_openURL) return;
+    if (sb_orig_openURL || sb_orig_openURL1) return;
     Method m = class_getInstanceMethod([UIApplication class], @selector(openURL:options:completionHandler:));
-    if (!m) return;
-    sb_orig_openURL = (BOOL (*)(id, SEL, NSURL *, NSDictionary *, void (^)(BOOL)))method_getImplementation(m);
-    method_setImplementation(m, (IMP)sb_openURL_hook);
+    if (m) {
+        sb_orig_openURL = (BOOL (*)(id, SEL, NSURL *, NSDictionary *, void (^)(BOOL)))method_getImplementation(m);
+        method_setImplementation(m, (IMP)sb_openURL_hook);
+    }
+    Method m1 = class_getInstanceMethod([UIApplication class], @selector(openURL:));
+    if (m1) {
+        sb_orig_openURL1 = (BOOL (*)(id, SEL, NSURL *))method_getImplementation(m1);
+        method_setImplementation(m1, (IMP)sb_openURL1_hook);
+    }
+    sb_log("[sb] hook installed 3arg=%d 1arg=%d", m != NULL, m1 != NULL);
 }
 
 __attribute__((constructor))
