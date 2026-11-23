@@ -372,6 +372,7 @@ end
 function love.touchmoved(id, x, y, dx, dy, pressure)
     local t = touches[id]
     if not t then return end
+    if t.ui then return end   -- ESC / L-R 按钮触摸没有 x0,y0，移动会炸 dist2
     t.x, t.y = x, y
     if not t.moved and dist2(x, y, t.x0, t.y0) > TAP_SLOP * TAP_SLOP then t.moved = true end
 
