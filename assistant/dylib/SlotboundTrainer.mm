@@ -727,6 +727,8 @@ static void read_catalog(void) {
 + (void)saveBackup:(id)s;
 + (void)saveRestore:(id)s;
 + (void)saveDefaults:(id)s;
++ (void)resetAllTapped:(id)s;
++ (void)doResetAll;
 + (void)linkTapped:(id)s;
 @end
 
@@ -1717,7 +1719,15 @@ static UIView *build_panel(CGRect bounds) {
     // 归并：开关按功能散到各页，抽奖区并入老虎机页
     @try {
         g_pageRes = build_page_res(w - 28);
-        append_switches(g_pageRes, w - 28,
+        // 页面顶部插一个「一键恢复原版」：整体下移 62pt，按钮独占首行
+        CGFloat pw = w - 28, shift = 62;
+        for (UIView *sv in g_pageRes.subviews) {
+            CGRect f = sv.frame; f.origin.y += shift; sv.frame = f;
+        }
+        g_pageRes.frame = CGRectMake(0, 0, pw, g_pageRes.frame.size.height + shift);
+        UIButton *rst = wideButton(@"一键恢复所有改动（回到原版）", @selector(resetAllTapped:), 14, 8, pw - 28, NO);
+        [g_pageRes addSubview:rst];
+        append_switches(g_pageRes, pw,
                         @[ @(9) /*开局超级加成*/, @(4) /*基地无敌*/ ],
                         g_pageRes.frame.size.height + 6, @"开关");
     }
@@ -2149,13 +2159,49 @@ static UIView *build_panel(CGRect bounds) {
 + (void)saveBackup:(id)s { send_command(@"save_backup", nil, nil); }
 + (void)saveRestore:(id)s { send_command(@"save_restore", nil, nil); }
 
-+ (void)saveDefaults:(id)s {
++ (void)saveDefaults:(id)s { [CheatsOverlay doResetAll]; }
+
+// 一键恢复原版：关掉全部开关/锁定/抽奖改动，并清掉一次性命令
++ (void)doResetAll {
     for (int i = 0; i < kSwCount; i++) g_swOn[i] = NO;
     g_symLock = g_gradeLock = g_luckTier = g_spinsWave = 0;
     g_jokerBits = 0;
     g_jesterHero = NO;
+    g_lockCoins = g_lockSpins = g_lockJungsu = g_lockOriginite = NO;
+    g_lockTarget = g_lockSpinsTarget = g_lockJungsuTarget = g_lockOriginiteTarget = 0;
+    g_originiteSet = 0;
+    g_originiteAdd = 0;
+    g_cmd = nil; g_arg = nil; g_arg2 = nil;
+
+    // UI 同步：所有页面上的开关回关，锁定开关回关
+    NSArray *pages = @[ g_pageRes ?: (id)[NSNull null], g_pageSlot ?: (id)[NSNull null],
+                        g_pageUnit ?: (id)[NSNull null], g_pageShop ?: (id)[NSNull null],
+                        g_pageSave ?: (id)[NSNull null] ];
+    for (id p in pages) {
+        if (![p isKindOfClass:[UIView class]]) continue;
+        for (UIView *sv in [(UIView *)p subviews]) {
+            if ([sv isKindOfClass:[UISwitch class]]) ((UISwitch *)sv).on = NO;
+        }
+    }
+    g_lockSwitch.on = g_spinsLockSwitch.on = NO;
+    g_jungsuLockSwitch.on = g_originiteLockSwitch.on = NO;
+
     send_command(@"reset_all", nil, nil);
-    show_toast(@"✓ 已恢复默认，重开面板后生效");
+    show_toast(@"✓ 已恢复原版，重开面板后生效");
+}
+
++ (void)resetAllTapped:(id)s {
+    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"恢复原版游戏"
+                                                              message:@"会关掉全部开关、锁定和抽奖改动，确定？"
+                                                       preferredStyle:UIAlertControllerStyleAlert];
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"恢复原版" style:UIAlertActionStyleDestructive
+                                        handler:^(UIAlertAction *a) { [CheatsOverlay doResetAll]; }]];
+    UIViewController *vc = g_win ? g_win.rootViewController : nil;
+    if (!vc) return;
+    UIViewController *top = vc;
+    while (top.presentedViewController) top = top.presentedViewController;
+    [top presentViewController:ac animated:YES completion:nil];
 }
 
 + (void)linkTapped:(id)s {
