@@ -58,30 +58,11 @@ jobs:
       - name: Check trainer backend in sync
         run: python3 tools/sync_backend.py --check
 
-      # 面板版本号由 -DSB_PANEL_VERSION 注入（.mm 里有 #ifndef 兜底，
-      # 本地手工编译不传该 flag 也能过）。
-      - name: Build SlotboundTrainer.dylib (iOS arm64)
-        run: |
-          SDK=$(xcrun -sdk iphoneos --show-sdk-path)
-          echo "SDK: $SDK"
-          # clang++ links the C++ runtime (Dobby is C++); CoreGraphics for CGPointZero
-          xcrun -sdk iphoneos clang++ -arch arm64 -dynamiclib \
-            -O2 -fPIC -fobjc-arc \
-            -DSB_PANEL_VERSION="\"${{ steps.version.outputs.version }}\"" \
-            -isysroot "$SDK" \
-            -miphoneos-version-min=14.0 \
-            -framework Foundation -framework UIKit -framework CoreGraphics -framework QuartzCore \
-            -lc++ \
-            -Iassistant/dylib/dobby \
-            -o SlotboundTrainer.dylib \
-            assistant/dylib/SlotboundTrainer.mm assistant/dylib/dobby/libdobby.a
-          file SlotboundTrainer.dylib
-          otool -L SlotboundTrainer.dylib
-          ls -la SlotboundTrainer.dylib
-
       # 纯 Lua 后端版：不含任何内存 hook（Dobby 那段被 SB_NO_HOOK 关掉），
       # 面板只负责 UI + cheats_ui.lua / cheats_status.lua 文件桥。
       # 用在 LiveContainer / 非 JIT 环境；需要 game.love 里带 trainer_backend.lua。
+      # 只产 NoJIT 一个 dylib：要 JIT 的 SlotboundTrainer.dylib 已停用
+      # （游戏包内置 trainer_backend.lua 后台，不再需要内存 hook 版）。
       - name: Build SlotboundTrainer-NoJIT.dylib
         run: |
           SDK=$(xcrun -sdk iphoneos --show-sdk-path)
@@ -104,7 +85,6 @@ jobs:
         with:
           name: SlotboundTrainer-dylib
           path: |
-            SlotboundTrainer.dylib
             SlotboundTrainer-NoJIT.dylib
 
       # 提取器自测：BSD awk 在 C locale 下处理中文会炸（v1.3.1 那次 tag 发布翻车的原因），
@@ -133,6 +113,7 @@ jobs:
           name: SlotboundTrainer-dylib
 
       # 固定 tag，dylib 名字不带版本号，所属版本由 release notes 里的 VERSION 标明。
+      # 只发 NoJIT 一个：要 JIT 的 SlotboundTrainer.dylib 已停用。
       - name: Publish dylibs to release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -140,7 +121,7 @@ jobs:
           set -euo pipefail
           NOTES="Trainer panel dylib（版本 ${VERSION}）。dylib 与 game.love 版本解耦，仅在面板功能改动时重建。"
           gh release create "panel-latest" --title "Trainer panel dylib" --notes "$NOTES" \
-            SlotboundTrainer.dylib SlotboundTrainer-NoJIT.dylib 2>/dev/null \
+            SlotboundTrainer-NoJIT.dylib 2>/dev/null \
             || gh release upload "panel-latest" \
-              SlotboundTrainer.dylib SlotboundTrainer-NoJIT.dylib --clobber
+              SlotboundTrainer-NoJIT.dylib --clobber
           gh release view "panel-latest" --json assets --jq '.assets[].name'
