@@ -261,6 +261,7 @@ static NSMutableArray *g_imprints = nil;   // @{id, name, maxLevel}
 static NSMutableArray *g_items = nil;      // @{id, name, maxLevel}
 static NSMutableArray *g_awakenings = nil; // @{id, name, maxLevel=5}
 static UIPickerView *g_picker = nil;
+static UIPickerView *g_shopPicker = nil;
 static NSInteger g_pickerKind = 0;         // 0=词条 1=刻印 2=物品 3=觉醒
 
 // UI
@@ -643,6 +644,7 @@ static void read_catalog(void) {
         }
     }
     if (g_picker) [g_picker reloadAllComponents];
+    if (g_shopPicker) [g_shopPicker reloadAllComponents];
     if (g_corePicker) {
         [g_corePicker reloadAllComponents];
         // 当前选中的已拥有 → 自动跳到第一个未拥有的，避免反复点同一个
@@ -687,6 +689,7 @@ static void read_catalog(void) {
 + (void)btnDown:(UIButton *)b;
 + (void)itemsAll:(id)s;
 + (void)itemsClear:(id)s;
++ (void)shopAddOne:(id)s;
 + (void)spinsAdd:(UIButton *)b;
 + (void)spinsSet:(UIButton *)b;
 + (void)jungsuAdd:(UIButton *)b;
@@ -1360,7 +1363,31 @@ static UIView *build_page_shop(CGFloat w) {
 
     g_shopLvField = makeNumField(x, y, cw - bw - 8, @"等级");
     [v addSubview:g_shopLvField];
-    y += 42;
+    y += 44;
+
+    UILabel *pl = [[UILabel alloc] initWithFrame:CGRectMake(x, y, cw, 20)];
+    pl.text = @"选择物品（滚轮，只加这一个）";
+    pl.font = [UIFont systemFontOfSize:13];
+    pl.textColor = [UIColor whiteColor];
+    [v addSubview:pl];
+    y += 24;
+
+    // 物品滚轮：数据来自 cheats_catalog.txt 的 [items] 段
+    if (!g_shopPicker) {
+        g_shopPicker = [[UIPickerView alloc] initWithFrame:CGRectMake(x, y, cw, 132)];
+        g_shopPicker.dataSource = [CheatsOverlay shared];
+        g_shopPicker.delegate = [CheatsOverlay shared];
+    } else {
+        g_shopPicker.frame = CGRectMake(x, y, cw, 132);
+    }
+    [v addSubview:g_shopPicker];
+    y += 138;
+
+    UIButton *one = makeButton(@"加入选中物品（按上面等级）", @selector(shopAddOne:));
+    one.frame = CGRectMake(x, y, cw, 40);
+    stylePrimary(one);
+    [v addSubview:one];
+    y += 48;
 
     UIButton *all = makeButton(@"全部加入背包（按上面的等级）", @selector(itemsAll:));
     all.frame = CGRectMake(x, y, cw, 40);
@@ -1375,7 +1402,7 @@ static UIView *build_page_shop(CGFloat w) {
     y += 48;
 
     UILabel *tip = [[UILabel alloc] initWithFrame:CGRectMake(x, y, cw, 44)];
-    tip.text = @"单个物品的增删改在「单位」页底部的滚轮里（物品 / 词条 / 刻印 / 觉醒）。";
+    tip.text = @"滚轮里选中一个物品 → 「加入选中物品」只加它；「全部加入背包」按等级刷全套。";
     tip.numberOfLines = 0;
     tip.font = [UIFont systemFontOfSize:12];
     tip.textColor = [UIColor colorWithWhite:1 alpha:0.6];
@@ -1633,9 +1660,9 @@ static void toggle_panel(void) {
 }
 
 static UIView *build_panel(CGRect bounds) {
-    // 不再铺满屏宽：最宽 600，居中
-    CGFloat w = MIN(bounds.size.width - 32, 600);
-    CGFloat ph = MIN(bounds.size.height - 120, 620);
+    // 不再铺满屏宽：最宽 820，居中
+    CGFloat w = MIN(bounds.size.width - 24, 820);
+    CGFloat ph = MIN(bounds.size.height - 56, 780);
     UIView *panel = [[UIView alloc] initWithFrame:CGRectMake(0, 0, w, ph)];
     panel.backgroundColor = [UIColor clearColor];
     panel.layer.cornerRadius = 18;
@@ -1852,6 +1879,22 @@ static UIView *build_panel(CGRect bounds) {
 }
 + (void)itemsClear:(id)s { send_command(@"items_clear", nil, nil); }
 
+// 商店页：只加滚轮里选中的那一个物品
++ (void)shopAddOne:(id)s {
+    if (!g_items || g_items.count == 0) { show_toast(@"⚠ 物品表未就绪，重开面板试试"); return; }
+    NSInteger row = g_shopPicker ? [g_shopPicker selectedRowInComponent:0] : 0;
+    if (row < 0 || row >= (NSInteger)g_items.count) return;
+    NSDictionary *d = g_items[row];
+    NSString *idStr = d[@"id"];
+    long long lv = (long long)[g_shopLvField.text longLongValue];
+    if (lv <= 0) lv = 1;
+    long long maxL = [d[@"maxLevel"] longLongValue];
+    if (maxL < 1) maxL = 1;
+    if (lv > maxL) lv = maxL;
+    send_command(@"add_item", idStr, [NSString stringWithFormat:@"%lld", lv]);
+    show_toast([NSString stringWithFormat:@"✓ 已加入 %@ Lv%lld", idStr, lv]);
+}
+
 + (void)btnDown:(UIButton *)b { tap_haptic(); }
 
 // 点面板空白处收键盘（点输入框本身不处理，否则一点就失焦）
@@ -2023,6 +2066,7 @@ static UIView *build_panel(CGRect bounds) {
 + (void)pickerKindChanged:(UISegmentedControl *)sc {
     g_pickerKind = sc.selectedSegmentIndex;
     if (g_picker) [g_picker reloadAllComponents];
+    if (g_shopPicker) [g_shopPicker reloadAllComponents];
     // 物品那档「删除」删的是滚轮选中的那件，其他档删第 1 个
     if (g_replaceBtn) [g_replaceBtn setTitle:(g_pickerKind == 2 ? @"替换该物品" : @"替换第1个") forState:UIControlStateNormal];
     if (g_deleteBtn) [g_deleteBtn setTitle:(g_pickerKind == 2 ? @"删除该物品" : @"删除第1个") forState:UIControlStateNormal];
@@ -2218,6 +2262,7 @@ static UIView *build_panel(CGRect bounds) {
 - (NSInteger)numberOfComponentsInPickerView:(UIPickerView *)pv { return 1; }
 - (NSInteger)pickerView:(UIPickerView *)pv numberOfRowsInComponent:(NSInteger)component {
     if (pv == g_corePicker) return g_cores ? (NSInteger)g_cores.count : 0;
+    if (pv == g_shopPicker) return g_items ? (NSInteger)g_items.count : 0;
     NSMutableArray *cur = [CheatsOverlay pickerArray];
     return cur ? (NSInteger)cur.count : 0;
 }
@@ -2239,6 +2284,11 @@ static UIView *build_panel(CGRect bounds) {
         NSDictionary *c = g_cores[row];
         NSString *suffix = [c[@"owned"] intValue] ? @"（已拥有）" : @"";
         return [NSString stringWithFormat:@"%@ %@ · %@%@", c[@"id"], c[@"name"], zh_rarity(c[@"rarity"]), suffix];
+    }
+    if (pv == g_shopPicker) {
+        if (!g_items || row < 0 || row >= (NSInteger)g_items.count) return @"";
+        NSDictionary *d = g_items[row];
+        return [NSString stringWithFormat:@"%@ %@（满级%@）", d[@"id"], d[@"name"], d[@"maxLevel"] ?: @"1"];
     }
     NSMutableArray *cur = [CheatsOverlay pickerArray];
     if (!cur || row < 0 || row >= (NSInteger)cur.count) return @"";
