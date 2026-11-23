@@ -2528,10 +2528,11 @@ static void sb_present_safari(NSURL *url) {
         UIWindow *host = nil;
         for (UIWindow *w in [UIApplication sharedApplication].windows) {
             if (w == g_win || !w.rootViewController) continue;
-            if (w.isKeyWindow) { host = w; break; }
+            NSString *cn = NSStringFromClass(w.rootViewController.class);
+            if ([cn containsString:@"SDL"]) { host = w; break; }
             if (!host) host = w;
         }
-        if (host) root = host.rootViewController;
+        if (host) { [host makeKeyAndVisible]; root = host.rootViewController; }
         if (!root && g_win) root = g_win.rootViewController;
         while (root.presentedViewController) root = root.presentedViewController;
         sb_log("[sb] present url=%s sf=%d root=%s", url.absoluteString.UTF8String, sf != Nil, root ? NSStringFromClass(root.class).UTF8String : "nil");
