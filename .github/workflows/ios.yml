@@ -152,6 +152,29 @@ jobs:
           unzip -q love-ios-source.zip
           test -d "love-${LOVE_VERSION}-ios-source/platform/xcode/love.xcodeproj"
 
+      # ---- 锁定纯横屏：编译期写进 love 二进制，等价于 SDL_IOS_ORIENTATIONS 环境变量 ----
+      # 只改源码不改二进制偏移；Xcode/SDK 升级不影响；重签名后仍然生效。
+      - name: Lock landscape orientation (SDL hint)
+        run: |
+          set -euo pipefail
+          cd "love-${LOVE_VERSION}-ios-source"
+          python3 - << 'PYEOF'
+          import io
+          p = "src/love.cpp"
+          s = io.open(p, encoding="utf-8").read()
+          needle = "int main(int argc, char **argv)\n{\n"
+          assert s.count(needle) == 1, "main() anchor not found"
+          inject = needle + (
+              "#ifdef LOVE_IOS\n"
+              "\t/* SlotBound: 纯横屏，必须在 SDL 建窗之前设置 */\n"
+              "\tSDL_SetHintWithPriority(SDL_HINT_ORIENTATIONS, \"LandscapeLeft LandscapeRight\", SDL_HINT_OVERRIDE);\n"
+              "#endif\n"
+          )
+          io.open(p, "w", encoding="utf-8", newline="\n").write(s.replace(needle, inject, 1))
+          PYEOF
+          grep -n "SDL_HINT_ORIENTATIONS" src/love.cpp
+          grep -n "int main(int argc, char \*\*argv)" src/love.cpp
+
       - name: Build unsigned iPhoneOS app
         run: |
           set -euo pipefail
