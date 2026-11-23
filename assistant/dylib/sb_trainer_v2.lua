@@ -303,6 +303,80 @@ local function cmd_set_stat(key, value, is_mul)
   return "ok"
 end
 
+-- 面板加的物品：游戏 restorePurchasedItems() 会按存档重建，把面板临时加的直接清掉。
+-- 这里记住这些物品，每次重建后再补回去；同时落盘 trainer_items.txt，重启也保留。
+local injected_items = {}
+local injected_guard = nil
+local injected_base = nil
+local injected_busy = false
+local injected_loaded = false
+
+local function injected_save()
+  local lines = {}
+  for id, lv in pairs(injected_items) do
+    lines[#lines + 1] = tostring(id) .. "\t" .. tostring(lv)
+  end
+  table.sort(lines)
+  pcall(love.filesystem.write, "trainer_items.txt", table.concat(lines, "\n"))
+end
+
+local function injected_load()
+  injected_items = {}
+  local ok, data = pcall(love.filesystem.read, "trainer_items.txt")
+  if not ok or type(data) ~= "string" then return end
+  for id, lv in data:gmatch("([^\t\r\n]+)\t(%d+)") do
+    injected_items[tostring(id)] = tonumber(lv) or 1
+  end
+end
+
+local function injected_apply()
+  if injected_busy then return end
+  local ui = rawget(_G, "ui")
+  if type(ui) ~= "table" then return end
+  injected_busy = true
+  local ok, I = pcall(require, "src.game.item")
+  if ok and type(I) == "table" then
+    ui._itemPurchased = ui._itemPurchased or {}
+    ui._itemPurchasedKeys = ui._itemPurchasedKeys or {}
+    for id, lv in pairs(injected_items) do
+      local found = false
+      for _, o in ipairs(ui._itemPurchased) do
+        if tostring(o.id) == tostring(id) then
+          o.level = lv
+          if type(o.updateEffectString) == "function" then pcall(o.updateEffectString, o) end
+          found = true
+          break
+        end
+      end
+      if not found then
+        local d = I.getById(id)
+        if d then
+          local o = {}
+          for k, v in pairs(d) do o[k] = v end
+          o.level = lv
+          if type(o.updateEffectString) == "function" then pcall(o.updateEffectString, o) end
+          table.insert(ui._itemPurchased, o)
+          local n = tonumber(ui._itemPanelNextId) or (#ui._itemPurchased + 100)
+          table.insert(ui._itemPurchasedKeys, "p" .. tostring(n))
+          ui._itemPanelNextId = n + 1
+        end
+      end
+    end
+  end
+  injected_busy = false
+end
+
+local function injected_hook()
+  local cur = rawget(_G, "restorePurchasedItems")
+  if type(cur) ~= "function" or cur == injected_guard then return end
+  injected_base = cur
+  injected_guard = function(...)
+    pcall(injected_base, ...)
+    pcall(injected_apply)
+  end
+  rawset(_G, "restorePurchasedItems", injected_guard)
+end
+
 local function cmd_add_item(id, level)
   local ui = rawget(_G, "ui")
   if type(ui) ~= "table" then return "noui" end
@@ -312,6 +386,9 @@ local function cmd_add_item(id, level)
   local maxL = math.max(1, math.floor(tonumber(d.maxLevel) or 1))
   local L = math.max(1, math.min(maxL, level or 1))
   ui._itemPurchased = ui._itemPurchased or {}
+  injected_items[tostring(d.id)] = L
+  injected_save()
+  injected_hook()
   for _, o in ipairs(ui._itemPurchased) do
     if tostring(o.id) == tostring(d.id) then
       o.level = L
@@ -343,6 +420,8 @@ local function cmd_remove_item(id)
       if type(ui._itemPurchasedKeys) == "table" and ui._itemPurchasedKeys[i] then
         table.remove(ui._itemPurchasedKeys, i)
       end
+      injected_items[tostring(id)] = nil
+      injected_save()
       return "ok"
     end
   end
@@ -373,6 +452,8 @@ local function cmd_items_clear()
   if type(ui) ~= "table" then return "noui" end
   ui._itemPurchased = {}
   ui._itemPurchasedKeys = {}
+  injected_items = {}
+  injected_save()
   return "ok"
 end
 
@@ -670,6 +751,26 @@ local function cmd_core_add_all()
     end
   end
   return "ok:" .. tostring(n)
+end
+
+-- 一键清除所有核心：逐个 remove 当前已激活的核心
+local function cmd_cores_clear()
+  local ok, cores = pcall(require, "src.game.cores")
+  if not ok or type(cores) ~= "table" then return "no_module" end
+  if type(cores.getActive) ~= "function" then return "no_api" end
+  local snapshot = {}
+  for _, c in ipairs(cores.getActive() or {}) do snapshot[#snapshot + 1] = c end
+  local removed = 0
+  for _, c in ipairs(snapshot) do
+    if type(cores.remove) == "function" then
+      if pcall(cores.remove, c) then removed = removed + 1 end
+    end
+  end
+  if removed == 0 and type(cores.reset) == "function" then
+    pcall(cores.reset)
+    return "reset"
+  end
+  return "ok:" .. tostring(removed)
 end
 
 local function core_count()
@@ -1279,6 +1380,9 @@ local function cmd_reset_all()
   pcall(apply_jester, false)
   pcall(apply_upgrade_wraps, false, 0, 0, 0, false)
   wrap_mode = nil
+  -- 面板加过的物品也一并撤掉（含落盘记录）
+  injected_items = {}
+  pcall(injected_save)
   local slot = rawget(_G, "slot")
   if type(slot) == "table" then slot.forceWinOnce = false end
   if spin_cost_orig then rawset(_G, "spinCost", spin_cost_orig); spin_cost_orig = nil end
@@ -1308,6 +1412,7 @@ local commands = {
   items_all = function() return cmd_items_all(cfg.arg) end,
   core_add = function() return cmd_core_add(cfg.arg) end,
   core_add_all = function() return cmd_core_add_all() end,
+  cores_clear = function() return cmd_cores_clear() end,
   items_clear = function() return cmd_items_clear() end,
   add_awakening = function() return cmd_add_awakening(cfg.arg) end,
   remove_awakening = function() return cmd_remove_awakening(cfg.arg) end,
@@ -1333,6 +1438,13 @@ end
 -- 一次性字段
 ----------------------------------------------------------------
 local function apply_once()
+  -- 面板加的物品要顶住游戏的 restorePurchasedItems()：先载盘，再挂钩子，再补一次
+  if not injected_loaded then
+    injected_loaded = true
+    pcall(injected_load)
+  end
+  pcall(injected_hook)
+  if next(injected_items) ~= nil then pcall(injected_apply) end
   if type(cfg.seq) ~= "number" then cfg.seq = 0 end
   if cfg.seq == applied_seq then return end
   -- 首次读取时，磁盘上的旧配置是上一次运行留下的：一次性动作（run_lua/cmd/加核心/大奖）

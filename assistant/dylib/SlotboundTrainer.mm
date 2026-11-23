@@ -732,6 +732,7 @@ static void read_catalog(void) {
 + (void)saveDefaults:(id)s;
 + (void)resetAllTapped:(id)s;
 + (void)doResetAll;
++ (void)clearCoresTapped:(id)s;
 + (void)linkTapped:(id)s;
 @end
 
@@ -1132,6 +1133,12 @@ static UIView *build_page_slot(CGFloat w) {
     coreAllBtn.frame = CGRectMake(x + chalf + 8, y, chalf, 44);
     coreAllBtn.backgroundColor = accent();
     [v addSubview:coreAllBtn];
+    y += 52;
+
+    UIButton *coreClearBtn = makeButton(@"一键清除所有核心", @selector(clearCoresTapped:));
+    coreClearBtn.frame = CGRectMake(x, y, cw, 44);
+    coreClearBtn.backgroundColor = [UIColor colorWithRed:0.62 green:0.20 blue:0.20 alpha:1.0];
+    [v addSubview:coreClearBtn];
     y += 54;
 
     v.frame = CGRectMake(0, 0, w, y);
@@ -2241,6 +2248,25 @@ static UIView *build_panel(CGRect bounds) {
     [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     [ac addAction:[UIAlertAction actionWithTitle:@"恢复原版" style:UIAlertActionStyleDestructive
                                         handler:^(UIAlertAction *a) { [CheatsOverlay doResetAll]; }]];
+    UIViewController *vc = g_win ? g_win.rootViewController : nil;
+    if (!vc) return;
+    UIViewController *top = vc;
+    while (top.presentedViewController) top = top.presentedViewController;
+    [top presentViewController:ac animated:YES completion:nil];
+}
+
++ (void)clearCoresTapped:(id)s {
+    UIAlertController *ac = [UIAlertController alertControllerWithTitle:@"清除所有核心"
+                                                              message:@"会移除当前已激活的全部核心（不清背包里的核心图鉴），确定？"
+                                                       preferredStyle:UIAlertControllerStyleAlert];
+    [ac addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    [ac addAction:[UIAlertAction actionWithTitle:@"全部清除" style:UIAlertActionStyleDestructive
+                                        handler:^(UIAlertAction *a) {
+                                            send_command(@"cores_clear", nil, nil);
+                                            // 清完刷一次目录，把「已拥有」标记同步回来
+                                            send_command(@"catalog", nil, nil);
+                                            show_toast(@"✓ 已清除所有核心");
+                                        }]];
     UIViewController *vc = g_win ? g_win.rootViewController : nil;
     if (!vc) return;
     UIViewController *top = vc;
