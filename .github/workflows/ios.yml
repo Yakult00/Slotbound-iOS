@@ -217,6 +217,18 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.build }}" "$APP/Info.plist"
           /usr/libexec/PlistBuddy -c "Add :UIFileSharingEnabled bool true" "$APP/Info.plist" || true
           /usr/libexec/PlistBuddy -c "Add :LSSupportsOpeningDocumentsInPlace bool true" "$APP/Info.plist" || true
+          # ---- 强制横屏启动：只留横屏方向，修竖屏启动 bug ----
+          /usr/libexec/PlistBuddy -c "Delete :UISupportedInterfaceOrientations" "$APP/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations array" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationLandscapeLeft" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations:1 string UIInterfaceOrientationLandscapeRight" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Delete :UISupportedInterfaceOrientations~ipad" "$APP/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations~ipad array" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations~ipad:0 string UIInterfaceOrientationLandscapeLeft" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :UISupportedInterfaceOrientations~ipad:1 string UIInterfaceOrientationLandscapeRight" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :UIRequiresFullScreen bool true" "$APP/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Add :UIInterfaceOrientation string UIInterfaceOrientationLandscapeRight" "$APP/Info.plist" || true
+          /usr/libexec/PlistBuddy -c "Print :UISupportedInterfaceOrientations" "$APP/Info.plist"
           /usr/bin/xcrun vtool -show-build "$APP/love" | grep -Eq '^[[:space:]]*platform IOS$'
           /usr/bin/lipo -archs "$APP/love" | grep -qw arm64
           mkdir -p Payload
