@@ -396,16 +396,17 @@ static void write_cheats(void) {
     [s appendFormat:@"  cmd = %@,\n", g_cmd ? [NSString stringWithFormat:@"\"%@\"", g_cmd] : @"nil"];
     [s appendFormat:@"  arg = %@,\n", g_arg ?: @"nil"];
     [s appendFormat:@"  arg2 = %@,\n", g_arg2 ?: @"nil"];
-    // ---- 抽奖页 ----
-    [s appendFormat:@"  sym_lock = %ld,\n", (long)g_symLock];
+    // ---- 抽奖（并入老虎机页；符号锁定与「必中大奖」重复，恒关）----
+    [s appendFormat:@"  sym_lock = 0,\n"];
     [s appendFormat:@"  grade_lock = %ld,\n", (long)g_gradeLock];
     [s appendFormat:@"  luck_tier = %ld,\n", (long)g_luckTier];
     [s appendFormat:@"  spins_wave = %ld,\n", (long)g_spinsWave];
     [s appendFormat:@"  joker_bits = %lld,\n", g_jokerBits];
     [s appendFormat:@"  jester_hero = %d,\n", g_jesterHero ? 1 : 0];
-    // ---- 开关页（14 项）----
+    // ---- 开关（13 项，分散到各页；金币/次数/精粹锁定沿用资源页原有开关）----
     for (int i = 0; i < kSwCount; i++) {
         long long v = g_swOn[i] ? 1 : 0;
+        if (i == 0 || i == 5 || i == 8) v = 0;         // coins/spins/jungsu 锁定由资源页原开关接管
         if (i == 9)  v = g_swOn[i] ? 1 : 0;           // start_bonus 开关即可
         if (i == 10) v = g_swOn[i] ? 99 : 0;          // unit_cap
         if (i == 11) v = g_swOn[i] ? 99 : 0;          // item_cap
@@ -1389,22 +1390,7 @@ static UIView *build_page_draw(CGFloat w) {
     v.backgroundColor = [UIColor clearColor];
     CGFloat x = 14, y = 8, cw = w - 28;
 
-    y = addSectionTitle(v, x, y, cw, @"符号锁定（9 格同一图案）");
-    g_symRow = [[UIView alloc] initWithFrame:CGRectMake(x, y, cw, 100)];
-    [v addSubview:g_symRow];
-    NSArray *symNames = @[ @"关", @"A", @"D", @"H", @"M", @"S", @"W" ];
-    CGFloat bw4 = (cw - 3 * 8) / 4;
-    for (NSInteger i = 0; i < (NSInteger)symNames.count; i++) {
-        UIButton *b = makeButton(symNames[i], @selector(symLockTapped:));
-        b.tag = 100 + i;
-        b.frame = CGRectMake((i % 4) * (bw4 + 8), (i / 4) * 50, bw4, 42);
-        BOOL on = (i == g_symLock);
-        b.backgroundColor = on ? accent() : [UIColor colorWithWhite:0.22 alpha:1];
-        [b setTitleColor:on ? inkOnGold() : txtPrimary() forState:UIControlStateNormal];
-        [g_symRow addSubview:b];
-    }
-    y += 108;
-
+    // 符号锁定整段删除：与老虎机页「必中大奖」重复
     y = addSectionTitle(v, x, y, cw, @"品质锁定");
     g_gradeRow = [[UIView alloc] initWithFrame:CGRectMake(x, y, cw, 100)];
     [v addSubview:g_gradeRow];
@@ -1475,7 +1461,7 @@ static UIView *build_page_draw(CGFloat w) {
     y += 44;
 
     UILabel *hint = [[UILabel alloc] initWithFrame:CGRectMake(x, y, cw, 40)];
-    hint.text = @"符号锁定会同时改两份权重表；关掉立即还原。";
+    hint.text = @"品质锁定时概率模式不生效；关掉立即还原。";
     hint.numberOfLines = 0;
     hint.font = [UIFont systemFontOfSize:12];
     hint.textColor = txtDim();
@@ -1565,20 +1551,17 @@ static UIView *build_page_save(CGFloat w) {
 static UISegmentedControl *g_tab = nil;
 
 static void show_page(NSInteger idx) {
+    // 0 全局 / 1 老虎机(含抽奖) / 2 单位 / 3 商店 / 4 存档
     g_pageRes.hidden = (idx != 0);
     g_pageSlot.hidden = (idx != 1);
     g_pageUnit.hidden = (idx != 2);
     if (g_pageShop) g_pageShop.hidden = (idx != 3);
+    if (g_pageSave) g_pageSave.hidden = (idx != 4);
     if (g_scrollRes) g_scrollRes.hidden = (idx != 0);
     if (g_scrollSlot) g_scrollSlot.hidden = (idx != 1);
     if (g_scrollUnit) g_scrollUnit.hidden = (idx != 2);
     if (g_scrollShop) g_scrollShop.hidden = (idx != 3);
-    if (g_pageDraw) g_pageDraw.hidden = (idx != 4);
-    if (g_pageSw) g_pageSw.hidden = (idx != 5);
-    if (g_pageSave) g_pageSave.hidden = (idx != 6);
-    if (g_scrollDraw) g_scrollDraw.hidden = (idx != 4);
-    if (g_scrollSw) g_scrollSw.hidden = (idx != 5);
-    if (g_scrollSave) g_scrollSave.hidden = (idx != 6);
+    if (g_scrollSave) g_scrollSave.hidden = (idx != 4);
 }
 
 static void refresh_hook_status(void) {
@@ -1592,6 +1575,30 @@ static void refresh_hook_status(void) {
         g_hookLabel.textColor = g_hookReady ? [UIColor colorWithRed:0.2 green:0.7 blue:0.3 alpha:1] : [UIColor secondaryLabelColor];
 #endif
     });
+}
+
+// 把若干开关追加到已有页面底部（idxList 是 swKey/swLabel 的下标）
+static CGFloat append_switches(UIView *v, CGFloat w, NSArray *idxList, CGFloat y, NSString *title) {
+    CGFloat x = 14, cw = w - 28;
+    y = addSectionTitle(v, x, y, cw, title);
+    for (NSNumber *n in idxList) {
+        int i = [n intValue];
+        UILabel *l = [[UILabel alloc] initWithFrame:CGRectMake(x, y + 6, cw - 70, 26)];
+        l.text = swLabel(i);
+        l.font = [UIFont systemFontOfSize:15];
+        l.textColor = txtPrimary();
+        [v addSubview:l];
+        UISwitch *s = [[UISwitch alloc] initWithFrame:CGRectMake(x + cw - 51, y + 4, 51, 31)];
+        s.on = g_swOn[i];
+        s.tag = i;
+        s.onTintColor = accent();
+        [s addTarget:[CheatsOverlay class] action:@selector(swChanged:) forControlEvents:UIControlEventValueChanged];
+        [v addSubview:s];
+        y += 44;
+    }
+    y += 10;
+    v.frame = CGRectMake(0, 0, w, y);
+    return y;
 }
 
 static void sync_window_frame(void) {
@@ -1670,7 +1677,7 @@ static UIView *build_panel(CGRect bounds) {
     [panel addSubview:g_hookLabel];
     refresh_hook_status();
 
-    g_tab = [[UISegmentedControl alloc] initWithItems:@[ @"资源", @"老虎机", @"单位", @"商店", @"抽奖", @"开关", @"存档" ]];
+    g_tab = [[UISegmentedControl alloc] initWithItems:@[ @"全局", @"老虎机", @"单位", @"商店", @"存档" ]];
     g_tab.frame = CGRectMake(16, 74, w - 32, 34);
     g_tab.selectedSegmentIndex = 0;
     styleSegment(g_tab);
@@ -1704,38 +1711,53 @@ static UIView *build_panel(CGRect bounds) {
     g_scrollSlot = mkscroll();
     g_scrollUnit = mkscroll();
     g_scrollShop = mkscroll();
-    g_scrollDraw = mkscroll();
-    g_scrollSw = mkscroll();
     g_scrollSave = mkscroll();
 
-    // 每个页面单独 try：某一页写崩了也不至于整个 app 起不来
-    @try { g_pageRes = build_page_res(w - 28); }
+    // 每页单独 try：某一页写崩了也不至于整个 app 起不来
+    // 归并：开关按功能散到各页，抽奖区并入老虎机页
+    @try {
+        g_pageRes = build_page_res(w - 28);
+        append_switches(g_pageRes, w - 28,
+                        @[ @(9) /*开局超级加成*/, @(4) /*基地无敌*/ ],
+                        g_pageRes.frame.size.height + 6, @"开关");
+    }
     @catch (NSException *e) { NSLog(@"[SBTrainer] page RES: %@", e.reason); g_pageRes = [[UIView alloc] initWithFrame:CGRectZero]; }
-    @try { g_pageSlot = build_page_slot(w - 28); }
+    @try {
+        g_pageSlot = build_page_slot(w - 28);
+        CGFloat y = append_switches(g_pageSlot, w - 28,
+                        @[ @(1) /*免费抽奖*/, @(2) /*必中大奖*/, @(3) /*必出英雄*/,
+                           @(7) /*无限免费抽*/, @(6) /*核心重掷不限*/, @(13) /*战斗加速×2*/ ],
+                        g_pageSlot.frame.size.height + 6, @"开关");
+        UIView *draw = build_page_draw(w - 28);
+        draw.frame = CGRectMake(0, y + 4, w - 28, draw.frame.size.height);
+        [g_pageSlot addSubview:draw];
+        g_pageSlot.frame = CGRectMake(0, 0, w - 28, y + 4 + draw.frame.size.height + 16);
+    }
     @catch (NSException *e) { NSLog(@"[SBTrainer] page SLOT: %@", e.reason); g_pageSlot = [[UIView alloc] initWithFrame:CGRectZero]; }
-    @try { g_pageUnit = build_page_unit(w - 28); }
+    @try {
+        g_pageUnit = build_page_unit(w - 28);
+        append_switches(g_pageUnit, w - 28, @[ @(10) /*单位容量 99*/ ],
+                        g_pageUnit.frame.size.height + 6, @"开关");
+    }
     @catch (NSException *e) { NSLog(@"[SBTrainer] page UNIT: %@", e.reason); g_pageUnit = [[UIView alloc] initWithFrame:CGRectZero]; }
-    @try { g_pageShop = build_page_shop(w - 28); }
+    @try {
+        g_pageShop = build_page_shop(w - 28);
+        append_switches(g_pageShop, w - 28,
+                        @[ @(11) /*物品容量 99*/, @(12) /*商店刷新不限*/ ],
+                        g_pageShop.frame.size.height + 6, @"开关");
+    }
     @catch (NSException *e) { NSLog(@"[SBTrainer] page SHOP: %@", e.reason); g_pageShop = [[UIView alloc] initWithFrame:CGRectZero]; }
-    @try { g_pageDraw = build_page_draw(w - 28); }
-    @catch (NSException *e) { NSLog(@"[SBTrainer] page DRAW: %@", e.reason); g_pageDraw = [[UIView alloc] initWithFrame:CGRectZero]; }
-    @try { g_pageSw = build_page_sw(w - 28); }
-    @catch (NSException *e) { NSLog(@"[SBTrainer] page SW: %@", e.reason); g_pageSw = [[UIView alloc] initWithFrame:CGRectZero]; }
     @try { g_pageSave = build_page_save(w - 28); }
     @catch (NSException *e) { NSLog(@"[SBTrainer] page SAVE: %@", e.reason); g_pageSave = [[UIView alloc] initWithFrame:CGRectZero]; }
     [g_scrollRes addSubview:g_pageRes];
     [g_scrollSlot addSubview:g_pageSlot];
     [g_scrollUnit addSubview:g_pageUnit];
     [g_scrollShop addSubview:g_pageShop];
-    [g_scrollDraw addSubview:g_pageDraw];
-    [g_scrollSw addSubview:g_pageSw];
     [g_scrollSave addSubview:g_pageSave];
     g_scrollRes.contentSize = g_pageRes.frame.size;
     g_scrollSlot.contentSize = g_pageSlot.frame.size;
     g_scrollUnit.contentSize = g_pageUnit.frame.size;
     g_scrollShop.contentSize = g_pageShop.frame.size;
-    g_scrollDraw.contentSize = g_pageDraw.frame.size;
-    g_scrollSw.contentSize = g_pageSw.frame.size;
     g_scrollSave.contentSize = g_pageSave.frame.size;
 
     // 左下角：项目主页（点一下开浏览器）
