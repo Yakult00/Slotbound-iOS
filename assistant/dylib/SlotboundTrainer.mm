@@ -399,8 +399,7 @@ static void write_cheats(void) {
     [s appendFormat:@"  cmd = %@,\n", g_cmd ? [NSString stringWithFormat:@"\"%@\"", g_cmd] : @"nil"];
     [s appendFormat:@"  arg = %@,\n", g_arg ?: @"nil"];
     [s appendFormat:@"  arg2 = %@,\n", g_arg2 ?: @"nil"];
-    // ---- 抽奖（并入老虎机页；符号锁定与「必中大奖」重复，恒关）----
-    [s appendFormat:@"  sym_lock = 0,\n"];
+    // ---- 抽奖（并入老虎机页；符号锁定已由 jackpot 取代，不再输出 sym_lock）----
     [s appendFormat:@"  grade_lock = %ld,\n", (long)g_gradeLock];
     [s appendFormat:@"  luck_tier = %ld,\n", (long)g_luckTier];
     [s appendFormat:@"  spins_wave = %ld,\n", (long)g_spinsWave];
@@ -409,7 +408,9 @@ static void write_cheats(void) {
     // ---- 开关（13 项，分散到各页；金币/次数/精粹锁定沿用资源页原有开关）----
     for (int i = 0; i < kSwCount; i++) {
         long long v = g_swOn[i] ? 1 : 0;
-        if (i == 0 || i == 5 || i == 8) v = 0;         // coins/spins/jungsu 锁定由资源页原开关接管
+        // 0/5/8：布尔锁由资源页 lock_coins/lock_spins/lock_jungsu 数值锁接管；
+        // 3：hero_always 与 force_win 共用 slot.forceWinOnce，去重后不再输出
+        if (i == 0 || i == 3 || i == 5 || i == 8) continue;
         if (i == 9)  v = g_swOn[i] ? 1 : 0;           // start_bonus 开关即可
         if (i == 10) v = g_swOn[i] ? 99 : 0;          // unit_cap
         if (i == 11) v = g_swOn[i] ? 99 : 0;          // item_cap
@@ -1771,7 +1772,7 @@ static UIView *build_panel(CGRect bounds) {
     @try {
         g_pageSlot = build_page_slot(w - 28);
         CGFloat y = append_switches(g_pageSlot, w - 28,
-                        @[ @(1) /*免费抽奖*/, @(2) /*必中大奖*/, @(3) /*必出英雄*/,
+                        @[ @(1) /*免费抽奖*/, @(2) /*必中大奖*/,
                            @(7) /*无限免费抽*/, @(6) /*核心重掷不限*/, @(13) /*战斗加速×2*/ ],
                         g_pageSlot.frame.size.height + 6, @"开关");
         UIView *draw = build_page_draw(w - 28);
