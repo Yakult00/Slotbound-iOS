@@ -16,6 +16,11 @@ on:
         description: '面板版本号（留空则自动用 panel-<短哈希>）'
         required: false
         default: ''
+      publish:
+        description: '发布到 panel-latest release（默认 false：只出 artifact，测试阶段不发 release）'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: write
@@ -96,6 +101,8 @@ jobs:
   # 始终从这个固定 release 下载最新 dylib（clobber 覆盖旧资产）。
   publish:
     name: Publish dylibs to release
+    # 测试期默认不发：push 只产出 artifact；要发 release 用手动触发并勾 publish
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
     needs: build-dylib
     runs-on: macos-15
     timeout-minutes: 30
