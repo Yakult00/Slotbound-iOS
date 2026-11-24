@@ -112,6 +112,7 @@ package.loaded["ffi"] = real_ffi
 local TAP_SLOP    = 14     -- 移动判定阈值（px）
 local TWO_TAP_SLOP = 50    -- 两段式第二下匹配阈值（px）
 local LONG_MS     = 0.5    -- 长按判定（秒）
+local LONG_PIN_DELAY = 0.09 -- 长按触发后先悬停这么多秒再发右键：candidate 由 love.update 每帧算，同一帧发右键读到的是旧值
 local WHEEL_STEP  = 40     -- 列表滚动每多少 px 折一格滚轮
 local EDGE_W_FRAC = 0.05   -- 左边缘宽度（屏幕宽比例）
 local EDGE_SWIPE_FRAC = 0.06
@@ -241,13 +242,50 @@ end
 local function fire_right_click(x, y)
     set_hover(x, y)
     if game_mousepressed then game_mousepressed(x, y, 2, true, 1) end
+    -- v1.0.3 的 tooltip:mousepressed(2) 在 iOS 上也会走 _macRightPress 延迟分支并 return true，
+    -- 而 mousereleased 里先 self._macRightPress = nil 再判空（上游写反）→ 永远钉不住，
+    -- 同时把 real_main 后面的 stone.rerollAt 也挡掉了。这里替它把这两件事做掉。
+    local u = get_ui()
+    local tip = u and u.tooltip
+    if tip then
+        tip._macRightPress = nil
+        -- v1.0.3 的 mousepressed(2) 会先被某个前置分支 return true（实测 pinHoveredUnit 根本没被调到），
+        -- 所以这里不指望它：candidate 有 ref 就直接钉住。
+        local c = tip.candidate
+        if c and c.ref then
+            pcall(tip.pinHoveredUnit, tip, rawget(_G, "battlefield"))
+        end
+        if u._stoneMode then
+            local ok, st = pcall(require, "src.game.stone")
+            if ok and st and st.rerollAt then
+                local vx, vy = to_virtual(x, y)
+                pcall(st.rerollAt, u, rawget(_G, "battlefield"), vx, vy)
+                glog(string.format("right click -> stone.rerollAt %.0f,%.0f", vx, vy))
+            end
+        end
+    end
     if game_mousereleased then game_mousereleased(x, y, 2, true, 1) end
 end
 
+local function results_like()
+    -- 结算/战斗详细（DPS 明细）界面：整屏只能滚，不能拖兵
+    local bf = rawget(_G, "battlefield")
+    if bf and (bf.gameOver or (bf.victoryPending and bf.victoryPending.active)) then return true end
+    local u = get_ui()
+    return (u and u._dpsHoverTarget ~= nil) and true or false
+end
+
 local function drag_kind_for_phase()
+    if results_like() then return "wheel" end
     local ph = phase_now()
     if ph == "upgrade" then return "tree" end
-    if ph == "prep" or ph == "battle" or ph == "spin" then return "drag" end
+    if ph == "prep" or ph == "battle" or ph == "spin" then
+        -- 手指没落在单位上 = 在拖列表/滚动条，按滚轮派发；落在单位上才是拖兵
+        local u = get_ui()
+        local c = u and u.tooltip and u.tooltip.candidate
+        if c and c.ref then return "drag" end
+        return "wheel"
+    end
     return "wheel"
 end
 
@@ -268,13 +306,38 @@ local function dispatch_drag(t)
     end
 end
 
--- 长按：悬停（tooltip 出详细）+ 右键（使用道具需要右键）。
+-- 长按：先只悬停（tooltip 出详细），延迟几帧再发右键。
+-- v1.0.3 起右键=钉住提示/核心重掷，游戏读的是上一帧算出的 tooltip.candidate；
+-- 同一帧 set_hover + 右键会拿到旧位置（多半是 nil），必须错开一帧。
+local function cand_desc()
+    local u = get_ui()
+    local c = u and u.tooltip and u.tooltip.candidate
+    if not c then return "nil" end
+    local r = c.ref
+    return tostring(c.kind) .. "/" .. tostring(r and (r.id or r.name or r.key) or "?")
+end
+
 local function do_long_press(t)
     if t.long then return end
     t.long = true
+    t.pin_at = now() + LONG_PIN_DELAY
     set_hover(t.x, t.y)
+    glog(string.format("long press -> hover @%.0f,%.0f (right click in %.2fs)", t.x, t.y, LONG_PIN_DELAY))
+end
+
+local function fire_long_pin(t)
+    t.pinned = true
+    local ctl = rawget(_G, "Controller")
+    local u = get_ui()
+    glog(string.format("long pin -> right click @%.0f,%.0f candidate=%s locked=%s rcPin=%s stone=%s shop=%s",
+        t.x, t.y, cand_desc(), tostring(u and u.tooltip and u.tooltip.locked),
+        tostring(ctl and ctl.rightClickPin),
+        tostring(u and u._stoneMode), tostring(u and u._shopMode)))
     fire_right_click(t.x, t.y)
-    glog(string.format("long press -> right click + hover @%.0f,%.0f", t.x, t.y))
+    glog(string.format("long pin done: locked=%s state=%s target=%s",
+        tostring(u and u.tooltip and u.tooltip.locked),
+        tostring(u and u.tooltip and u.tooltip.state),
+        tostring(u and u.tooltip and u.tooltip.target and u.tooltip.target.kind)))
 end
 
 -- 单击：升级树/专职/商店商品槽两段式；商店右侧 section 栏单击切换；其余直接 click
@@ -340,6 +403,7 @@ function love.touchpressed(id, x, y, dx, dy, pressure)
 
     touches[id] = { x0 = x, y0 = y, x = x, y = y, t0 = now(),
                     moved = false, dispatched = false, long = false }
+    set_hover(x, y)   -- 按下即悬停：candidate 立刻对准手指下的对象（长按/右键都要它）
     order[#order + 1] = id
     if #order == 1 then primary_id = id end
 
@@ -545,6 +609,9 @@ function love.update(dt)
         if tt and not tt.ui and not tt.dead then
             if tt.long then
                 set_hover(tt.x, tt.y)
+                if not tt.pinned and tt.pin_at and t >= tt.pin_at then
+                    fire_long_pin(tt)
+                end
             elseif not tt.moved and (t - tt.t0) >= LONG_MS then
                 do_long_press(tt)
             end

@@ -1,5 +1,12 @@
 # 更新日志
 
+## v1.4.1（2026-11-24）—— 基于 PC v1.0.3
+
+- 修复长按士兵不出详细：v1.0.3 的 `tooltip:mousepressed(button=2)` 先被前置分支 `return true`，`pinHoveredUnit` 从未执行；垫片现在右键后自行钉住 `candidate.ref`
+- 修复石头/核心列表长按右键不能重掷：游戏那句 `stone.rerollAt` 排在 tooltip 之后永远轮不到，垫片在 `ui._stoneMode` 时补调
+- 修复战斗详细/结算明细列表拖不动：`battle/prep/spin` 阶段按落点是否在单位上区分拖兵与滚轮，非单位上的拖动转成滚轮派发
+- 长按触发时先悬停 90ms 再发右键，避免同一帧读到上一帧的 `candidate`
+
 ## v1.4.0（2026-11-23）—— 基于 PC v1.0.3
 
 - 游戏文件跟随上游更新为 PC v1.0.3：暂停界面新增放弃按钮、任务重随等
