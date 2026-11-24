@@ -375,6 +375,50 @@ static NSString *find_save_dir(void) {
 }
 
 // ---- 文件写入 / 读取 ----
+// ---- 面板状态持久化（NSUserDefaults）----
+// 之前 g_swOn/g_jackpot 只在进程内有效：重启后面板显示全关，但 cheats_ui.lua 里
+// 还是上一次的配置，后端继续按旧值生效 —— 看起来就是「开关自己关了却还在起作用」。
+// 现在启动时恢复，每次 write_cheats 后落盘。
+static NSString *const kPanelStateKey = @"SBTrainerPanelState_v1";
+
+static void save_panel_state(void) {
+    NSMutableArray *sw = [NSMutableArray array];
+    for (int i = 0; i < kSwCount; i++) [sw addObject:@(g_swOn[i] ? 1 : 0)];
+    NSDictionary *st = @{
+        @"sw": sw,
+        @"jackpot": g_jackpot ?: @"",
+        @"lockCoins": @(g_lockCoins), @"lockCoinsT": @(g_lockTarget),
+        @"lockSpins": @(g_lockSpins), @"lockSpinsT": @(g_lockSpinsTarget),
+        @"lockJungsu": @(g_lockJungsu), @"lockJungsuT": @(g_lockJungsuTarget),
+        @"lockOriginite": @(g_lockOriginite), @"lockOriginiteT": @(g_lockOriginiteTarget),
+        @"grade": @(g_gradeLock), @"luck": @(g_luckTier), @"wave": @(g_spinsWave),
+        @"joker": @(g_jokerBits), @"jester": @(g_jesterHero),
+    };
+    NSUserDefaults *ud = [NSUserDefaults standardUserDefaults];
+    [ud setObject:st forKey:kPanelStateKey];
+    (void)[ud synchronize];
+}
+
+static void load_panel_state(void) {
+    NSDictionary *st = [[NSUserDefaults standardUserDefaults] dictionaryForKey:kPanelStateKey];
+    if (![st isKindOfClass:[NSDictionary class]]) return;
+    NSArray *sw = st[@"sw"];
+    if ([sw isKindOfClass:[NSArray class]]) {
+        for (int i = 0; i < kSwCount && i < (int)sw.count; i++) g_swOn[i] = [sw[i] boolValue];
+    }
+    NSString *jp = st[@"jackpot"];
+    g_jackpot = ([jp isKindOfClass:[NSString class]] && jp.length) ? jp : nil;
+    g_lockCoins = [st[@"lockCoins"] boolValue];         g_lockTarget = [st[@"lockCoinsT"] longLongValue];
+    g_lockSpins = [st[@"lockSpins"] boolValue];         g_lockSpinsTarget = [st[@"lockSpinsT"] longLongValue];
+    g_lockJungsu = [st[@"lockJungsu"] boolValue];       g_lockJungsuTarget = [st[@"lockJungsuT"] longLongValue];
+    g_lockOriginite = [st[@"lockOriginite"] boolValue]; g_lockOriginiteTarget = [st[@"lockOriginiteT"] longLongValue];
+    g_gradeLock = [st[@"grade"] integerValue];
+    g_luckTier = [st[@"luck"] integerValue];
+    g_spinsWave = [st[@"wave"] integerValue];
+    g_jokerBits = [st[@"joker"] longLongValue];
+    g_jesterHero = [st[@"jester"] boolValue];
+}
+
 static void write_cheats(void) {
     NSString *dir = find_save_dir();
     if (!dir) return;
@@ -410,7 +454,7 @@ static void write_cheats(void) {
         long long v = g_swOn[i] ? 1 : 0;
         // 0/5/8：布尔锁由资源页 lock_coins/lock_spins/lock_jungsu 数值锁接管；
         // 3：hero_always 与 force_win 共用 slot.forceWinOnce，去重后不再输出
-        if (i == 0 || i == 3 || i == 5 || i == 8) continue;
+        if (i == 0 || i == 2 || i == 3 || i == 5 || i == 8) continue;
         if (i == 9)  v = g_swOn[i] ? 1 : 0;           // start_bonus 开关即可
         if (i == 10) v = g_swOn[i] ? 99 : 0;          // unit_cap
         if (i == 11) v = g_swOn[i] ? 99 : 0;          // item_cap
@@ -434,6 +478,7 @@ static void write_cheats(void) {
     g_cmd = nil;
     g_arg = nil;
     g_arg2 = nil;
+    save_panel_state();
 }
 
 // ---- 轻量反馈：触感 + 底部提示条（让"点了有没有生效"看得见）----
@@ -1772,7 +1817,7 @@ static UIView *build_panel(CGRect bounds) {
     @try {
         g_pageSlot = build_page_slot(w - 28);
         CGFloat y = append_switches(g_pageSlot, w - 28,
-                        @[ @(1) /*免费抽奖*/, @(2) /*必中大奖*/,
+                        @[ @(1) /*免费抽奖*/,
                            @(7) /*无限免费抽*/, @(6) /*核心重掷不限*/, @(13) /*战斗加速×2*/ ],
                         g_pageSlot.frame.size.height + 6, @"开关");
         UIView *draw = build_page_draw(w - 28);
@@ -2371,6 +2416,7 @@ static UIView *build_panel(CGRect bounds) {
         [g_floatBtn addGestureRecognizer:pan];
         [root addSubview:g_floatBtn];
 
+        load_panel_state();
         g_panel = build_panel(bounds);
         g_panel.hidden = YES;
         {

@@ -1313,11 +1313,6 @@ local function apply_locks()
     spin_cost_orig = nil
   end
   local slot = rawget(_G, "slot")
-  if (cfg.force_win == 1 or cfg.hero_always == 1) and type(slot) == "table" then
-    if slot.forceWinOnce ~= true then slot.forceWinOnce = true end
-  elseif type(slot) == "table" and slot.forceWinOnce == true then
-    slot.forceWinOnce = false
-  end
   if cfg.reroll_lock == 1 then
     local v = rawget(_G, "coreFreeRerollsRemaining")
     if type(v) == "number" and v < 99 then rawset(_G, "coreFreeRerollsRemaining", 99) end
@@ -1421,6 +1416,16 @@ local function cmd_reset_all()
   local slot = rawget(_G, "slot")
   if type(slot) == "table" then slot.forceWinOnce = false end
   if spin_cost_orig then rawset(_G, "spinCost", spin_cost_orig); spin_cost_orig = nil end
+  -- 大奖状态也要清：之前只清了一半，重启后 scfg 还留着上一次的符号
+  cfg.jackpot = false
+  cfg.lock_coins, cfg.lock_spins = false, false
+  cfg.lock_jungsu, cfg.lock_originite = false, false
+  cfg.coins_set, cfg.spins_set, cfg.jungsu_set = nil, nil, nil
+  cfg.originite_set, cfg.coins_add, cfg.spins_add = nil, 0, 0
+  cfg.originite_add, cfg.core_add, cfg.core_add_all = 0, 0, 0
+  local scfg = rawget(_G, "__sbSlotCfg")
+  if type(scfg) == "table" then scfg.jackpot, scfg.symbol, scfg.hits = false, nil, 0 end
+  last_content = nil   -- 让下一帧重新读一遍面板文件，避免旧值残留
   return "ok"
 end
 
@@ -1428,7 +1433,6 @@ end
 -- 命令分发
 ----------------------------------------------------------------
 local commands = {
-  catalog = function() catalog_dirty = true return "ok" end,
   add_option = function() return cmd_add_option(cfg.arg) end,
   remove_option = function() return cmd_remove_option(cfg.arg) end,
   replace_option = function() return cmd_replace_option(cfg.arg, cfg.arg2) end,
@@ -1454,7 +1458,7 @@ local commands = {
   replace_awakening = function() return cmd_replace_awakening(cfg.arg, cfg.arg2) end,
   set_skill_cd = function() return cmd_set_skill_cd(cfg.arg) end,
   set_passive = function() return cmd_set_passive(cfg.arg, cfg.arg2) end,
-  catalog = function() write_catalog() return "ok" end,
+  catalog = function() catalog_dirty = true write_catalog() return "ok" end,
   unit_info = function() return cmd_unit_info() end,
   save_now = function() return cmd_save_now() end,
   save_backup = function() return cmd_save_backup() end,
