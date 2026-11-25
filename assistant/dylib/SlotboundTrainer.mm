@@ -456,7 +456,7 @@ static void load_panel_state(void) {
 
 // ---- 后端补丁（面板下发，改后端逻辑不用动 game.love）----
 // 版本号变了就重写文件；后端检测到 mtime 变化会重载
-static NSString *const kPatchVersion = @"5";
+static NSString *const kPatchVersion = @"6";
 static NSString *const kPatchLua =
     @"local ctx = ...\n"
      "local M = ctx.M\n"
@@ -486,8 +486,8 @@ static NSString *const kPatchLua =
      "    logT = logT + (dt or 0)\n"
      "    if logT >= 5 then\n"
      "      logT = 0\n"
-     "      local sig = tostring(bf and bf.mode) .. '|' .. tostring(wt and wt.state) .. '|' .. tostring(wt and wt.disabled) .. '|' .. tostring(busy)\n"
-     "      love.filesystem.append('auto_wave.log', os.date('%H:%M:%S') .. ' hb' .. sig .. ' go=' .. tostring(go) .. '|')\n"
+     "      local sig = tostring(rawget(_G, 'phase')) .. '|' .. tostring(bf and bf.mode) .. '|' .. tostring(wt and wt.state) .. '|' .. tostring(wt and wt.disabled) .. '|' .. tostring(busy) .. '|can=' .. tostring(canStart)\n"
+     "      if sig ~= lastSig then lastSig = sig love.filesystem.append('auto_wave.log', os.date('%H:%M:%S') .. ' hb ' .. sig .. ' go=' .. tostring(go) .. '|') end\n"
      "    end\n"
      "    if go then\n"
      "      autoT = autoT + (dt or 0)\n"
@@ -504,7 +504,7 @@ static NSString *const kPatchLua =
      "  end\n"
      "  if not wrote then\n"
      "    wrote = true\n"
-     "    love.filesystem.write('patch_ok.txt', 'v5 ' .. os.date('%H:%M:%S'))\n"
+     "    love.filesystem.write('patch_ok.txt', 'v6 ' .. os.date('%H:%M:%S'))\n"
      "  end\n"
      "end)\n";
 
