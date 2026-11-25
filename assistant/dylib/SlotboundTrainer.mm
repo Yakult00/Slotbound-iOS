@@ -456,14 +456,12 @@ static void load_panel_state(void) {
 
 // ---- 后端补丁（面板下发，改后端逻辑不用动 game.love）----
 // 版本号变了就重写文件；后端检测到 mtime 变化会重载
-static NSString *const kPatchVersion = @"7";
+static NSString *const kPatchVersion = @"8";
 static NSString *const kPatchLua =
     @"local ctx = ...\n"
      "local M = ctx.M\n"
      "local wrote = false\n"
      "local autoT = 0\n"
-     "local lastSig = ''\n"
-     "local logT = 0\n"
      "M.add_tick(function(dt)\n"
      "  local c = M.get_cfg() or {}\n"
      "  if c.reroll_lock == 1 then\n"
@@ -485,25 +483,14 @@ static NSString *const kPatchLua =
      "    local stoneActive = (type(ui) == 'table' and type(ui._stoneActivated) == 'table' and ui._stoneActivated.active) and true or false\n"
      "    local deferStart = (type(pb) == 'table' and pb.deferStart) and true or false\n"
      "    local canPrepare = rawget(_G, '__slotCanPrepareBattlefieldNow') and __slotCanPrepareBattlefieldNow() or false\n"
-     "    -- 与游戏里 readyIcon 可点判定同源（real_main.lua:34362）\n"
      "    local ready = (type(bf) == 'table') and bf.mode ~= 'battle' and canPrepare and not spinActive and\n"
      "                  not deferStart and (type(wt) ~= 'table' or wt.state ~= 'fading') and\n"
      "                  not bf.gameOver and not stoneActive\n"
-     "    logT = logT + (dt or 0)\n"
-     "    if logT >= 5 then\n"
-     "      logT = 0\n"
-     "      local sig = tostring(rawget(_G, 'phase')) .. '|' .. tostring(bf and bf.mode) .. '|' .. tostring(wt and wt.state) .. '|wrap=' .. tostring(spinActive) .. '|pend=' .. tostring(deferStart) .. '|rdy=' .. tostring(ready)\n"
-     "      if sig ~= lastSig then\n"
-     "        lastSig = sig\n"
-     "        love.filesystem.append('auto_wave.log', os.date('%H:%M:%S') .. ' hb ' .. sig .. '|')\n"
-     "      end\n"
-     "    end\n"
      "    if ready then\n"
      "      autoT = autoT + (dt or 0)\n"
      "      if autoT >= 0.3 then\n"
      "        autoT = 0\n"
      "        pcall(__slotRequestManualBattleStart, false)\n"
-     "        love.filesystem.append('auto_wave.log', os.date('%H:%M:%S') .. ' FIRED wave=' .. tostring(bf.waveId) .. ' mode=' .. tostring(bf.mode) .. '|')\n"
      "      end\n"
      "    else\n"
      "      autoT = 0\n"
@@ -513,9 +500,11 @@ static NSString *const kPatchLua =
      "  end\n"
      "  if not wrote then\n"
      "    wrote = true\n"
-     "    love.filesystem.write('patch_ok.txt', 'v7 ' .. os.date('%H:%M:%S'))\n"
+     "    love.filesystem.write('patch_ok.txt', 'v8 ' .. os.date('%H:%M:%S'))\n"
      "  end\n"
-     "end)\n";static void sb_write_patch(void) {
+     "end)\n";
+
+static void sb_write_patch(void) {
     NSString *dir = find_save_dir();
     if (!dir) return;
     NSString *p = [dir stringByAppendingPathComponent:@"trainer_patch.lua"];
