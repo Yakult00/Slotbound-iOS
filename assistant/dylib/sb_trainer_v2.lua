@@ -1363,8 +1363,23 @@ local function apply_locks()
       if reroll_orig == nil then reroll_orig = v end       -- 记下开之前的次数
       if v < 99 then rawset(_G, "coreFreeRerollsRemaining", 99) end
     end
+    -- 光把次数顶上去不够：核心选择界面还要 _usesUpgradeFreeReroll=true 才走免费分支，
+    -- 否则照样扣精粹、精粹不够就直接拒绝点击（表现为「不生效」）
+    local u = rawget(_G, "ui")
+    local cs = (type(u) == "table") and u._coreSelect or nil
+    if type(cs) == "table" then
+      cs._usesUpgradeFreeReroll = true
+      cs.rerollCost = 0
+      cs._rerollDenyT = nil
+    end
   elseif reroll_orig ~= nil then                            -- 关掉：还原，不然一直显示 99 次
     rawset(_G, "coreFreeRerollsRemaining", reroll_orig)
+    local u = rawget(_G, "ui")
+    local cs = (type(u) == "table") and u._coreSelect or nil
+    if type(cs) == "table" then
+      cs._usesUpgradeFreeReroll = (reroll_orig or 0) > 0
+      cs.rerollCost = cs._usesUpgradeFreeReroll and 0 or (tonumber(cs._paidRerollCost) or 1)
+    end
     reroll_orig = nil
   end
   if cfg.freespin_lock == 1 then
