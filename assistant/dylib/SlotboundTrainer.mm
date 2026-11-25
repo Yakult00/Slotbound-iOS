@@ -2165,7 +2165,7 @@ static SBSaveImporter *g_saveImporter = nil;
          "if not ok then love.filesystem.write(S._lastSavePath,S.serialize(t)) end";
     write_cheats();
     tap_haptic();
-    show_toast(@"✓ 已解锁全部关卡（含无尽），重开选关页可见");
+    show_toast(@"✓ 已解锁全部关卡（含无尽），重新进入游戏生效");
 }
 
 + (void)jungsuAdd:(UIButton *)b {
