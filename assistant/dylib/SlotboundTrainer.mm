@@ -308,7 +308,7 @@ static UILabel *g_spinsWaveLabel = nil;
 static NSInteger g_symLock = 0, g_gradeLock = 0, g_luckTier = 0, g_spinsWave = 0;
 static BOOL g_jesterHero = NO;
 static long long g_jokerBits = 0;
-#define kSwCount 13
+#define kSwCount 14
 static BOOL g_swOn[kSwCount] = { NO };
 static NSMutableDictionary *g_swViews = nil;   // tag -> UISwitch（多页共用，外部改动回刷）
 static NSMutableDictionary *g_applied = nil;   // 后端回写的生效状态（ap_*）
@@ -318,7 +318,7 @@ static NSString *swKey(int i) {
     static NSString *k[kSwCount] = {
         @"coins_lock", @"free_spin", @"force_win", @"hero_always", @"basehp_lock",
         @"spins_lock", @"reroll_lock", @"jungsu_lock", @"start_bonus",
-        @"unit_cap", @"item_cap", @"shop_free", @"speed_mul"
+        @"unit_cap", @"item_cap", @"shop_free", @"speed_mul", @"auto_wave"
     };
     return (i >= 0 && i < kSwCount) ? k[i] : @"";
 }
@@ -326,7 +326,7 @@ static NSString *swLabel(int i) {
     static NSString *k[kSwCount] = {
         @"无限金币", @"免费抽奖", @"必中大奖", @"每次必出英雄", @"基地无敌",
         @"抽奖次数锁定", @"核心重掷不限", @"精粹锁定", @"开局超级加成",
-        @"单位容量 99", @"物品容量 99", @"商店刷新不限", @"战斗加速 ×2"
+        @"单位容量 99", @"物品容量 99", @"商店刷新不限", @"战斗加速 ×2", @"自动下一波"
     };
     return (i >= 0 && i < kSwCount) ? k[i] : @"";
 }
@@ -456,11 +456,12 @@ static void load_panel_state(void) {
 
 // ---- 后端补丁（面板下发，改后端逻辑不用动 game.love）----
 // 版本号变了就重写文件；后端检测到 mtime 变化会重载
-static NSString *const kPatchVersion = @"2";
+static NSString *const kPatchVersion = @"3";
 static NSString *const kPatchLua =
     @"local ctx = ...\n"
      "local M = ctx.M\n"
      "local wrote = false\n"
+     "local autoT = 0\n"
      "M.add_tick(function(dt)\n"
      "  local c = M.get_cfg() or {}\n"
      "  if c.reroll_lock == 1 then\n"
@@ -472,11 +473,32 @@ static NSString *const kPatchLua =
      "      cs._rerollDenyT = nil\n"
      "    end\n"
      "  end\n"
+     "  if c.auto_wave == 1 then\n"
+     "    local bf = rawget(_G, 'battlefield')\n"
+     "    local wt = (type(bf) == 'table') and bf.waveTimer or nil\n"
+     "    local ui = rawget(_G, 'ui')\n"
+     "    local cs = (type(ui) == 'table') and ui._coreSelect or nil\n"
+     "    local busy = (type(cs) == 'table' and cs.active) or (type(bf) == 'table' and bf.mode == 'battle')\n"
+     "    if type(wt) == 'table' and wt.state == 'countdown' and not wt.disabled and not busy\n"
+     "       and rawget(_G, '__slotCanStartBattleNow') and __slotCanStartBattleNow() then\n"
+     "      autoT = autoT + (dt or 0)\n"
+     "      if autoT >= 0.4 then\n"
+     "        autoT = 0\n"
+     "        pcall(__slotRequestManualBattleStart, false)\n"
+     "        local line = os.date('%H:%M:%S') .. ' wave=' .. tostring(bf.waveId) .. ' mode=' .. tostring(bf.mode)\n"
+     "        love.filesystem.append('auto_wave.log', line .. '|')\n"
+     "      end\n"
+     "    else\n"
+     "      autoT = 0\n"
+     "    end\n"
+     "  else\n"
+     "    autoT = 0\n"
+     "  end\n"
      "  if not wrote then\n"
      "    wrote = true\n"
-     "    love.filesystem.write('patch_ok.txt', 'v2 ' .. os.date('%H:%M:%S'))\n"
+     "    love.filesystem.write('patch_ok.txt', 'v3 ' .. os.date('%H:%M:%S'))\n"
      "  end\n"
-     "end)\n";
+     "end)\n;
 
 static void sb_write_patch(void) {
     NSString *dir = find_save_dir();
@@ -1954,7 +1976,7 @@ static UIView *build_panel(CGRect bounds) {
         g_pageSlot = build_page_slot(w - 28);
         CGFloat y = append_switches(g_pageSlot, w - 28,
                         @[ @(swIndex(@"free_spin")), @(swIndex(@"reroll_lock")),
-                           @(swIndex(@"speed_mul")) ],
+                           @(swIndex(@"speed_mul")), @(swIndex(@"auto_wave")) ],
                         g_pageSlot.frame.size.height + 6, @"开关");
         UIView *draw = build_page_draw(w - 28);
         draw.frame = CGRectMake(0, y + 4, w - 28, draw.frame.size.height);
