@@ -342,6 +342,26 @@ local function do_long_press(t)
     glog(string.format("long press -> hover @%.0f,%.0f (right click in %.2fs)", t.x, t.y, LONG_PIN_DELAY))
 end
 
+-- 开局前 SLOT 界面（flow.machine_select）的长按=右键。
+-- 合成出来的 love.mousepressed(button=2) 到不了它的 mousepressed，
+-- 只能直接调模块。
+local function machine_select_right(vx, vy)
+    -- 只在开局前的 SLOT 界面生效，战斗/商店绝不能接管长按
+    if rawget(_G, "phase") ~= "menu" then return false end
+    local bf = rawget(_G, "battlefield")
+    if bf and bf.mode == "battle" then return false end
+    local ok, F = pcall(require, "src.ui.flow")
+    if not ok or type(F) ~= "table" then return false end
+    local M = F.machine_select
+    if type(M) ~= "table" or type(M.mousepressed) ~= "function" then return false end
+    if type(M.isActive) == "function" then
+        local a, act = pcall(M.isActive)
+        if not a or not act then return false end
+    end
+    local c, ret = pcall(M.mousepressed, vx, vy, 2)
+    return (c and ret) and true or false
+end
+
 local function fire_long_pin(t)
     t.pinned = true
     local ctl = rawget(_G, "Controller")
@@ -350,6 +370,11 @@ local function fire_long_pin(t)
         t.x, t.y, cand_desc(), tostring(u and u.tooltip and u.tooltip.locked),
         tostring(ctl and ctl.rightClickPin),
         tostring(u and u._stoneMode), tostring(u and u._shopMode)))
+    local mvx, mvy = to_virtual(t.x0, t.y0)
+    if machine_select_right(mvx, mvy) then
+        glog(string.format("long pin -> machine_select right @%.0f,%.0f", mvx, mvy))
+        return
+    end
     fire_right_click(t.x, t.y)
     glog(string.format("long pin done: locked=%s state=%s target=%s",
         tostring(u and u.tooltip and u.tooltip.locked),
