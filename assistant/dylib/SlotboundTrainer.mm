@@ -453,6 +453,41 @@ static void load_panel_state(void) {
     g_jesterHero = [st[@"jester"] boolValue];
 }
 
+
+// ---- 后端补丁（面板下发，改后端逻辑不用动 game.love）----
+// 版本号变了就重写文件；后端检测到 mtime 变化会重载
+static NSString *const kPatchVersion = @"1";
+static NSString *const kPatchLua =
+    @"local ctx = ...\n"
+     "local M = ctx.M\n"
+     "local wrote = false\n"
+     "M.add_tick(function(dt)\n"
+     "  local c = M.get_cfg() or {}\n"
+     "  if c.reroll_lock == 1 then\n"
+     "    local ui = rawget(_G, 'ui')\n"
+     "    local cs = (type(ui) == 'table') and ui._coreSelect or nil\n"
+     "    if type(cs) == 'table' then\n"
+     "      cs._usesUpgradeFreeReroll = true\n"
+     "      cs.rerollCost = 0\n"
+     "      cs._rerollDenyT = nil\n"
+     "    end\n"
+     "  end\n"
+     "  if not wrote then\n"
+     "    wrote = true\n"
+     "    love.filesystem.write('patch_ok.txt', 'v1 ' .. os.date('%H:%M:%S'))\n"
+     "  end\n"
+     "end)\n";
+
+static void sb_write_patch(void) {
+    NSString *dir = find_save_dir();
+    if (!dir) return;
+    NSString *p = [dir stringByAppendingPathComponent:@"trainer_patch.lua"];
+    NSString *cur = [NSString stringWithContentsOfFile:p encoding:NSUTF8StringEncoding error:NULL];
+    if ([cur isEqualToString:kPatchLua]) return;      // 没变就别写，省 IO
+    [kPatchLua writeToFile:p atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+    NSLog(@"[SBTrainer] patch written v%@", kPatchVersion);
+}
+
 static void write_cheats(void) {
     NSString *dir = find_save_dir();
     if (!dir) return;
@@ -2629,6 +2664,8 @@ static SBSaveImporter *g_saveImporter = nil;
         }
         [root addSubview:g_panel];
         // 启动对齐：面板状态先写一次，避免后端还停在旧的 cheats_ui.lua 上
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), ^{ sb_write_patch(); });
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)),
                        dispatch_get_main_queue(), ^{ write_cheats(); });
 

@@ -961,6 +961,10 @@ local function write_status(extra)
     if type(v) == "number" then return math.floor(v) end
     return 0
   end
+  local pst = patch_err and ("err:" .. tostring(patch_err)) or (patch_sig and "ok" or "none")
+  pst = pst:gsub("[\"
+]", " "):sub(1, 60)
+  lines[#lines + 1] = "  patch = \"" .. pst .. "\","
   lines[#lines + 1] = "  cost = " .. (tonumber(rawget(_G, "spinCost")) or -1) .. ","
   lines[#lines + 1] = "  freecredits = " .. (tonumber(rawget(_G, "freeSpinCredits")) or -1) .. ","
   lines[#lines + 1] = "  ap_free_spin = " .. apb(cfg.free_spin) .. ","
@@ -1702,6 +1706,47 @@ local function diag_line()
   pcall(love.filesystem.append, "trainer_diag.log", line .. "\n")
 end
 
+----------------------------------------------------------------
+-- 外部补丁：存档目录 trainer_patch.lua（面板下发）
+-- 目的：后端逻辑改动不用再动 game.love，换面板写这个文件即可
+----------------------------------------------------------------
+local tick_hooks = {}
+local patch_sig, patch_err = nil, nil
+
+function M.add_tick(fn)
+  if type(fn) == "function" then tick_hooks[#tick_hooks + 1] = fn end
+end
+
+local function run_patch()
+  local info = love.filesystem.getInfo("trainer_patch.lua")
+  if not info then return end
+  local sig = tostring(info.size or 0) .. ":" .. tostring(info.modtime or 0)
+  if sig == patch_sig then return end
+  patch_sig = sig
+  local ok, src = pcall(love.filesystem.read, "trainer_patch.lua")
+  if not ok or type(src) ~= "string" then patch_err = "read_fail" return end
+  local chunk, cerr = loadstring(src, "trainer_patch")
+  if not chunk then patch_err = tostring(cerr) return end
+  local ok2, err = pcall(chunk, { M = M, cfg = cfg })
+  if ok2 then
+    patch_err = nil
+    pcall(love.filesystem.append, "sbtrainer_backend.log",
+          "patch loaded " .. sig .. "
+")
+  else
+    patch_err = tostring(err)
+    pcall(love.filesystem.append, "sbtrainer_backend.log",
+          "patch error: " .. tostring(err) .. "
+")
+  end
+end
+
+function M.get_cfg() return cfg end
+
+function M.patch_state()
+  return patch_sig, patch_err
+end
+
 function M.tick(dt)
   tune_gc()
 
@@ -1745,6 +1790,10 @@ function M.tick(dt)
     catalog_t = 0
     if alive then catalog_dirty = true end
   end
+
+  -- 外部补丁（有变化才重载）+ 补丁注册的每帧钩子
+  pcall(run_patch)
+  for i = 1, #tick_hooks do pcall(tick_hooks[i], dt) end
 
   -- 诊断：每 5s 记一行内存/实体数，崩溃后能看出是内存涨还是某一帧炸的
   diag_t = diag_t + (dt or 0)
