@@ -229,6 +229,7 @@ static NSString *g_jackpot = nil;
 
 // 实时状态（游戏写回）
 static long long g_lastCoins = 0;
+static long long g_lastWave = -1;
 static long long g_lastSpins = 0;
 static long long g_lastJungsu = 0;
 static long long g_lastOriginite = 0;
@@ -295,6 +296,7 @@ static UIScrollView *g_scrollShop = nil;
 static UILabel *g_spinsLabel = nil;
 static UILabel *g_jungsuLabel = nil;
 static UILabel *g_originiteLabel = nil;
+static UILabel *g_waveLabel = nil;
 static UILabel *g_unitLabel = nil;
 static UISwitch *g_lockSwitch = nil;
 static UISwitch *g_spinsLockSwitch = nil;
@@ -458,13 +460,14 @@ static void load_panel_state(void) {
 
 // ---- 后端补丁（面板下发，改后端逻辑不用动 game.love）----
 // 版本号变了就重写文件；后端检测到 mtime 变化会重载
-static NSString *const kPatchVersion = @"9";
+static NSString *const kPatchVersion = @"10";
 static NSString *const kPatchLua =
     @"local ctx = ...\n"
      "local M = ctx.M\n"
      "local wrote = false\n"
      "local autoT = 0\n"
      "local wSeq = -1\n"
+     "local wT = 0\n"
      "M.add_tick(function(dt)\n"
      "  local c = M.get_cfg() or {}\n"
      "  if c.reroll_lock == 1 then\n"
@@ -489,6 +492,14 @@ static NSString *const kPatchLua =
      "        bfw.waveId = n\n"
      "        love.filesystem.write('wave_ok.txt', tostring(n) .. ' @' .. os.date('%H:%M:%S'))\n"
      "      end\n"
+     "    end\n"
+     "  end\n"
+     "  wT = wT + (dt or 0)\n"
+     "  if wT >= 0.5 then\n"
+     "    wT = 0\n"
+     "    local bwf = rawget(_G, 'battlefield')\n"
+     "    if type(bwf) == 'table' and type(bwf.wave) == 'table' then\n"
+     "      love.filesystem.write('wave_now.txt', tostring(bwf.wave.id or 0) .. ' ' .. ((bwf.wave.active and 1) or 0))\n"
      "    end\n"
      "  end\n"
      "  if c.auto_wave == 1 then\n"
@@ -518,7 +529,7 @@ static NSString *const kPatchLua =
      "  end\n"
      "  if not wrote then\n"
      "    wrote = true\n"
-     "    love.filesystem.write('patch_ok.txt', 'v9 ' .. os.date('%H:%M:%S'))\n"
+     "    love.filesystem.write('patch_ok.txt', 'v10 ' .. os.date('%H:%M:%S'))\n"
      "  end\n"
      "end)\n";
 
@@ -768,6 +779,23 @@ static void read_status(void) {
         }
     }
     if (g_coinLabel) g_coinLabel.text = [NSString stringWithFormat:@"金币：%lld", g_lastCoins];
+    // 当前波次由补丁写 wave_now.txt（后端 status 里没有这一项）
+    {
+        NSString *wf = [NSString stringWithContentsOfFile:[dir stringByAppendingPathComponent:@"wave_now.txt"]
+                                                  encoding:NSUTF8StringEncoding error:nil];
+        if (wf) {
+            NSArray *p = [[wf stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]
+                          componentsSeparatedByString:@" "];
+            if (p.count >= 2) {
+                long long wid = [p[0] longLongValue];
+                long long act = [p[1] longLongValue];
+                g_lastWave = act ? wid : wid + 1;
+            }
+        }
+    }
+    if (g_waveLabel) g_waveLabel.text = g_lastWave >= 0
+        ? [NSString stringWithFormat:@"当前波次：%lld", g_lastWave]
+        : @"当前波次：--";
     if (g_spinsLabel) g_spinsLabel.text = [NSString stringWithFormat:@"旋转次数：%lld", g_lastSpins];
     if (g_jungsuLabel) g_jungsuLabel.text = [NSString stringWithFormat:@"水晶：%lld", g_lastJungsu];
     if (g_originiteLabel) g_originiteLabel.text = [NSString stringWithFormat:@"升级宝石：%lld", g_lastOriginite];
@@ -905,6 +933,8 @@ static void read_catalog(void) {
 + (void)coinAdd:(UIButton *)b;
 + (void)coinSet:(UIButton *)b;
 + (void)waveSetText:(id)s;
++ (void)waveAdd:(UIButton *)b;
++ (void)waveQuick:(UIButton *)b;
 + (void)coinSetText:(id)s;
 + (void)spinsSetText:(id)s;
 + (void)jungsuSetText:(id)s;
@@ -1256,6 +1286,24 @@ static UIView *build_page_res(CGFloat w) {
     g_jungsuField = fields[2];
     g_originiteField = fields[3];
     g_waveField = fields[4];
+
+    UILabel *waveNow = [[UILabel alloc] initWithFrame:CGRectMake(x, y, cw, 30)];
+    waveNow.text = @"当前波次：--";
+    waveNow.font = [UIFont boldSystemFontOfSize:16];
+    waveNow.textColor = accent();
+    [v addSubview:waveNow];
+    g_waveLabel = waveNow;
+    y += 36;
+
+    NSArray *wq = @[ @"+1", @"+5", @"+10", @"设 500" ];
+    for (NSInteger i = 0; i < 4; i++) {
+        BOOL absolute = (i == 3);
+        UIButton *b = makeButton(wq[i], absolute ? @selector(waveQuick:) : @selector(waveAdd:));
+        b.tag = absolute ? 500 : (long)(1 + (i == 1 ? 4 : (i == 2 ? 9 : 0)));
+        b.frame = CGRectMake(x + i * (bw + 8), y, bw, 40);
+        [v addSubview:b];
+    }
+    y += 50;
 
     // ---- 关卡 / 无尽：一键全开（写存档，重进选关界面生效）----
     UIView *sepS = [[UIView alloc] initWithFrame:CGRectMake(x, y + 6, cw, 1)];
@@ -2139,6 +2187,19 @@ static SBSaveImporter *g_saveImporter = nil;
 
 + (void)coinAdd:(UIButton *)b { g_coinAdd = b.tag; write_cheats(); }
 + (void)coinSet:(UIButton *)b { g_coinSet = b.tag; write_cheats(); }
++ (void)waveAdd:(UIButton *)b {
+    if (g_lastWave < 0) { show_toast(@"⚠ 还没读到波次，先进一局"); return; }
+    long long target = g_lastWave + b.tag;
+    if (target < 1) target = 1;
+    g_waveSet = target;
+    write_cheats();
+    show_toast([NSString stringWithFormat:@"✓ 已请求跳到第 %lld 波", target]);
+}
++ (void)waveQuick:(UIButton *)b {
+    g_waveSet = b.tag;
+    write_cheats();
+    show_toast([NSString stringWithFormat:@"✓ 已请求跳到第 %lld 波", (long long)b.tag]);
+}
 + (void)waveSetText:(id)s {
     long long v = (long long)[g_waveField.text longLongValue];
     if (v <= 0) return;
