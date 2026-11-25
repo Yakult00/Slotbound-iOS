@@ -498,7 +498,7 @@ static NSString *const kPatchLua =
      "    wrote = true\n"
      "    love.filesystem.write('patch_ok.txt', 'v3 ' .. os.date('%H:%M:%S'))\n"
      "  end\n"
-     "end)\n;
+     "end)\n";
 
 static void sb_write_patch(void) {
     NSString *dir = find_save_dir();
