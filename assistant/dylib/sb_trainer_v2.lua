@@ -1625,9 +1625,10 @@ end
 local function diag_line()
   local bf = rawget(_G, "battlefield")
   local ui = rawget(_G, "ui")
-  local units = diag_count(type(bf) == "table" and bf.units or nil)
+  local units = diag_count(type(bf) == "table" and (bf.allies or bf.units) or nil)
   local enemies = diag_count(type(bf) == "table" and bf.enemies or nil)
   local projs = diag_count(type(bf) == "table" and bf.projectiles or nil)
+  local vfx = diag_count(type(bf) == "table" and bf.vfxList or nil)
   local items = diag_count(type(ui) == "table" and ui._itemPurchased or nil)
   local on = {}
   for _, k in ipairs({ "free_spin", "basehp_lock", "reroll_lock", "freespin_lock",
@@ -1636,9 +1637,9 @@ local function diag_line()
   end
   if type(cfg.lock_coins) == "number" then on[#on + 1] = "lock_coins" end
   if type(cfg.lock_spins) == "number" then on[#on + 1] = "lock_spins" end
-  local line = string.format("%s mem=%dKB units=%d enemies=%d proj=%d items=%d wave=%s on=%s",
+  local line = string.format("%s mem=%dKB units=%d enemies=%d proj=%d vfx=%d items=%d wave=%s on=%s",
     os.date("%m-%d %H:%M:%S"), math.floor(collectgarbage("count")),
-    units, enemies, projs, items,
+    units, enemies, projs, vfx, items,
     tostring(type(bf) == "table" and bf.waveId or "?"),
     (#on > 0 and table.concat(on, ",") or "-"))
   local info = love.filesystem.getInfo("trainer_diag.log")
