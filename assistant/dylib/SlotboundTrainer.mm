@@ -310,6 +310,10 @@ static BOOL g_jesterHero = NO;
 static long long g_jokerBits = 0;
 #define kSwCount 14
 static BOOL g_swOn[kSwCount] = { NO };
+static NSMutableDictionary *g_swViews = nil;   // tag -> UISwitch（多页共用，外部改动回刷）
+static NSMutableDictionary *g_applied = nil;   // 后端回写的生效状态（ap_*）
+static double g_lastTouchT = 0;                // 用户最后一次拨面板的时间
+static double sb_now(void) { return [NSDate timeIntervalSinceReferenceDate]; }
 static NSString *swKey(int i) {
     static NSString *k[kSwCount] = {
         @"coins_lock", @"free_spin", @"force_win", @"hero_always", @"basehp_lock",
@@ -527,6 +531,60 @@ static void send_command(NSString *cmd, NSString *arg, NSString *arg2) {
     show_toast(@"✓ 已执行");
 }
 
+static void refresh_switch_ui(void) {
+    if (!g_swViews) return;
+    for (NSNumber *k in g_swViews) {
+        NSInteger i = k.integerValue;
+        UISwitch *s = g_swViews[k];
+        if (i >= 0 && i < kSwCount && s && s.on != g_swOn[i]) [s setOn:g_swOn[i] animated:YES];
+    }
+    if (g_jackpotSwitch && g_jackpotSwitch.on != (g_jackpot.length > 0))
+        [g_jackpotSwitch setOn:(g_jackpot.length > 0) animated:YES];
+}
+
+// 后端写回 ap_* 后对比本地：不一致且用户 1s 内没动面板，就以文件为准（外部改动/重置/探针）
+static void reconcile_applied(void) {
+    static BOOL inReconcile = NO;
+    if (inReconcile || !g_applied.count) return;
+    if (sb_now() - g_lastTouchT < 1.0) return;
+    inReconcile = YES;
+    BOOL changed = NO;
+    for (NSString *k in [g_applied allKeys]) {
+        if (![k hasPrefix:@"ap_"]) continue;
+        NSString *name = [k substringFromIndex:3];
+        long long n = [g_applied[k] longLongValue];
+        BOOL b = (n != 0);
+        if ([name isEqualToString:@"lock_coins"]) {
+            if ((n > 0) != g_lockCoins || (n > 0 && n != g_lockTarget)) { g_lockCoins = (n > 0); g_lockTarget = n; changed = YES; }
+            continue;
+        }
+        if ([name isEqualToString:@"lock_spins"]) {
+            if ((n > 0) != g_lockSpins || (n > 0 && n != g_lockSpinsTarget)) { g_lockSpins = (n > 0); g_lockSpinsTarget = n; changed = YES; }
+            continue;
+        }
+        if ([name isEqualToString:@"lock_jungsu"]) {
+            if ((n > 0) != g_lockJungsu || (n > 0 && n != g_lockJungsuTarget)) { g_lockJungsu = (n > 0); g_lockJungsuTarget = n; changed = YES; }
+            continue;
+        }
+        if ([name isEqualToString:@"lock_originite"]) {
+            if ((n > 0) != g_lockOriginite || (n > 0 && n != g_lockOriginiteTarget)) { g_lockOriginite = (n > 0); g_lockOriginiteTarget = n; changed = YES; }
+            continue;
+        }
+        if ([name isEqualToString:@"jackpot"]) continue;   // 符号字符串，不做反向采纳
+        int idx = -1;
+        for (int i = 0; i < kSwCount; i++) {
+            if ([swKey(i) isEqualToString:name]) { idx = i; break; }
+        }
+        if (idx >= 0 && g_swOn[idx] != b) { g_swOn[idx] = b; changed = YES; }
+    }
+    if (changed) {
+        save_panel_state();
+        refresh_switch_ui();
+        NSLog(@"[SB] applied state adopted from cheats_status.lua");
+    }
+    inReconcile = NO;
+}
+
 static void read_status(void) {
     NSString *dir = find_save_dir();
     if (!dir) return;
@@ -540,6 +598,11 @@ static void read_status(void) {
         NSString *key = [kv[0] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
         NSString *val = [kv[1] stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
         val = [val stringByReplacingOccurrencesOfString:@"," withString:@""];
+        if ([key hasPrefix:@"ap_"]) {          // 后端回写的生效状态
+            if (!g_applied) g_applied = [NSMutableDictionary dictionary];
+            g_applied[key] = val;
+            continue;
+        }
         if ([key isEqualToString:@"coins"]) {
             g_lastCoins = (long long)[val doubleValue];
         } else if ([key isEqualToString:@"spins"]) {
@@ -1574,6 +1637,8 @@ static UIView *build_page_sw(CGFloat w) {
         s.tag = i;
         s.onTintColor = accent();
         [s addTarget:[CheatsOverlay class] action:@selector(swChanged:) forControlEvents:UIControlEventValueChanged];
+        if (!g_swViews) g_swViews = [NSMutableDictionary dictionary];
+        g_swViews[@(i)] = s;
         [v addSubview:s];
         y += 44;
     }
@@ -1677,6 +1742,8 @@ static CGFloat append_switches(UIView *v, CGFloat w, NSArray *idxList, CGFloat y
         s.tag = i;
         s.onTintColor = accent();
         [s addTarget:[CheatsOverlay class] action:@selector(swChanged:) forControlEvents:UIControlEventValueChanged];
+        if (!g_swViews) g_swViews = [NSMutableDictionary dictionary];
+        g_swViews[@(i)] = s;
         [v addSubview:s];
         y += 44;
     }
@@ -2302,6 +2369,7 @@ static SBSaveImporter *g_saveImporter = nil;
 + (void)swChanged:(UISwitch *)sw {
     NSInteger i = (NSInteger)sw.tag;
     if (i < 0 || i >= kSwCount) return;
+    g_lastTouchT = sb_now();
     g_swOn[i] = sw.isOn;
     write_cheats();
     tap_haptic();
@@ -2524,12 +2592,16 @@ static SBSaveImporter *g_saveImporter = nil;
                                        ps.width, ps.height);
         }
         [root addSubview:g_panel];
+        // 启动对齐：面板状态先写一次，避免后端还停在旧的 cheats_ui.lua 上
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.2 * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), ^{ write_cheats(); });
 
         // 面板关着的时候完全不读文件；开着时 1Hz 读状态，并每 2 秒 touch
         // cheats_alive.txt —— 游戏后端据此决定 1Hz 还是 0.125Hz 写状态文件。
         [NSTimer scheduledTimerWithTimeInterval:1.0 repeats:YES block:^(NSTimer *t) {
             if (!g_open) return;
             read_status();
+            reconcile_applied();
             read_catalog();
             static double lastAlive = 0;
             double now = [NSDate timeIntervalSinceReferenceDate];
@@ -2544,6 +2616,7 @@ static SBSaveImporter *g_saveImporter = nil;
             }
         }];
         read_status();
+        reconcile_applied();
         read_catalog();
         refresh_hook_status();
     });

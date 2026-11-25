@@ -950,6 +950,30 @@ local function write_status(extra)
       lines[#lines + 1] = "  " .. k .. " = " .. tostring(v) .. ","
     end
   end
+  -- 生效状态回写（ap_*）：面板读这些键对齐 UI，修「面板显示 != 后端实际」
+  local function apb(v)
+    if v == true then return 1 end
+    if type(v) == "number" then return v ~= 0 and 1 or 0 end
+    return 0
+  end
+  local function apn(v)
+    if type(v) == "number" then return math.floor(v) end
+    return 0
+  end
+  lines[#lines + 1] = "  ap_free_spin = " .. apb(cfg.free_spin) .. ","
+  lines[#lines + 1] = "  ap_basehp_lock = " .. apb(cfg.basehp_lock) .. ","
+  lines[#lines + 1] = "  ap_reroll_lock = " .. apb(cfg.reroll_lock) .. ","
+  lines[#lines + 1] = "  ap_freespin_lock = " .. apb(cfg.freespin_lock) .. ","
+  lines[#lines + 1] = "  ap_start_bonus = " .. apb(cfg.start_bonus) .. ","
+  lines[#lines + 1] = "  ap_unit_cap = " .. apb(cfg.unit_cap) .. ","
+  lines[#lines + 1] = "  ap_item_cap = " .. apb(cfg.item_cap) .. ","
+  lines[#lines + 1] = "  ap_shop_free = " .. apb(cfg.shop_free) .. ","
+  lines[#lines + 1] = "  ap_speed_mul = " .. apb(cfg.speed_mul) .. ","
+  lines[#lines + 1] = "  ap_lock_coins = " .. apn(cfg.lock_coins) .. ","
+  lines[#lines + 1] = "  ap_lock_spins = " .. apn(cfg.lock_spins) .. ","
+  lines[#lines + 1] = "  ap_lock_jungsu = " .. apn(cfg.lock_jungsu) .. ","
+  lines[#lines + 1] = "  ap_lock_originite = " .. apn(cfg.lock_originite) .. ","
+  lines[#lines + 1] = "  ap_jackpot = " .. ((type(cfg.jackpot) == "string" and cfg.jackpot ~= "" and cfg.jackpot ~= "false") and 1 or 0) .. ","
   lines[#lines + 1] = "}"
   pcall(love.filesystem.write, "cheats_status.lua", table.concat(lines, "\n"))
 end
