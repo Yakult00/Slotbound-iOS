@@ -1731,13 +1731,11 @@ local function run_patch()
   if ok2 then
     patch_err = nil
     pcall(love.filesystem.append, "sbtrainer_backend.log",
-          "patch loaded " .. sig .. "
-")
+          "patch loaded " .. sig .. "\n")
   else
     patch_err = tostring(err)
     pcall(love.filesystem.append, "sbtrainer_backend.log",
-          "patch error: " .. tostring(err) .. "
-")
+          "patch error: " .. tostring(err) .. "\n")
   end
 end
 
