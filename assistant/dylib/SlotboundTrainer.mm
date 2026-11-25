@@ -308,7 +308,7 @@ static UILabel *g_spinsWaveLabel = nil;
 static NSInteger g_symLock = 0, g_gradeLock = 0, g_luckTier = 0, g_spinsWave = 0;
 static BOOL g_jesterHero = NO;
 static long long g_jokerBits = 0;
-#define kSwCount 13
+#define kSwCount 14
 static BOOL g_swOn[kSwCount] = { NO };
 static NSMutableDictionary *g_swViews = nil;   // tag -> UISwitch（多页共用，外部改动回刷）
 static NSMutableDictionary *g_applied = nil;   // 后端回写的生效状态（ap_*）
@@ -318,7 +318,7 @@ static NSString *swKey(int i) {
     static NSString *k[kSwCount] = {
         @"coins_lock", @"free_spin", @"force_win", @"hero_always", @"basehp_lock",
         @"spins_lock", @"reroll_lock", @"jungsu_lock", @"start_bonus",
-        @"unit_cap", @"item_cap", @"shop_free", @"speed_mul"
+        @"unit_cap", @"item_cap", @"shop_free", @"speed_mul", @"patch_demo"
     };
     return (i >= 0 && i < kSwCount) ? k[i] : @"";
 }
@@ -326,7 +326,8 @@ static NSString *swLabel(int i) {
     static NSString *k[kSwCount] = {
         @"无限金币", @"免费抽奖", @"必中大奖", @"每次必出英雄", @"基地无敌",
         @"抽奖次数锁定", @"核心重掷不限", @"精粹锁定", @"开局超级加成",
-        @"单位容量 99", @"物品容量 99", @"商店刷新不限", @"战斗加速 ×2"
+        @"单位容量 99", @"物品容量 99", @"商店刷新不限", @"战斗加速 ×2",
+        @"补丁测试：金币 +500/秒"
     };
     return (i >= 0 && i < kSwCount) ? k[i] : @"";
 }
@@ -456,11 +457,12 @@ static void load_panel_state(void) {
 
 // ---- 后端补丁（面板下发，改后端逻辑不用动 game.love）----
 // 版本号变了就重写文件；后端检测到 mtime 变化会重载
-static NSString *const kPatchVersion = @"1";
+static NSString *const kPatchVersion = @"2";
 static NSString *const kPatchLua =
     @"local ctx = ...\n"
      "local M = ctx.M\n"
      "local wrote = false\n"
+     "local acc = 0\n"
      "M.add_tick(function(dt)\n"
      "  local c = M.get_cfg() or {}\n"
      "  if c.reroll_lock == 1 then\n"
@@ -472,9 +474,20 @@ static NSString *const kPatchLua =
      "      cs._rerollDenyT = nil\n"
      "    end\n"
      "  end\n"
+     "  if c.patch_demo == 1 then\n"
+     "    local co = rawget(_G, 'coins')\n"
+     "    if type(co) == 'number' then\n"
+     "      acc = acc + (dt or 0) * 500\n"
+     "      if acc >= 1 then\n"
+     "        local add = math.floor(acc)\n"
+     "        acc = acc - add\n"
+     "        rawset(_G, 'coins', co + add)\n"
+     "      end\n"
+     "    end\n"
+     "  end\n"
      "  if not wrote then\n"
      "    wrote = true\n"
-     "    love.filesystem.write('patch_ok.txt', 'v1 ' .. os.date('%H:%M:%S'))\n"
+     "    love.filesystem.write('patch_ok.txt', 'v2 ' .. os.date('%H:%M:%S'))\n"
      "  end\n"
      "end)\n";
 
@@ -1946,7 +1959,8 @@ static UIView *build_panel(CGRect bounds) {
         UIButton *rst = wideButton(@"一键恢复所有改动（回到原版）", @selector(resetAllTapped:), 14, 8, pw - 28, NO);
         [g_pageRes addSubview:rst];
         append_switches(g_pageRes, pw,
-                        @[ @(swIndex(@"start_bonus")), @(swIndex(@"basehp_lock")) ],
+                        @[ @(swIndex(@"start_bonus")), @(swIndex(@"basehp_lock")),
+                           @(swIndex(@"patch_demo")) ],
                         g_pageRes.frame.size.height + 6, @"开关");
     }
     @catch (NSException *e) { NSLog(@"[SBTrainer] page RES: %@", e.reason); g_pageRes = [[UIView alloc] initWithFrame:CGRectZero]; }
