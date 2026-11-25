@@ -204,6 +204,7 @@ static NSString *g_saveDir = nil;
 
 // 一次性操作 pending（写完 cheats_ui.lua 即清空）
 static long long g_coinSet = 0;
+static long long g_waveSet = 0;
 static long long g_coinAdd = 0;
 static long long g_spinsSet = 0;
 static long long g_spinsAdd = 0;
@@ -278,6 +279,7 @@ static UILabel *g_hookLabel = nil;
 static UILabel *g_coinLabel = nil;
 // 自定义数值输入框（资源 / 吸收等级 / 商店等级）
 static UITextField *g_coinField = nil;
+static UITextField *g_waveField = nil;
 static UITextField *g_spinsField = nil;
 static UITextField *g_jungsuField = nil;
 static UITextField *g_originiteField = nil;
@@ -456,12 +458,13 @@ static void load_panel_state(void) {
 
 // ---- 后端补丁（面板下发，改后端逻辑不用动 game.love）----
 // 版本号变了就重写文件；后端检测到 mtime 变化会重载
-static NSString *const kPatchVersion = @"8";
+static NSString *const kPatchVersion = @"9";
 static NSString *const kPatchLua =
     @"local ctx = ...\n"
      "local M = ctx.M\n"
      "local wrote = false\n"
      "local autoT = 0\n"
+     "local wSeq = -1\n"
      "M.add_tick(function(dt)\n"
      "  local c = M.get_cfg() or {}\n"
      "  if c.reroll_lock == 1 then\n"
@@ -471,6 +474,21 @@ static NSString *const kPatchLua =
      "      cs0._usesUpgradeFreeReroll = true\n"
      "      cs0.rerollCost = 0\n"
      "      cs0._rerollDenyT = nil\n"
+     "    end\n"
+     "  end\n"
+     "  -- 跳波：面板输入第 N 波，点「设定」-> wave_set = N，这里只应用一次\n"
+     "  if c.wave_set then\n"
+     "    local n = tonumber(c.wave_set)\n"
+     "    local sq = tonumber(c.seq) or 0\n"
+     "    if n and n >= 1 and sq ~= wSeq then\n"
+     "      wSeq = sq\n"
+     "      local bfw = rawget(_G, 'battlefield')\n"
+     "      if type(bfw) == 'table' then\n"
+     "        bfw.wave = bfw.wave or {}\n"
+     "        bfw.wave.id = n - 1\n"
+     "        bfw.waveId = n\n"
+     "        love.filesystem.write('wave_ok.txt', tostring(n) .. ' @' .. os.date('%H:%M:%S'))\n"
+     "      end\n"
      "    end\n"
      "  end\n"
      "  if c.auto_wave == 1 then\n"
@@ -500,7 +518,7 @@ static NSString *const kPatchLua =
      "  end\n"
      "  if not wrote then\n"
      "    wrote = true\n"
-     "    love.filesystem.write('patch_ok.txt', 'v8 ' .. os.date('%H:%M:%S'))\n"
+     "    love.filesystem.write('patch_ok.txt', 'v9 ' .. os.date('%H:%M:%S'))\n"
      "  end\n"
      "end)\n";
 
@@ -521,6 +539,7 @@ static void write_cheats(void) {
     NSMutableString *s = [NSMutableString string];
     [s appendFormat:@"return {\n  seq = %ld,\n", (long)g_seq];
     [s appendFormat:@"  coins_set = %@,\n", g_coinSet > 0 ? [NSString stringWithFormat:@"%lld", g_coinSet] : @"nil"];
+    [s appendFormat:@"  wave_set = %@,\n", g_waveSet > 0 ? [NSString stringWithFormat:@"%lld", g_waveSet] : @"nil"];
     [s appendFormat:@"  coins_add = %lld,\n", g_coinAdd];
     [s appendFormat:@"  lock_coins = %@,\n", g_lockCoins ? [NSString stringWithFormat:@"%lld", g_lockTarget] : @"false"];
     [s appendFormat:@"  spins_set = %@,\n", g_spinsSet > 0 ? [NSString stringWithFormat:@"%lld", g_spinsSet] : @"nil"];
@@ -562,6 +581,7 @@ static void write_cheats(void) {
     [s writeToFile:[dir stringByAppendingPathComponent:@"cheats_ui.lua"]
         atomically:YES encoding:NSUTF8StringEncoding error:nil];
     g_coinSet = 0;
+    g_waveSet = 0;
     g_coinAdd = 0;
     g_spinsSet = 0;
     g_spinsAdd = 0;
@@ -884,6 +904,7 @@ static void read_catalog(void) {
 + (void)tabChanged:(UISegmentedControl *)sc;
 + (void)coinAdd:(UIButton *)b;
 + (void)coinSet:(UIButton *)b;
++ (void)waveSetText:(id)s;
 + (void)coinSetText:(id)s;
 + (void)spinsSetText:(id)s;
 + (void)jungsuSetText:(id)s;
@@ -1218,10 +1239,10 @@ static UIView *build_page_res(CGFloat w) {
     [v addSubview:custLab];
     y += 26;
 
-    NSArray *ph = @[ @"金币", @"旋转次数", @"水晶", @"升级宝石" ];
-    NSArray *sel = @[ @"coinSetText:", @"spinsSetText:", @"jungsuSetText:", @"originiteSetText:" ];
-    NSMutableArray *fields = [NSMutableArray arrayWithCapacity:4];
-    for (NSInteger i = 0; i < 4; i++) {
+    NSArray *ph = @[ @"金币", @"旋转次数", @"水晶", @"升级宝石", @"波次（下一波）" ];
+    NSArray *sel = @[ @"coinSetText:", @"spinsSetText:", @"jungsuSetText:", @"originiteSetText:", @"waveSetText:" ];
+    NSMutableArray *fields = [NSMutableArray arrayWithCapacity:5];
+    for (NSInteger i = 0; i < 5; i++) {
         UITextField *f = makeNumField(x, y, cw - bw - 8, ph[i]);
         [v addSubview:f];
         [fields addObject:f];
@@ -1234,6 +1255,7 @@ static UIView *build_page_res(CGFloat w) {
     g_spinsField = fields[1];
     g_jungsuField = fields[2];
     g_originiteField = fields[3];
+    g_waveField = fields[4];
 
     // ---- 关卡 / 无尽：一键全开（写存档，重进选关界面生效）----
     UIView *sepS = [[UIView alloc] initWithFrame:CGRectMake(x, y + 6, cw, 1)];
@@ -2117,6 +2139,13 @@ static SBSaveImporter *g_saveImporter = nil;
 
 + (void)coinAdd:(UIButton *)b { g_coinAdd = b.tag; write_cheats(); }
 + (void)coinSet:(UIButton *)b { g_coinSet = b.tag; write_cheats(); }
++ (void)waveSetText:(id)s {
+    long long v = (long long)[g_waveField.text longLongValue];
+    if (v <= 0) return;
+    g_waveSet = v;
+    write_cheats();
+    show_toast([NSString stringWithFormat:@"✓ 已请求跳到第 %lld 波", v]);
+}
 
 // ---- 自定义数值（读输入框）----
 + (void)coinSetText:(id)s {
