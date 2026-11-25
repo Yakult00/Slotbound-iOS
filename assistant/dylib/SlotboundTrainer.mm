@@ -24,6 +24,9 @@
 //        SlotboundTrainer.mm dobby/libdobby.a
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#if __has_include(<UniformTypeIdentifiers/UniformTypeIdentifiers.h>)
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+#endif
 #import <objc/runtime.h>
 #import <stdarg.h>
 #import <mach-o/dyld.h>
@@ -1608,13 +1611,13 @@ static UIView *build_page_save(CGFloat w) {
     y = addSectionTitle(v, x, y, cw, @"存档");
     [v addSubview:wideButton(@"立即存档", @selector(saveNow:), x, y, cw, YES)];
     y += 56;
-    [v addSubview:wideButton(@"备份当前存档", @selector(saveBackup:), x, y, cw, NO)];
+    [v addSubview:wideButton(@"导出存档到本地", @selector(exportSave:), x, y, cw, NO)];
     y += 56;
-    [v addSubview:wideButton(@"从备份还原", @selector(saveRestore:), x, y, cw, NO)];
+    [v addSubview:wideButton(@"从文件恢复存档", @selector(importSave:), x, y, cw, NO)];
     y += 56;
 
     UILabel *hint = [[UILabel alloc] initWithFrame:CGRectMake(x, y, cw, 60)];
-    hint.text = @"备份写在 save.dat.sb_bak / save_fallback.dat.sb_bak；\n还原后需要重进一局才看到变化。";
+    hint.text = @"导出：先点「立即存档」，再导出 .sbsave（弹分享面板，存到「文件」即可）；\n恢复：选 .sbsave 文件，覆盖前自动留 .sb_before 备份，重进游戏生效。";
     hint.numberOfLines = 0;
     hint.font = [UIFont systemFontOfSize:12];
     hint.textColor = txtDim();
@@ -2255,8 +2258,108 @@ static UIView *build_panel(CGRect bounds) {
 }
 
 + (void)saveNow:(id)s { send_command(@"save_now", nil, nil); }
-+ (void)saveBackup:(id)s { send_command(@"save_backup", nil, nil); }
-+ (void)saveRestore:(id)s { send_command(@"save_restore", nil, nil); }
+
+#pragma mark - 存档导出 / 导入（单文件 .sbsave）
+
+static NSString *sb_save_dir(void) {
+    NSString *base = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Application Support"];
+    NSFileManager *fm = [NSFileManager defaultManager];
+    for (NSString *n in @[@"slotbound_full", @"slotbound"]) {
+        NSString *p = [base stringByAppendingPathComponent:n];
+        if ([fm fileExistsAtPath:p]) return p;
+    }
+    return [base stringByAppendingPathComponent:@"slotbound_full"];
+}
+
+static UIViewController *sb_top_vc(void) {
+    UIViewController *vc = g_win ? g_win.rootViewController : nil;
+    while (vc.presentedViewController) vc = vc.presentedViewController;
+    return vc;
+}
+
+@interface SBSaveImporter : NSObject <UIDocumentPickerDelegate>
+@end
+static SBSaveImporter *g_saveImporter = nil;
+
+@implementation SBSaveImporter
+- (void)documentPicker:(UIDocumentPickerViewController *)c didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
+    NSURL *u = urls.firstObject;
+    if (!u) return;
+    BOOL scoped = [u startAccessingSecurityScopedResource];
+    NSData *d = [NSData dataWithContentsOfURL:u];
+    if (scoped) [u stopAccessingSecurityScopedResource];
+    if (!d || d.length == 0) { show_toast(@"⚠ 读不到这个文件"); return; }
+    id obj = [NSPropertyListSerialization propertyListWithData:d options:NSPropertyListImmutable format:NULL error:NULL];
+    if (![obj isKindOfClass:[NSDictionary class]]) { show_toast(@"⚠ 不是有效的存档文件"); return; }
+    NSDictionary *blob = (NSDictionary *)obj;
+    NSString *dir = sb_save_dir();
+    NSFileManager *fm = [NSFileManager defaultManager];
+    [fm createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:NULL];
+    NSInteger n = 0;
+    for (NSString *name in blob) {
+        NSData *data = blob[name];
+        if (![name isKindOfClass:[NSString class]] || ![data isKindOfClass:[NSData class]]) continue;
+        if ([name containsString:@"/"] || [name hasPrefix:@"."]) continue;
+        NSString *dst = [dir stringByAppendingPathComponent:name];
+        NSData *cur = [NSData dataWithContentsOfFile:dst];
+        if (cur) [cur writeToFile:[dst stringByAppendingString:@".sb_before"] atomically:YES];
+        if ([data writeToFile:dst atomically:YES]) n++;
+    }
+    show_toast(n > 0 ? [NSString stringWithFormat:@"✓ 已恢复 %ld 个文件，杀掉游戏重进生效", (long)n]
+                     : @"⚠ 文件里没有可恢复的内容");
+    NSLog(@"[SBSave] import ok n=%ld", (long)n);
+}
+- (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)c { g_saveImporter = nil; }
+@end
+
++ (void)exportSave:(id)s {
+    NSString *dir = sb_save_dir();
+    NSMutableDictionary *blob = [NSMutableDictionary dictionary];
+    for (NSString *n in @[@"save.dat", @"save_fallback.dat"]) {
+        NSData *d = [NSData dataWithContentsOfFile:[dir stringByAppendingPathComponent:n]];
+        if (d && d.length) blob[n] = d;
+    }
+    if (blob.count == 0) { show_toast(@"⚠ 还没存档，先点「立即存档」"); return; }
+    NSData *pl = [NSPropertyListSerialization dataWithPropertyList:blob
+                                                            format:NSPropertyListBinaryFormat_v1_0
+                                                           options:0 error:NULL];
+    if (!pl) { show_toast(@"⚠ 打包失败"); return; }
+    NSDateFormatter *df = [NSDateFormatter new];
+    df.dateFormat = @"yyyyMMdd_HHmmss";
+    NSString *name = [NSString stringWithFormat:@"SlotBound存档_%@.sbsave", [df stringFromDate:[NSDate date]]];
+    NSString *docs = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
+    [[NSFileManager defaultManager] createDirectoryAtPath:docs withIntermediateDirectories:YES attributes:nil error:NULL];
+    NSString *out = [docs stringByAppendingPathComponent:name];
+    if (![pl writeToFile:out atomically:YES]) { show_toast(@"⚠ 写入失败"); return; }
+    NSLog(@"[SBSave] export %@ %lu B", out, (unsigned long)pl.length);
+    UIViewController *top = sb_top_vc();
+    if (!top) { show_toast([NSString stringWithFormat:@"已导出到 Documents/%@", name]); return; }
+    UIActivityViewController *av = [[UIActivityViewController alloc] initWithActivityItems:@[[NSURL fileURLWithPath:out]]
+                                                                   applicationActivities:nil];
+    av.popoverPresentationController.sourceView = top.view;
+    av.popoverPresentationController.sourceRect = CGRectMake(top.view.bounds.size.width * 0.5,
+                                                            top.view.bounds.size.height * 0.5, 1, 1);
+    [top presentViewController:av animated:YES completion:nil];
+}
+
++ (void)importSave:(id)s {
+    UIViewController *top = sb_top_vc();
+    if (!top) return;
+    UIDocumentPickerViewController *pk = nil;
+    if (@available(iOS 14.0, *)) {
+        pk = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[UTTypeData] asCopy:YES];
+    } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+        pk = [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[@"public.data"]
+                                                                   inMode:UIDocumentPickerModeImport];
+#pragma clang diagnostic pop
+    }
+    g_saveImporter = [SBSaveImporter new];
+    pk.delegate = g_saveImporter;
+    pk.allowsMultipleSelection = NO;
+    [top presentViewController:pk animated:YES completion:nil];
+}
 
 + (void)saveDefaults:(id)s { [CheatsOverlay doResetAll]; }
 
