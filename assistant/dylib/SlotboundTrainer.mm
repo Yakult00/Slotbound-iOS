@@ -24,9 +24,6 @@
 //        SlotboundTrainer.mm dobby/libdobby.a
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#if __has_include(<UniformTypeIdentifiers/UniformTypeIdentifiers.h>)
-#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
-#endif
 #import <objc/runtime.h>
 #import <stdarg.h>
 #import <mach-o/dyld.h>
@@ -2345,16 +2342,14 @@ static SBSaveImporter *g_saveImporter = nil;
 + (void)importSave:(id)s {
     UIViewController *top = sb_top_vc();
     if (!top) return;
-    UIDocumentPickerViewController *pk = nil;
-    if (@available(iOS 14.0, *)) {
-        pk = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:@[UTTypeData] asCopy:YES];
-    } else {
+    // 用老的 initWithDocumentTypes（iOS14 起标记 deprecated，但不需要额外链接
+    // UniformTypeIdentifiers，.sbsave 走 dynamic UTI，仍归 public.data，可被选中）
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-        pk = [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[@"public.data"]
-                                                                   inMode:UIDocumentPickerModeImport];
+    UIDocumentPickerViewController *pk =
+        [[UIDocumentPickerViewController alloc] initWithDocumentTypes:@[@"public.data"]
+                                                               inMode:UIDocumentPickerModeImport];
 #pragma clang diagnostic pop
-    }
     g_saveImporter = [SBSaveImporter new];
     pk.delegate = g_saveImporter;
     pk.allowsMultipleSelection = NO;
