@@ -38,6 +38,7 @@ local cfg = {
 local applied_seq = -1
 local last_content = nil
 local poll_t = 0
+local diag_t = 0
 local status_t = 0
 local catalog_t = 0
 
@@ -1613,6 +1614,47 @@ end
 ----------------------------------------------------------------
 -- 每帧入口 + 自己包 love.update（注入版，不改 main.lua）
 ----------------------------------------------------------------
+local function diag_count(t)
+  if type(t) ~= "table" then return -1 end
+  local n = 0
+  for _ in pairs(t) do n = n + 1 end
+  return n
+end
+
+-- 崩溃诊断：内存 + 实体数 + 当前生效的作弊项，5s 一行，超过 256KB 只留最后 200 行
+local function diag_line()
+  local bf = rawget(_G, "battlefield")
+  local ui = rawget(_G, "ui")
+  local units = diag_count(type(bf) == "table" and bf.units or nil)
+  local enemies = diag_count(type(bf) == "table" and bf.enemies or nil)
+  local projs = diag_count(type(bf) == "table" and bf.projectiles or nil)
+  local items = diag_count(type(ui) == "table" and ui._itemPurchased or nil)
+  local on = {}
+  for _, k in ipairs({ "free_spin", "basehp_lock", "reroll_lock", "freespin_lock",
+                       "start_bonus", "unit_cap", "item_cap", "shop_free", "speed_mul" }) do
+    if cfg[k] and cfg[k] ~= 0 then on[#on + 1] = k end
+  end
+  if type(cfg.lock_coins) == "number" then on[#on + 1] = "lock_coins" end
+  if type(cfg.lock_spins) == "number" then on[#on + 1] = "lock_spins" end
+  local line = string.format("%s mem=%dKB units=%d enemies=%d proj=%d items=%d wave=%s on=%s",
+    os.date("%m-%d %H:%M:%S"), math.floor(collectgarbage("count")),
+    units, enemies, projs, items,
+    tostring(type(bf) == "table" and bf.waveId or "?"),
+    (#on > 0 and table.concat(on, ",") or "-"))
+  local info = love.filesystem.getInfo("trainer_diag.log")
+  if info and info.size and info.size > 262144 then
+    local ok, old = pcall(love.filesystem.read, "trainer_diag.log")
+    if ok and type(old) == "string" then
+      local keep = {}
+      for l in old:gmatch("[^\n]+") do keep[#keep + 1] = l end
+      local tail = {}
+      for i = math.max(1, #keep - 199), #keep do tail[#tail + 1] = keep[i] end
+      pcall(love.filesystem.write, "trainer_diag.log", table.concat(tail, "\n") .. "\n")
+    end
+  end
+  pcall(love.filesystem.append, "trainer_diag.log", line .. "\n")
+end
+
 function M.tick(dt)
   tune_gc()
 
@@ -1655,6 +1697,13 @@ function M.tick(dt)
     -- 30 秒兜底：面板可能是后打开的
     catalog_t = 0
     if alive then catalog_dirty = true end
+  end
+
+  -- 诊断：每 5s 记一行内存/实体数，崩溃后能看出是内存涨还是某一帧炸的
+  diag_t = diag_t + (dt or 0)
+  if diag_t >= 5.0 then
+    diag_t = 0
+    pcall(diag_line)
   end
 
   -- 状态：面板开着 1Hz，关着降到 0.125Hz（没人看就别写盘）
