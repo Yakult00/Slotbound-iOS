@@ -275,7 +275,17 @@ local function results_like()
     return (u and u._dpsHoverTarget ~= nil) and true or false
 end
 
-local function drag_kind_for_phase()
+-- 印记「长按吸收」按钮的命中区（模块在 package.loaded，不在 ui 下）
+local function imprint_absorb_hit(x, y)
+    local imp = package.loaded["src.ui.imprint"]
+    local r = imp and imp._absorbAllRect
+    if type(r) ~= "table" then return false end
+    local vx, vy = to_virtual(x, y)
+    local w, h = r.w or 0, r.h or 0
+    return vx >= r.x and vx <= r.x + w and vy >= r.y and vy <= r.y + h
+end
+
+local function drag_kind_for_phase(x, y)
     if results_like() then return "wheel" end
     local ph = phase_now()
     if ph == "upgrade" then return "tree" end
@@ -284,6 +294,9 @@ local function drag_kind_for_phase()
         local u = get_ui()
         local c = u and u.tooltip and u.tooltip.candidate
         if c and c.ref then return "drag" end
+        -- 印记「长按吸收」按钮：v1.3.5 靠"长按后滑动 -> 补发左键"启动游戏自己的
+        -- holdTimer（imprint._absorbHold / holdTimer）；按矩形命中判定，不能当滚轮。
+        if imprint_absorb_hit(x, y) then return "drag" end
         return "wheel"
     end
     return "wheel"
@@ -293,7 +306,7 @@ end
 local function dispatch_drag(t)
     if t.dispatched then return end  -- 长按后移动仍可拖拽（吸收/拖兵）
     t.dispatched = true
-    local kind = drag_kind_for_phase()
+    local kind = drag_kind_for_phase(t.x0, t.y0)
     t.drag_kind = kind
     if kind == "tree" then
         glog("drag -> tree pan")
@@ -320,6 +333,10 @@ end
 local function do_long_press(t)
     if t.long then return end
     t.long = true
+    if imprint_absorb_hit(t.x0, t.y0) then
+        glog(string.format("long press on absorb button @%.0f,%.0f (no right click)", t.x0, t.y0))
+        return
+    end
     t.pin_at = now() + LONG_PIN_DELAY
     set_hover(t.x, t.y)
     glog(string.format("long press -> hover @%.0f,%.0f (right click in %.2fs)", t.x, t.y, LONG_PIN_DELAY))
