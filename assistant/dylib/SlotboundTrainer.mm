@@ -778,8 +778,8 @@ static void read_catalog(void) {
 + (void)jesterChanged:(UISwitch *)sw;
 + (void)swChanged:(UISwitch *)sw;
 + (void)saveNow:(id)s;
-+ (void)saveBackup:(id)s;
-+ (void)saveRestore:(id)s;
++ (void)exportSave:(id)s;
++ (void)importSave:(id)s;
 + (void)saveDefaults:(id)s;
 + (void)resetAllTapped:(id)s;
 + (void)doResetAll;
@@ -1869,6 +1869,59 @@ static UIView *build_panel(CGRect bounds) {
     return panel;
 }
 
+#pragma mark - 存档导出 / 导入（单文件 .sbsave）
+
+static NSString *sb_save_dir(void) {
+    NSString *base = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Application Support"];
+    NSFileManager *fm = [NSFileManager defaultManager];
+    for (NSString *n in @[@"slotbound_full", @"slotbound"]) {
+        NSString *p = [base stringByAppendingPathComponent:n];
+        if ([fm fileExistsAtPath:p]) return p;
+    }
+    return [base stringByAppendingPathComponent:@"slotbound_full"];
+}
+
+static UIViewController *sb_top_vc(void) {
+    UIViewController *vc = g_win ? g_win.rootViewController : nil;
+    while (vc.presentedViewController) vc = vc.presentedViewController;
+    return vc;
+}
+
+@interface SBSaveImporter : NSObject <UIDocumentPickerDelegate>
+@end
+static SBSaveImporter *g_saveImporter = nil;
+
+@implementation SBSaveImporter
+- (void)documentPicker:(UIDocumentPickerViewController *)c didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
+    NSURL *u = urls.firstObject;
+    if (!u) return;
+    BOOL scoped = [u startAccessingSecurityScopedResource];
+    NSData *d = [NSData dataWithContentsOfURL:u];
+    if (scoped) [u stopAccessingSecurityScopedResource];
+    if (!d || d.length == 0) { show_toast(@"⚠ 读不到这个文件"); return; }
+    id obj = [NSPropertyListSerialization propertyListWithData:d options:NSPropertyListImmutable format:NULL error:NULL];
+    if (![obj isKindOfClass:[NSDictionary class]]) { show_toast(@"⚠ 不是有效的存档文件"); return; }
+    NSDictionary *blob = (NSDictionary *)obj;
+    NSString *dir = sb_save_dir();
+    NSFileManager *fm = [NSFileManager defaultManager];
+    [fm createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:NULL];
+    NSInteger n = 0;
+    for (NSString *name in blob) {
+        NSData *data = blob[name];
+        if (![name isKindOfClass:[NSString class]] || ![data isKindOfClass:[NSData class]]) continue;
+        if ([name containsString:@"/"] || [name hasPrefix:@"."]) continue;
+        NSString *dst = [dir stringByAppendingPathComponent:name];
+        NSData *cur = [NSData dataWithContentsOfFile:dst];
+        if (cur) [cur writeToFile:[dst stringByAppendingString:@".sb_before"] atomically:YES];
+        if ([data writeToFile:dst atomically:YES]) n++;
+    }
+    show_toast(n > 0 ? [NSString stringWithFormat:@"✓ 已恢复 %ld 个文件，杀掉游戏重进生效", (long)n]
+                     : @"⚠ 文件里没有可恢复的内容");
+    NSLog(@"[SBSave] import ok n=%ld", (long)n);
+}
+- (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)c { g_saveImporter = nil; }
+@end
+
 // ---- CheatsOverlay 实现 ----
 @implementation CheatsOverlay
 
@@ -2258,59 +2311,6 @@ static UIView *build_panel(CGRect bounds) {
 }
 
 + (void)saveNow:(id)s { send_command(@"save_now", nil, nil); }
-
-#pragma mark - 存档导出 / 导入（单文件 .sbsave）
-
-static NSString *sb_save_dir(void) {
-    NSString *base = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Application Support"];
-    NSFileManager *fm = [NSFileManager defaultManager];
-    for (NSString *n in @[@"slotbound_full", @"slotbound"]) {
-        NSString *p = [base stringByAppendingPathComponent:n];
-        if ([fm fileExistsAtPath:p]) return p;
-    }
-    return [base stringByAppendingPathComponent:@"slotbound_full"];
-}
-
-static UIViewController *sb_top_vc(void) {
-    UIViewController *vc = g_win ? g_win.rootViewController : nil;
-    while (vc.presentedViewController) vc = vc.presentedViewController;
-    return vc;
-}
-
-@interface SBSaveImporter : NSObject <UIDocumentPickerDelegate>
-@end
-static SBSaveImporter *g_saveImporter = nil;
-
-@implementation SBSaveImporter
-- (void)documentPicker:(UIDocumentPickerViewController *)c didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
-    NSURL *u = urls.firstObject;
-    if (!u) return;
-    BOOL scoped = [u startAccessingSecurityScopedResource];
-    NSData *d = [NSData dataWithContentsOfURL:u];
-    if (scoped) [u stopAccessingSecurityScopedResource];
-    if (!d || d.length == 0) { show_toast(@"⚠ 读不到这个文件"); return; }
-    id obj = [NSPropertyListSerialization propertyListWithData:d options:NSPropertyListImmutable format:NULL error:NULL];
-    if (![obj isKindOfClass:[NSDictionary class]]) { show_toast(@"⚠ 不是有效的存档文件"); return; }
-    NSDictionary *blob = (NSDictionary *)obj;
-    NSString *dir = sb_save_dir();
-    NSFileManager *fm = [NSFileManager defaultManager];
-    [fm createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:NULL];
-    NSInteger n = 0;
-    for (NSString *name in blob) {
-        NSData *data = blob[name];
-        if (![name isKindOfClass:[NSString class]] || ![data isKindOfClass:[NSData class]]) continue;
-        if ([name containsString:@"/"] || [name hasPrefix:@"."]) continue;
-        NSString *dst = [dir stringByAppendingPathComponent:name];
-        NSData *cur = [NSData dataWithContentsOfFile:dst];
-        if (cur) [cur writeToFile:[dst stringByAppendingString:@".sb_before"] atomically:YES];
-        if ([data writeToFile:dst atomically:YES]) n++;
-    }
-    show_toast(n > 0 ? [NSString stringWithFormat:@"✓ 已恢复 %ld 个文件，杀掉游戏重进生效", (long)n]
-                     : @"⚠ 文件里没有可恢复的内容");
-    NSLog(@"[SBSave] import ok n=%ld", (long)n);
-}
-- (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)c { g_saveImporter = nil; }
-@end
 
 + (void)exportSave:(id)s {
     NSString *dir = sb_save_dir();
