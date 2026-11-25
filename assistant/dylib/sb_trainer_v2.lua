@@ -961,6 +961,8 @@ local function write_status(extra)
     if type(v) == "number" then return math.floor(v) end
     return 0
   end
+  lines[#lines + 1] = "  cost = " .. (tonumber(rawget(_G, "spinCost")) or -1) .. ","
+  lines[#lines + 1] = "  freecredits = " .. (tonumber(rawget(_G, "freeSpinCredits")) or -1) .. ","
   lines[#lines + 1] = "  ap_free_spin = " .. apb(cfg.free_spin) .. ","
   lines[#lines + 1] = "  ap_basehp_lock = " .. apb(cfg.basehp_lock) .. ","
   lines[#lines + 1] = "  ap_reroll_lock = " .. apb(cfg.reroll_lock) .. ","
@@ -1014,6 +1016,8 @@ local LUCK_MUL = {
   { normal = 0.5, advanced = 3, rare = 10, legendary = 35, prism = 120 },
 }
 local prob_snap, spin_snap, spin_cost_orig = nil, nil, nil
+local spin_cost_nat = nil   -- 关着的时候观察到的真实价格（防止把 0 当成原价快照)
+local reroll_orig, freespin_orig = nil, nil   -- 关闭开关时要还原的原始次数
 local wrap_mode, joker_applied, jester_on = nil, 0, false
 local last_wave, last_spins_in_wave = nil, nil
 
@@ -1330,21 +1334,48 @@ local function apply_locks()
   if cfg.free_spin == 1 then
     local sc = rawget(_G, "spinCost")
     if type(sc) == "number" then
-      if spin_cost_orig == nil then spin_cost_orig = sc end
+      if sc > 0 then spin_cost_nat = sc end                 -- 只认真实价格
+      if type(spin_cost_orig) ~= "number" or spin_cost_orig <= 0 then
+        spin_cost_orig = spin_cost_nat                      -- 快照为 0 就不采信，用观察值
+      end
       if sc ~= 0 then rawset(_G, "spinCost", 0) end
     end
-  elseif spin_cost_orig then
-    rawset(_G, "spinCost", spin_cost_orig)
+  else
+    local sc = rawget(_G, "spinCost")
+    if type(sc) == "number" and sc > 0 then spin_cost_nat = sc end
+    local want = spin_cost_orig
+    if type(want) ~= "number" or want <= 0 then want = spin_cost_nat end
+    if type(want) ~= "number" or want <= 0 then           -- 兜底：上次实付 + 步进
+      local last = tonumber(rawget(_G, "lastPaidSpinCost")) or 0
+      local step = tonumber(rawget(_G, "spinCostStep")) or 0
+      if last > 0 then want = last + step end
+    end
+    -- 只在价格掉到 0（被 free 顶住）时写回；游戏自己算出的正常价不覆盖
+    if (type(want) == "number" and want > 0) and (type(sc) ~= "number" or sc <= 0) then
+      rawset(_G, "spinCost", want)
+    end
     spin_cost_orig = nil
   end
   local slot = rawget(_G, "slot")
   if cfg.reroll_lock == 1 then
     local v = rawget(_G, "coreFreeRerollsRemaining")
-    if type(v) == "number" and v < 99 then rawset(_G, "coreFreeRerollsRemaining", 99) end
+    if type(v) == "number" then
+      if reroll_orig == nil then reroll_orig = v end       -- 记下开之前的次数
+      if v < 99 then rawset(_G, "coreFreeRerollsRemaining", 99) end
+    end
+  elseif reroll_orig ~= nil then                            -- 关掉：还原，不然一直显示 99 次
+    rawset(_G, "coreFreeRerollsRemaining", reroll_orig)
+    reroll_orig = nil
   end
   if cfg.freespin_lock == 1 then
     local v = rawget(_G, "freeSpinCredits")
-    if type(v) == "number" and v < 99 then rawset(_G, "freeSpinCredits", 99) end
+    if type(v) == "number" then
+      if freespin_orig == nil then freespin_orig = v end    -- 记下开之前的免费券
+      if v < 99 then rawset(_G, "freeSpinCredits", 99) end
+    end
+  elseif freespin_orig ~= nil then                          -- 关掉：还原免费券
+    rawset(_G, "freeSpinCredits", freespin_orig)
+    freespin_orig = nil
   end
   if cfg.basehp_lock == 1 then
     local bf = rawget(_G, "battlefield")

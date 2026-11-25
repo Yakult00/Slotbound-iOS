@@ -308,7 +308,7 @@ static UILabel *g_spinsWaveLabel = nil;
 static NSInteger g_symLock = 0, g_gradeLock = 0, g_luckTier = 0, g_spinsWave = 0;
 static BOOL g_jesterHero = NO;
 static long long g_jokerBits = 0;
-#define kSwCount 14
+#define kSwCount 13
 static BOOL g_swOn[kSwCount] = { NO };
 static NSMutableDictionary *g_swViews = nil;   // tag -> UISwitch（多页共用，外部改动回刷）
 static NSMutableDictionary *g_applied = nil;   // 后端回写的生效状态（ap_*）
@@ -317,7 +317,7 @@ static double sb_now(void) { return [NSDate timeIntervalSinceReferenceDate]; }
 static NSString *swKey(int i) {
     static NSString *k[kSwCount] = {
         @"coins_lock", @"free_spin", @"force_win", @"hero_always", @"basehp_lock",
-        @"spins_lock", @"reroll_lock", @"freespin_lock", @"jungsu_lock", @"start_bonus",
+        @"spins_lock", @"reroll_lock", @"jungsu_lock", @"start_bonus",
         @"unit_cap", @"item_cap", @"shop_free", @"speed_mul"
     };
     return (i >= 0 && i < kSwCount) ? k[i] : @"";
@@ -325,10 +325,14 @@ static NSString *swKey(int i) {
 static NSString *swLabel(int i) {
     static NSString *k[kSwCount] = {
         @"无限金币", @"免费抽奖", @"必中大奖", @"每次必出英雄", @"基地无敌",
-        @"抽奖次数锁定", @"核心重掷不限", @"无限免费抽", @"精粹锁定", @"开局超级加成",
+        @"抽奖次数锁定", @"核心重掷不限", @"精粹锁定", @"开局超级加成",
         @"单位容量 99", @"物品容量 99", @"商店刷新不限", @"战斗加速 ×2"
     };
     return (i >= 0 && i < kSwCount) ? k[i] : @"";
+}
+static int swIndex(NSString *name) {
+    for (int i = 0; i < kSwCount; i++) if ([swKey(i) isEqualToString:name]) return i;
+    return -1;
 }
 static UILabel *g_skillLabel = nil;
 static UIView *g_cdRow = nil;
@@ -386,10 +390,11 @@ static NSString *find_save_dir(void) {
 static NSString *const kPanelStateKey = @"SBTrainerPanelState_v1";
 
 static void save_panel_state(void) {
-    NSMutableArray *sw = [NSMutableArray array];
-    for (int i = 0; i < kSwCount; i++) [sw addObject:@(g_swOn[i] ? 1 : 0)];
+    NSMutableDictionary *swd = [NSMutableDictionary dictionary];
+    for (int i = 0; i < kSwCount; i++) swd[swKey(i)] = @(g_swOn[i] ? 1 : 0);
     NSDictionary *st = @{
-        @"sw": sw,
+        @"ver": @2,
+        @"swd": swd,
         @"jackpot": g_jackpot ?: @"",
         @"lockCoins": @(g_lockCoins), @"lockCoinsT": @(g_lockTarget),
         @"lockSpins": @(g_lockSpins), @"lockSpinsT": @(g_lockSpinsTarget),
@@ -403,12 +408,37 @@ static void save_panel_state(void) {
     (void)[ud synchronize];
 }
 
+// 旧版本（v1）用 14 项数组存，下标与现在不同：按名字迁移一次
+static NSString *legacySwName(int i) {
+    static NSString *k[14] = {
+        @"coins_lock", @"free_spin", @"force_win", @"hero_always", @"basehp_lock",
+        @"spins_lock", @"reroll_lock", @"freespin_lock", @"jungsu_lock", @"start_bonus",
+        @"unit_cap", @"item_cap", @"shop_free", @"speed_mul"
+    };
+    return (i >= 0 && i < 14) ? k[i] : nil;
+}
+
 static void load_panel_state(void) {
     NSDictionary *st = [[NSUserDefaults standardUserDefaults] dictionaryForKey:kPanelStateKey];
     if (![st isKindOfClass:[NSDictionary class]]) return;
-    NSArray *sw = st[@"sw"];
-    if ([sw isKindOfClass:[NSArray class]]) {
-        for (int i = 0; i < kSwCount && i < (int)sw.count; i++) g_swOn[i] = [sw[i] boolValue];
+    NSDictionary *swd = st[@"swd"];
+    if ([swd isKindOfClass:[NSDictionary class]]) {
+        for (int i = 0; i < kSwCount; i++) {
+            NSNumber *n = swd[swKey(i)];
+            if ([n isKindOfClass:[NSNumber class]]) g_swOn[i] = n.boolValue;
+        }
+    } else {
+        NSArray *sw = st[@"sw"];
+        if ([sw isKindOfClass:[NSArray class]]) {
+            for (int i = 0; i < (int)sw.count && i < 14; i++) {
+                NSString *name = legacySwName(i);
+                if (!name || ![sw[i] boolValue]) continue;
+                for (int j = 0; j < kSwCount; j++) {
+                    if ([swKey(j) isEqualToString:name]) { g_swOn[j] = YES; break; }
+                }
+            }
+            NSLog(@"[SB] panel state migrated from v1 (14-switch array)");
+        }
     }
     NSString *jp = st[@"jackpot"];
     g_jackpot = ([jp isKindOfClass:[NSString class]] && jp.length) ? jp : nil;
@@ -455,15 +485,16 @@ static void write_cheats(void) {
     [s appendFormat:@"  jester_hero = %d,\n", g_jesterHero ? 1 : 0];
     // ---- 开关（13 项，分散到各页；金币/次数/精粹锁定沿用资源页原有开关）----
     for (int i = 0; i < kSwCount; i++) {
+        NSString *k = swKey(i);
+        // 数值锁接管：资源页的 lock_coins/lock_spins/lock_jungsu 才是真正的开关
+        if ([k isEqualToString:@"coins_lock"] || [k isEqualToString:@"spins_lock"] ||
+            [k isEqualToString:@"jungsu_lock"]) continue;
+        // force_win / hero_always 与 jackpot 链重复，暂不输出（界面另行处理）
+        if ([k isEqualToString:@"force_win"] || [k isEqualToString:@"hero_always"]) continue;
         long long v = g_swOn[i] ? 1 : 0;
-        // 0/5/8：布尔锁由资源页 lock_coins/lock_spins/lock_jungsu 数值锁接管；
-        // 3：hero_always 与 force_win 共用 slot.forceWinOnce，去重后不再输出
-        if (i == 0 || i == 2 || i == 3 || i == 5 || i == 8) continue;
-        if (i == 9)  v = g_swOn[i] ? 1 : 0;           // start_bonus 开关即可
-        if (i == 10) v = g_swOn[i] ? 99 : 0;          // unit_cap
-        if (i == 11) v = g_swOn[i] ? 99 : 0;          // item_cap
-        if (i == 13) v = g_swOn[i] ? 2 : 0;           // speed_mul
-        [s appendFormat:@"  %@ = %lld,\n", swKey(i), v];
+        if ([k isEqualToString:@"unit_cap"] || [k isEqualToString:@"item_cap"]) v = g_swOn[i] ? 99 : 0;
+        else if ([k isEqualToString:@"speed_mul"]) v = g_swOn[i] ? 2 : 0;
+        [s appendFormat:@"  %@ = %lld,\n", k, v];
     }
     [s appendFormat:@"  coins_value = 9999999,\n  basehp_value = 999,\n  spins_value = 99,\n"];
     [s appendString:@"}\n"];
@@ -1732,6 +1763,7 @@ static CGFloat append_switches(UIView *v, CGFloat w, NSArray *idxList, CGFloat y
     y = addSectionTitle(v, x, y, cw, title);
     for (NSNumber *n in idxList) {
         int i = [n intValue];
+        if (i < 0 || i >= kSwCount) continue;
         UILabel *l = [[UILabel alloc] initWithFrame:CGRectMake(x, y + 6, cw - 70, 26)];
         l.text = swLabel(i);
         l.font = [UIFont systemFontOfSize:15];
@@ -1877,15 +1909,15 @@ static UIView *build_panel(CGRect bounds) {
         UIButton *rst = wideButton(@"一键恢复所有改动（回到原版）", @selector(resetAllTapped:), 14, 8, pw - 28, NO);
         [g_pageRes addSubview:rst];
         append_switches(g_pageRes, pw,
-                        @[ @(9) /*开局超级加成*/, @(4) /*基地无敌*/ ],
+                        @[ @(swIndex(@"start_bonus")), @(swIndex(@"basehp_lock")) ],
                         g_pageRes.frame.size.height + 6, @"开关");
     }
     @catch (NSException *e) { NSLog(@"[SBTrainer] page RES: %@", e.reason); g_pageRes = [[UIView alloc] initWithFrame:CGRectZero]; }
     @try {
         g_pageSlot = build_page_slot(w - 28);
         CGFloat y = append_switches(g_pageSlot, w - 28,
-                        @[ @(1) /*免费抽奖*/,
-                           @(7) /*无限免费抽*/, @(6) /*核心重掷不限*/, @(13) /*战斗加速×2*/ ],
+                        @[ @(swIndex(@"free_spin")), @(swIndex(@"reroll_lock")),
+                           @(swIndex(@"speed_mul")) ],
                         g_pageSlot.frame.size.height + 6, @"开关");
         UIView *draw = build_page_draw(w - 28);
         draw.frame = CGRectMake(0, y + 4, w - 28, draw.frame.size.height);
@@ -1895,14 +1927,14 @@ static UIView *build_panel(CGRect bounds) {
     @catch (NSException *e) { NSLog(@"[SBTrainer] page SLOT: %@", e.reason); g_pageSlot = [[UIView alloc] initWithFrame:CGRectZero]; }
     @try {
         g_pageUnit = build_page_unit(w - 28);
-        append_switches(g_pageUnit, w - 28, @[ @(10) /*单位容量 99*/ ],
+        append_switches(g_pageUnit, w - 28, @[ @(swIndex(@"unit_cap")) ],
                         g_pageUnit.frame.size.height + 6, @"开关");
     }
     @catch (NSException *e) { NSLog(@"[SBTrainer] page UNIT: %@", e.reason); g_pageUnit = [[UIView alloc] initWithFrame:CGRectZero]; }
     @try {
         g_pageShop = build_page_shop(w - 28);
         append_switches(g_pageShop, w - 28,
-                        @[ @(11) /*物品容量 99*/, @(12) /*商店刷新不限*/ ],
+                        @[ @(swIndex(@"item_cap")), @(swIndex(@"shop_free")) ],
                         g_pageShop.frame.size.height + 6, @"开关");
     }
     @catch (NSException *e) { NSLog(@"[SBTrainer] page SHOP: %@", e.reason); g_pageShop = [[UIView alloc] initWithFrame:CGRectZero]; }
