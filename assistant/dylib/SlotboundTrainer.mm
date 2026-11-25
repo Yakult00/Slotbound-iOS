@@ -456,7 +456,7 @@ static void load_panel_state(void) {
 
 // ---- 后端补丁（面板下发，改后端逻辑不用动 game.love）----
 // 版本号变了就重写文件；后端检测到 mtime 变化会重载
-static NSString *const kPatchVersion = @"4";
+static NSString *const kPatchVersion = @"5";
 static NSString *const kPatchLua =
     @"local ctx = ...\n"
      "local M = ctx.M\n"
@@ -481,24 +481,20 @@ static NSString *const kPatchLua =
      "    local ui = rawget(_G, 'ui')\n"
      "    local cs = (type(ui) == 'table') and ui._coreSelect or nil\n"
      "    local busy = (type(cs) == 'table' and cs.active) or (type(bf) == 'table' and bf.mode == 'battle')\n"
-     "    local okGo = type(wt) == 'table' and wt.state == 'countdown' and not wt.disabled and not busy\n"
-     "             and rawget(_G, '__slotCanStartBattleNow') and __slotCanStartBattleNow()\n"
+     "    local canStart = rawget(_G, '__slotCanStartBattleNow') and __slotCanStartBattleNow() or false\n"
+     "    local go = (type(wt) == 'table') and wt.state == 'countdown' and not busy and canStart\n"
      "    logT = logT + (dt or 0)\n"
-     "    if logT >= 1 then\n"
+     "    if logT >= 5 then\n"
      "      logT = 0\n"
      "      local sig = tostring(bf and bf.mode) .. '|' .. tostring(wt and wt.state) .. '|' .. tostring(wt and wt.disabled) .. '|' .. tostring(busy)\n"
-     "      if sig ~= lastSig then\n"
-     "        lastSig = sig\n"
-     "        local msg = os.date('%H:%M:%S') .. ' mode=' .. tostring(bf and bf.mode) .. ' st=' .. tostring(wt and wt.state)          .. ' dis=' .. tostring(wt and wt.disabled) .. ' t=' .. string.format('%.1f', tonumber(wt and wt.t) or -1)          .. ' dur=' .. tostring(wt and wt.dur) .. ' busy=' .. tostring(busy) .. ' go=' .. tostring(okGo ~= nil and okGo or false)\n"
-     "        love.filesystem.append('auto_wave.log', msg .. '|')\n"
-     "      end\n"
+     "      love.filesystem.append('auto_wave.log', os.date('%H:%M:%S') .. ' hb' .. sig .. ' go=' .. tostring(go) .. '|')\n"
      "    end\n"
-     "    if okGo then\n"
+     "    if go then\n"
      "      autoT = autoT + (dt or 0)\n"
      "      if autoT >= 0.4 then\n"
      "        autoT = 0\n"
      "        pcall(__slotRequestManualBattleStart, false)\n"
-     "        love.filesystem.append('auto_wave.log', os.date('%H:%M:%S') .. ' FIRED wave=' .. tostring(bf.waveId) .. '|')\n"
+     "        love.filesystem.append('auto_wave.log', os.date('%H:%M:%S') .. ' FIRED wave=' .. tostring(bf.waveId) .. ' mode=' .. tostring(bf.mode) .. '|')\n"
      "      end\n"
      "    else\n"
      "      autoT = 0\n"
@@ -508,7 +504,7 @@ static NSString *const kPatchLua =
      "  end\n"
      "  if not wrote then\n"
      "    wrote = true\n"
-     "    love.filesystem.write('patch_ok.txt', 'v4 ' .. os.date('%H:%M:%S'))\n"
+     "    love.filesystem.write('patch_ok.txt', 'v5 ' .. os.date('%H:%M:%S'))\n"
      "  end\n"
      "end)\n";
 
