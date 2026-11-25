@@ -903,6 +903,7 @@ end
 -- 状态写回
 ----------------------------------------------------------------
 local status_extra = nil
+local patch_sig, patch_err = nil, nil   -- 补丁状态（write_status 会读，必须前置）
 local function write_status(extra)
   if type(extra) == "table" then status_extra = extra end
   local coins = rawget(_G, "coins")
@@ -961,10 +962,10 @@ local function write_status(extra)
     if type(v) == "number" then return math.floor(v) end
     return 0
   end
-  local pst = patch_err and ("err:" .. tostring(patch_err)) or (patch_sig and "ok" or "none")
-  pst = pst:gsub("[\"
-]", " "):sub(1, 60)
-  lines[#lines + 1] = "  patch = \"" .. pst .. "\","
+    local pst = patch_err and ("err:" .. tostring(patch_err)) or (patch_sig and "ok" or "none")
+  local q, nlch = string.char(34), string.char(10)
+  pst = tostring(pst):gsub("[" .. q .. nlch .. "]", " "):sub(1, 60)
+lines[#lines + 1] = "  patch = \"" .. pst .. "\","
   lines[#lines + 1] = "  cost = " .. (tonumber(rawget(_G, "spinCost")) or -1) .. ","
   lines[#lines + 1] = "  freecredits = " .. (tonumber(rawget(_G, "freeSpinCredits")) or -1) .. ","
   lines[#lines + 1] = "  ap_free_spin = " .. apb(cfg.free_spin) .. ","
@@ -1711,7 +1712,6 @@ end
 -- 目的：后端逻辑改动不用再动 game.love，换面板写这个文件即可
 ----------------------------------------------------------------
 local tick_hooks = {}
-local patch_sig, patch_err = nil, nil
 
 function M.add_tick(fn)
   if type(fn) == "function" then tick_hooks[#tick_hooks + 1] = fn end
