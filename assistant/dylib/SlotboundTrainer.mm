@@ -941,6 +941,7 @@ static UIButton *makeButton(NSString *title, SEL action) {
     UIButton *b = [UIButton buttonWithType:UIButtonTypeSystem];
     [b setTitle:title forState:UIControlStateNormal];
     styleSecondary(b);
+    b.exclusiveTouch = YES;
     [b addTarget:[CheatsOverlay class] action:action forControlEvents:UIControlEventTouchUpInside];
     [b addTarget:[CheatsOverlay class] action:@selector(btnDown:) forControlEvents:UIControlEventTouchDown];
     return b;
@@ -1887,6 +1888,7 @@ static UIView *build_panel(CGRect bounds) {
         s.showsVerticalScrollIndicator = YES;
         s.indicatorStyle = UIScrollViewIndicatorStyleWhite;
         s.keyboardDismissMode = UIScrollViewKeyboardDismissModeOnDrag; // 拖动就收键盘
+        s.delaysContentTouches = NO;   // 按钮立刻响应，不等 150ms 手势判定
         [panel addSubview:s];
         return s;
     };
@@ -2162,6 +2164,8 @@ static SBSaveImporter *g_saveImporter = nil;
          "local ok=pcall(S.save,t); "
          "if not ok then love.filesystem.write(S._lastSavePath,S.serialize(t)) end";
     write_cheats();
+    tap_haptic();
+    show_toast(@"✓ 已解锁全部关卡（含无尽），重开选关页可见");
 }
 
 + (void)jungsuAdd:(UIButton *)b {
