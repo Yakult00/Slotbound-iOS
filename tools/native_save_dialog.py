@@ -145,7 +145,7 @@ static bool sb_present_export(NSString *name)
 		d.mode = @"export";
 		g_sbDialog = d;
 		UIDocumentPickerViewController *pk =
-			[[UIDocumentPickerViewController alloc] initForExportingURLs:@[[NSURL fileURLWithPath:path]] asCopy:YES];
+			[[UIDocumentPickerViewController alloc] initForExportingURLs:@[[NSURL fileURLWithPath:shown]] asCopy:YES];
 		pk.delegate = d;
 		[top presentViewController:pk animated:YES completion:nil];
 		return true;
