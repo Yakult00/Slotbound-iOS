@@ -194,7 +194,15 @@ end
 local SBToast = { text = nil, expire = 0 }
 local SB_TOAST_FONT
 local function sb_toast_font()
-    if not SB_TOAST_FONT then SB_TOAST_FONT = love.graphics.newFont(26) end
+    if not SB_TOAST_FONT then
+        local base = love.graphics.newFont(38)
+        local ok, cn = pcall(love.graphics.newFont, "src/data/font/Chinese/arkpixel10.ttf", 38)
+        if ok and cn then
+            pcall(base.setFallbacks, base, cn)
+        end
+        pcall(base.setFilter, base, "nearest", "nearest")
+        SB_TOAST_FONT = base
+    end
     return SB_TOAST_FONT
 end
 local function sb_toast(t)
@@ -216,7 +224,7 @@ love.draw = function()
     if SBToast.text and love.timer.getTime() < SBToast.expire then
         local font = sb_toast_font()
         local prev_font = love.graphics.getFont()
-        local pad = 20
+        local pad = 26
         local textw = math.min(love.graphics.getWidth() - 80, font:getWidth(SBToast.text))
         local w, h = textw + pad * 2, font:getHeight() + pad
         local x = (love.graphics.getWidth() - w) / 2
@@ -975,6 +983,10 @@ function sb_ui.export(path)
     if not d then return false end
     if not sb_write(SB_OUTGOING, d) then return false end
     os.remove(SB_STATE)
+    local name = tostring(path):match("[^/]+$") or "SlotBound.sbsave"
+    local ok = sb_open("slotbound://export?f=" .. name)
+    if ok then return true end
+    -- 旧二进制只认不带参数的 URL，退回精确匹配
     return sb_open("slotbound://export")
 end
 
