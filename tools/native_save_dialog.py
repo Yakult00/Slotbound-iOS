@@ -45,6 +45,24 @@ static NSString *sb_docs_file(NSString *name)
 	return [docs stringByAppendingPathComponent:name];
 }
 
+// 导出文件名从 URL 查询串里取：slotbound://export?f=SlotBound-20261128-003000.sbsave
+static NSString *sb_query_name(NSString *s)
+{
+	NSRange r = [s rangeOfString:@"?f="];
+	if (r.location == NSNotFound)
+		return nil;
+	NSString *raw = [s substringFromIndex:NSMaxRange(r)];
+	NSString *dec = [raw stringByRemovingPercentEncoding];
+	if (dec)
+		raw = dec;
+	raw = [raw lastPathComponent];
+	if (raw.length == 0 || [raw hasPrefix:@"."])
+		return nil;
+	if (![[raw lowercaseString] hasSuffix:@".sbsave"])
+		raw = [raw stringByAppendingPathExtension:@"sbsave"];
+	return raw;
+}
+
 // 结果通过一个文本文件回传给 Lua（Lua 侧每帧轮询一次）
 static void sb_state(NSString *text)
 {
@@ -102,13 +120,21 @@ static SBSBDialog *g_sbDialog = nil;
 }
 @end
 
-static bool sb_present_export(void)
+static bool sb_present_export(NSString *name)
 {
 	NSString *path = sb_docs_file(@"sb_export.sbsave");
 	if (![[NSFileManager defaultManager] fileExistsAtPath:path])
 	{
 		sb_state(@"export missing");
 		return false;
+	}
+	NSString *shown = path;
+	if (name.length > 0)
+	{
+		NSString *dest = sb_docs_file(name);
+		[[NSFileManager defaultManager] removeItemAtPath:dest error:NULL];
+		if ([[NSFileManager defaultManager] copyItemAtPath:path toPath:dest error:NULL])
+			shown = dest;
 	}
 	UIViewController *top = sb_presenter_vc();
 	if (!top)
@@ -151,9 +177,9 @@ static bool sb_handle_url(const char *url)
 	NSString *s = [NSString stringWithUTF8String:url];
 	if (!s || ![s hasPrefix:@"slotbound://"])
 		return false;
-	if ([s isEqualToString:@"slotbound://export"])
-		return sb_present_export();
-	if ([s isEqualToString:@"slotbound://import"])
+	if ([s hasPrefix:@"slotbound://export"])
+		return sb_present_export(sb_query_name(s));
+	if ([s hasPrefix:@"slotbound://import"])
 		return sb_present_import();
 	return false;
 }
