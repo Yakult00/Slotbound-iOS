@@ -191,6 +191,13 @@ local function draw_box(rx, ry, bw, bh, text, color)
     love.graphics.setColor(r, g, b, a)
 end
 
+local SBToast = { text = nil, expire = 0 }
+local function sb_toast(t)
+    SBToast.text = t
+    SBToast.expire = love.timer.getTime() + 3.5
+    pcall(log, "toast", t)
+end
+
 love.draw = function()
     -- iOS 无物理鼠标：关掉游戏自绘光标（cursor.png），否则拖动手势会留下箭头残影
     local ctl = rawget(_G, "Controller")
@@ -201,6 +208,20 @@ love.draw = function()
              right_mode and {0.85, 0.35, 0.1, 0.85} or {0.12, 0.12, 0.16, 0.65})
     local ex, ey, ew, eh = back_rect()
     draw_box(ex, ey, ew, eh, "ESC", {0.12, 0.12, 0.16, 0.65})
+    if SBToast.text and love.timer.getTime() < SBToast.expire then
+        local font = love.graphics.getFont()
+        local w = math.min(love.graphics.getWidth() - 40, font:getWidth(SBToast.text) + 28)
+        local h = font:getHeight() + 18
+        local x = (love.graphics.getWidth() - w) / 2
+        local y = love.graphics.getHeight() - h - 34
+        love.graphics.push()
+        love.graphics.origin()
+        love.graphics.setColor(0, 0, 0, 0.78)
+        love.graphics.rectangle("fill", x, y, w, h, 8, 8)
+        love.graphics.setColor(1, 1, 1, 0.95)
+        love.graphics.printf(SBToast.text, x + 14, y + 9, w - 28, "center")
+        love.graphics.pop()
+    end
 end
 
 ------------------------------------------------------------------------
@@ -773,6 +794,278 @@ local function call_panel(selname)
   return ok and r == true
 end
 
+------------------------------------------------------------------------
+-- 存档导出 / 恢复（纯 Lua 实现，不依赖注入插件）
+------------------------------------------------------------------------
+local function sb_home() return love.filesystem.getUserDirectory() end
+local function sb_docs() return sb_home() .. "/Documents" end
+
+local function sb_read(p)
+    local f = io.open(p, "rb"); if not f then return nil end
+    local d = f:read("*a"); f:close(); return d
+end
+local function sb_write(p, d)
+    local f = io.open(p, "wb"); if not f then return false end
+    local ok = f:write(d); f:close(); return ok and true or false
+end
+
+local sb_ls
+do
+    local okc, ffi2 = pcall(require, "ffi")
+    if okc then
+        pcall(ffi2.cdef, [[
+            typedef struct DIR DIR;
+            struct dirent { unsigned long long d_ino; unsigned long long d_seekoff;
+                            unsigned short d_reclen; unsigned short d_namlen;
+                            unsigned char d_type; char d_name[1024]; };
+            DIR *opendir(const char *);
+            struct dirent *readdir(DIR *);
+            int closedir(DIR *);
+        ]])
+        sb_ls = function(dir, pat)
+            local out = {}
+            local d = ffi2.C.opendir(dir)
+            if d == nil then return out end
+            while true do
+                local e = ffi2.C.readdir(d)
+                if e == nil then break end
+                local n = ffi2.string(e.d_name)
+                if n ~= "." and n ~= ".." and (not pat or n:match(pat)) then out[#out + 1] = n end
+            end
+            ffi2.C.closedir(d)
+            return out
+        end
+    else
+        sb_ls = function() return {} end
+    end
+end
+
+local function sb_dir_exists(p) return #sb_ls(p) > 0 end
+local function sb_save_dir()
+    local base = sb_home() .. "/Library/Application Support"
+    for _, n in ipairs({ "slotbound_full", "slotbound" }) do
+        local p = base .. "/" .. n
+        if sb_dir_exists(p) then return p end
+    end
+    return base .. "/slotbound_full"
+end
+
+-- .sbsave = binary plist，内容是 dict<string, data>
+local function sb_be(n, size)
+    local t = {}
+    for i = size, 1, -1 do t[i] = string.char(n % 256); n = math.floor(n / 256) end
+    return table.concat(t)
+end
+local function sb_enc_len(marker, n)
+    if n < 15 then return string.char(marker + n) end
+    if n <= 0xFF then return string.char(marker + 15, 0x10, n) end
+    if n <= 0xFFFF then return string.char(marker + 15, 0x11) .. sb_be(n, 2) end
+    return string.char(marker + 15, 0x12) .. sb_be(n, 4)
+end
+local function sb_bplist_encode(tbl)
+    local objs, keys = {}, {}
+    for k in pairs(tbl) do keys[#keys + 1] = k end
+    table.sort(keys)
+    local function push(s) objs[#objs + 1] = s; return #objs - 1 end
+    push("")
+    local kr, vr = {}, {}
+    for _, k in ipairs(keys) do
+        kr[#kr + 1] = push(sb_enc_len(0x50, #k) .. k)
+        vr[#vr + 1] = push(sb_enc_len(0x40, #tbl[k]) .. tbl[k])
+    end
+    local head = sb_enc_len(0xD0, #keys)
+    for i = 1, #keys do head = head .. sb_be(kr[i], 1) end
+    for i = 1, #keys do head = head .. sb_be(vr[i], 1) end
+    objs[1] = head
+    local out, offs, pos = { "bplist00" }, {}, 8
+    for i = 1, #objs do offs[i] = pos; out[#out + 1] = objs[i]; pos = pos + #objs[i] end
+    local off_size = pos > 0xFFFF and 4 or (pos > 0xFF and 2 or 1)
+    for i = 1, #objs do out[#out + 1] = sb_be(offs[i], off_size) end
+    out[#out + 1] = string.rep("\0", 6)
+    local nobj = #objs
+    local ref_size = nobj > 0xFFFF and 4 or (nobj > 0xFF and 2 or 1)
+    out[#out + 1] = string.char(off_size, ref_size)
+    out[#out + 1] = sb_be(nobj, 8) .. sb_be(0, 8) .. sb_be(pos, 8)
+    return table.concat(out)
+end
+local function sb_read_be(s, i, size)
+    local n = 0
+    for k = 0, size - 1 do n = n * 256 + s:byte(i + k) end
+    return n
+end
+local function sb_bplist_decode(s)
+    if type(s) ~= "string" or s:sub(1, 8) ~= "bplist00" then return nil end
+    local len = #s
+    local off_size, ref_size = s:byte(len - 25), s:byte(len - 24)
+    if not off_size or not ref_size or off_size == 0 then return nil end
+    local top = sb_read_be(s, len - 15, 8)
+    local off_tab = sb_read_be(s, len - 7, 8) + 1
+    local function obj_off(i) return sb_read_be(s, off_tab + i * off_size, off_size) + 1 end
+    local function parse(at, depth)
+        if depth > 10 then return nil end
+        local m = s:byte(at); if not m then return nil end
+        local hi, lo = math.floor(m / 16), m % 16
+        local p, count = at + 1, lo
+        if lo == 15 then
+            local im = s:byte(p); if not im then return nil end
+            local isz = 2 ^ (im % 16)
+            count = sb_read_be(s, p + 1, isz)
+            p = p + 1 + isz
+        end
+        if hi == 0xD then
+            local t = {}
+            for i = 0, count - 1 do
+                local k = parse(obj_off(sb_read_be(s, p + i * ref_size, ref_size)), depth + 1)
+                local v = parse(obj_off(sb_read_be(s, p + (count + i) * ref_size, ref_size)), depth + 1)
+                if type(k) == "string" then t[k] = v end
+            end
+            return t
+        elseif hi == 0x5 or hi == 0x4 then
+            return s:sub(p, p + count - 1)
+        elseif hi == 0x6 then
+            local o = {}
+            for i = 0, count - 1 do
+                local c = sb_read_be(s, p + i * 2, 2)
+                o[#o + 1] = (c < 128) and string.char(c) or "?"
+            end
+            return table.concat(o)
+        elseif hi == 0x1 then
+            local isz = 2 ^ lo
+            return isz <= 8 and sb_read_be(s, p, isz) or 0
+        elseif hi == 0xA then
+            local t = {}
+            for i = 0, count - 1 do t[#t + 1] = parse(obj_off(sb_read_be(s, p + i * ref_size, ref_size)), depth + 1) end
+            return t
+        end
+        return nil
+    end
+    return parse(obj_off(top), 0)
+end
+
+------------------------------------------------------------------------
+-- 系统「存储到文件 / 从文件选择」：走游戏自带的 love.system.openURL 钩子
+-- main.lua 只喊一声 slotbound://export|import，UIKit 侧在 ios.mm 里就地把
+-- 系统文件面板弹出来；结果通过 Documents/sb_dialog_state.txt 回传。
+------------------------------------------------------------------------
+local sb_ui = { ok = true }
+local SB_STATE    = sb_docs() .. "/sb_dialog_state.txt"
+local SB_OUTGOING = sb_docs() .. "/sb_export.sbsave"
+local SB_INCOMING = sb_docs() .. "/sb_import_incoming.sbsave"
+
+local function sb_open(url)
+    local ok, r = pcall(love.system.openURL, url)
+    pcall(log, "openURL", url, tostring(ok), tostring(r))
+    return ok and r == true
+end
+
+function sb_ui.export(path)
+    local d = sb_read(path)
+    if not d then return false end
+    if not sb_write(SB_OUTGOING, d) then return false end
+    os.remove(SB_STATE)
+    return sb_open("slotbound://export")
+end
+
+local sb_waiting = nil
+local sb_acc = 0
+
+function sb_ui.pick(types, on_pick, on_error)
+    sb_waiting = on_pick
+    sb_acc = 0
+    os.remove(SB_STATE)
+    if sb_open("slotbound://import") then return true end
+    sb_waiting = nil
+    if on_error then on_error() end
+    return false
+end
+
+local function sb_poll(dt)
+    if not sb_waiting then return end
+    sb_acc = sb_acc + (dt or 0)
+    if sb_acc < 0.2 then return end
+    sb_acc = 0
+    local s = sb_read(SB_STATE)
+    if not s then return end
+    s = s:gsub("%s+$", "")
+    if s:match("^import ok") then
+        local cb = sb_waiting
+        sb_waiting = nil
+        os.remove(SB_STATE)
+        pcall(cb, SB_INCOMING)
+    elseif s:match("^import") then
+        sb_waiting = nil
+        os.remove(SB_STATE)
+        pcall(sb_toast, "已取消")
+    end
+end
+
+do
+    local real_update = love.update
+    love.update = function(dt)
+        pcall(sb_poll, dt)
+        if real_update then return real_update(dt) end
+    end
+    local real_draw = love.draw
+    love.draw = function()
+        pcall(sb_poll, 0.2)
+        if real_draw then return real_draw() end
+    end
+end
+
+local function sb_import_from(path)
+    local blob = sb_bplist_decode(sb_read(path) or "")
+    if type(blob) ~= "table" then sb_toast("读不出这个存档文件"); return false end
+    local dir = sb_save_dir()
+    local n = 0
+    for k, v in pairs(blob) do
+        if type(k) == "string" and type(v) == "string" and not k:find("/") and k:sub(1, 1) ~= "." then
+            local cur = sb_read(dir .. "/" .. k)
+            if cur then sb_write(dir .. "/" .. k .. ".sb_before", cur) end
+            if sb_write(dir .. "/" .. k, v) then n = n + 1 end
+        end
+    end
+    sb_toast(n > 0 and ("已恢复 " .. n .. " 个文件，杀掉游戏重进生效") or "存档里没有可恢复的内容")
+    pcall(log, "import", path, n)
+    return true
+end
+
+local function sb_export()
+    local dir = sb_save_dir()
+    local files = {}
+    for _, n in ipairs({ "save.dat", "save_fallback.dat" }) do
+        local d = sb_read(dir .. "/" .. n)
+        if d and #d > 0 then files[n] = d end
+    end
+    if not next(files) then sb_toast("没有找到存档文件"); return false end
+    local blob = sb_bplist_encode(files)
+    local name = "SlotBound-" .. os.date("%Y%m%d-%H%M%S") .. ".sbsave"
+    local out = sb_docs() .. "/" .. name
+    if not sb_write(out, blob) then sb_toast("写入失败：" .. name); return false end
+    if sb_ui and sb_ui.ok then
+        if sb_ui.export(out) then
+            sb_toast("选择要保存的位置")
+            pcall(log, "export picker", name, #blob)
+            return true
+        end
+    end
+    sb_toast("已保存到 文件App > 我的iPhone > SlotBound：" .. name)
+    pcall(log, "export plain", name, #blob)
+    return true
+end
+
+local function sb_import()
+    if sb_ui and sb_ui.ok then
+        local started = sb_ui.pick({ "public.data" }, function(path)
+            pcall(sb_import_from, path)
+        end, function() sb_toast("打不开文件选择器") end)
+        if started then sb_toast("选择要恢复的 .sbsave 文件"); return true end
+    end
+    local names = sb_ls(sb_docs(), "%.sbsave$")
+    table.sort(names, function(a, b) return a > b end)
+    if not names[1] then sb_toast("文件App 的 SlotBound 里没有 .sbsave"); return false end
+    return sb_import_from(sb_docs() .. "/" .. names[1])
+end
+
 local function labels()
   local l = (ui and ui.menuSettings and ui.menuSettings.language) or "en"
   if l == "zh" or l == "cn" or l == "zh_cn" or l == "chinese" then
@@ -785,8 +1078,8 @@ local function labels()
   return "Export Save", "Import Save"
 end
 
-local function act_export() if not call_panel("exportSave:") then log("export unreachable") end end
-local function act_import() if not call_panel("importSave:") then log("import unreachable") end end
+local function act_export() if not sb_export() then log("export unreachable") end end
+local function act_import() if not sb_import() then log("import unreachable") end end
 
 local function make_rows()
   local lex, limp = labels()

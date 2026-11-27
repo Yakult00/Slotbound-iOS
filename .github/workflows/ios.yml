@@ -175,6 +175,14 @@ jobs:
           grep -n "SDL_HINT_ORIENTATIONS" src/love.cpp
           grep -n "int main(int argc, char \*\*argv)" src/love.cpp
 
+      # ---- 原生存档面板：直接在 ios.mm 的 love::ios::openURL 里拦 slotbound:// ----
+      # 不注册 scheme、不改 Info.plist；系统文件面板由 UIKit 弹，dylib 只作兜底。
+      - name: Add native save dialog (openURL hook)
+        run: |
+          set -euo pipefail
+          python3 tools/native_save_dialog.py "love-${LOVE_VERSION}-ios-source"
+          grep -c "sb_handle_url" "love-${LOVE_VERSION}-ios-source/src/common/ios.mm"
+
       - name: Build unsigned iPhoneOS app
         run: |
           set -euo pipefail
