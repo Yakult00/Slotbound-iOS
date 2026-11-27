@@ -2110,8 +2110,19 @@ static NSString *sb_save_dir(void) {
     return [base stringByAppendingPathComponent:@"slotbound_full"];
 }
 
+// g_win 是那个 44x44 的悬浮按钮窗口（windowLevel=Alert+1），
+// 从它 rootViewController 上 present 会把弹层压进 44x44 的角落，
+// 所以这里优先挑 SDL 主窗口（896x414 那个），找不到再退回 g_win。
 static UIViewController *sb_top_vc(void) {
-    UIViewController *vc = g_win ? g_win.rootViewController : nil;
+    UIWindow *host = nil;
+    for (UIWindow *w in [UIApplication sharedApplication].windows) {
+        if (w == g_win || !w.rootViewController) continue;
+        NSString *cn = NSStringFromClass(w.rootViewController.class);
+        if ([cn containsString:@"SDL"]) { host = w; break; }
+        if (!host) host = w;
+    }
+    if (!host) host = g_win;
+    UIViewController *vc = host.rootViewController;
     while (vc.presentedViewController) vc = vc.presentedViewController;
     return vc;
 }
@@ -2149,6 +2160,24 @@ static SBSaveImporter *g_saveImporter = nil;
     NSLog(@"[SBSave] import ok n=%ld", (long)n);
 }
 - (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)c { g_saveImporter = nil; }
+@end
+
+// 导出用的 delegate：只提示，绝不回写存档（不能再复用 SBSaveImporter）
+@interface SBExportDelegate : NSObject <UIDocumentPickerDelegate>
+@end
+static SBExportDelegate *g_exportDelegate = nil;
+
+@implementation SBExportDelegate
+- (void)documentPicker:(UIDocumentPickerViewController *)c didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
+    NSLog(@"[SBSave] export picked %@", urls.firstObject);
+    show_toast(@"✓ 存档已保存到所选位置");
+    g_exportDelegate = nil;
+    if (g_win) g_win.hidden = NO;
+}
+- (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)c {
+    g_exportDelegate = nil;
+    if (g_win) g_win.hidden = NO;
+}
 @end
 
 // ---- CheatsOverlay 实现 ----
@@ -2586,12 +2615,25 @@ static SBSaveImporter *g_saveImporter = nil;
     NSLog(@"[SBSave] export %@ %lu B", out, (unsigned long)pl.length);
     UIViewController *top = sb_top_vc();
     if (!top) { show_toast([NSString stringWithFormat:@"已导出到 Documents/%@", name]); return; }
-    UIActivityViewController *av = [[UIActivityViewController alloc] initWithActivityItems:@[[NSURL fileURLWithPath:out]]
-                                                                   applicationActivities:nil];
-    av.popoverPresentationController.sourceView = top.view;
-    av.popoverPresentationController.sourceRect = CGRectMake(top.view.bounds.size.width * 0.5,
-                                                            top.view.bounds.size.height * 0.5, 1, 1);
-    [top presentViewController:av animated:YES completion:nil];
+    if (g_win) g_win.hidden = YES;   // 44x44 悬浮按钮窗口别压在弹层上
+    NSURL *fileURL = [NSURL fileURLWithPath:out];
+    if (@available(iOS 14.0, *)) {
+        // 直接进「存储到文件」：选目录保存，少一次点「存储到文件」
+        UIDocumentPickerViewController *pk =
+            [[UIDocumentPickerViewController alloc] initForExportingURLs:@[fileURL] asCopy:YES];
+        g_exportDelegate = [SBExportDelegate new];
+        pk.delegate = g_exportDelegate;
+        [top presentViewController:pk animated:YES completion:nil];
+        NSLog(@"[SBSave] presented export picker");
+    } else {
+        UIActivityViewController *av = [[UIActivityViewController alloc] initWithActivityItems:@[fileURL]
+                                                                       applicationActivities:nil];
+        av.completionWithItemsHandler = ^(UIActivityType t, BOOL done, NSArray *items, NSError *err) {
+            if (g_win) g_win.hidden = NO;
+        };
+        [top presentViewController:av animated:YES completion:nil];
+        NSLog(@"[SBSave] presented activity sheet");
+    }
 }
 
 + (void)importSave:(id)s {

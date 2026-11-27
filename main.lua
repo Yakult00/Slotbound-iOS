@@ -101,17 +101,22 @@ package.loaded["ffi"] = real_ffi
 ------------------------------------------------------------------------
 -- 手势层 v2
 --
+--   【定位】本层不改游戏逻辑，目标是把 iOS 触摸"基本还原成 PC 的鼠标交互"：
+--     单击 = 左键点击      长按 0.38s = 右键（悬停 0.09s 后发）
+--     长按拖 = 左键拖动    列表/升级树 = 滚轮
+--     刻印吸收按钮长按 = 按住左键   双指/三指 = 原生手势（捏合 / 截图）
+--
 --   按下              → 静默，只记 (x0,y0), t0，不发任何事件
 --   移动 > slop       → 按 phase 分派：拖兵(补发 press@x0,y0 + mousemoved 跟随)
 --                                       / 升级树平移(dragPan) / 列表滚动(滚轮)
---   不动 > 500ms      → 长按：静默悬停（tooltip 出详细，不发 press）
+--   不动 > 380ms      → 长按：静默悬停（tooltip 出详细，不发 press）
 --   松手(未动未长按)   → 单击：升级树/专职两段式(hover→click)，其余直接 click
 --   双指              → 升级树捏合缩放 + 中点拖动平移；两指轻点 = 右键
 --   三指轻点          → 截图；左边缘右滑 → ESC；顶部按钮 L/R、ESC 兜底
 ------------------------------------------------------------------------
 local TAP_SLOP    = 14     -- 移动判定阈值（px）
 local TWO_TAP_SLOP = 50    -- 两段式第二下匹配阈值（px）
-local LONG_MS     = 0.5    -- 长按判定（秒）
+local LONG_MS     = 0.38   -- 长按判定（秒）
 local LONG_PIN_DELAY = 0.09 -- 长按触发后先悬停这么多秒再发右键：candidate 由 love.update 每帧算，同一帧发右键读到的是旧值
 local WHEEL_STEP  = 40     -- 列表滚动每多少 px 折一格滚轮
 local EDGE_W_FRAC = 0.05   -- 左边缘宽度（屏幕宽比例）
@@ -239,6 +244,32 @@ end
 local function fire_left_release(x, y)
     if game_mousereleased then game_mousereleased(x, y, 1, true, 1) end
 end
+-- 左键单击钉住士兵：点按抬起后延一帧再读 candidate（同一帧里 press+release 连发，
+-- tooltip 的 candidate 还没算出来；长按有 0.09s 悬停等待所以不受影响）。
+-- 拖拽松手不排队 → 不会钉住。
+local pending_pin = false
+local suppress_hover = false   -- 拖拽抬手后压住悬停面板，直到下一次触摸
+local function queue_pin(x, y, tag)
+    pending_pin = { x = x, y = y, tag = tag or "tap" }
+end
+local function flush_pin()
+    local p = pending_pin
+    if not p then return end
+    pending_pin = false
+    local u = get_ui()
+    local tp = u and u.tooltip
+    local bf = rawget(_G, "battlefield")
+    if not (tp and bf and tp.pinHoveredUnit) then return end
+    local ph = phase_now()
+    if ph == "menu" or ph == "upgrade" or in_shop() or in_class_select() then return end
+    local c = tp.candidate
+    if c and c.ref and (c.kind == "roster" or c.kind == "ally" or c.kind == "enemy") then
+        tp:pinHoveredUnit(bf)
+        glog(string.format("%s pin -> %s @%.0f,%.0f absorb=%s", p.tag, tostring(c.kind), p.x, p.y, tostring(bf.absorbMode)))
+    else
+        glog(string.format("%s pin skip: kind=%s absorb=%s", p.tag, tostring(c and c.kind), tostring(bf.absorbMode)))
+    end
+end
 local function fire_right_click(x, y)
     set_hover(x, y)
     if game_mousepressed then game_mousepressed(x, y, 2, true, 1) end
@@ -277,6 +308,12 @@ end
 
 -- 印记「长按吸收」按钮的命中区（模块在 package.loaded，不在 ui 下）
 local function imprint_absorb_hit(x, y)
+    -- 必须先确认刻印弹窗真的开着：imprint 模块的 _absorbAllRect 在弹窗关闭后
+    -- 不会被清空（实测 bf.imprintModal=false 时 rect 仍是旧值），
+    -- 不加这个判断，残留矩形会让长按在普通界面误触发。
+    local bf = rawget(_G, "battlefield")
+    local m = bf and bf.imprintModal
+    if not (m and m.active) then return false end
     local imp = package.loaded["src.ui.imprint"]
     local r = imp and imp._absorbAllRect
     if type(r) ~= "table" then return false end
@@ -334,7 +371,11 @@ local function do_long_press(t)
     if t.long then return end
     t.long = true
     if imprint_absorb_hit(t.x0, t.y0) then
-        glog(string.format("long press on absorb button @%.0f,%.0f (no right click)", t.x0, t.y0))
+        -- 吸收按钮：长按 0.5 秒后补发左键（等价 PC 按住左键）。
+        -- 游戏自己的 tooltip.update 每帧查 isDown(1) 续吸，抬手即停，
+        -- 不需要补 release；本分支以外所有路径原样不动。
+        fire_left_press(t.x0, t.y0)
+        glog(string.format("long press on absorb button @%.0f,%.0f -> left press", t.x0, t.y0))
         return
     end
     t.pin_at = now() + LONG_PIN_DELAY
@@ -426,11 +467,13 @@ local function do_tap(x, y)
     else
         fire_left_press(x, y)
         fire_left_release(x, y)
+        queue_pin(x, y, "tap")
         glog("tap -> click")
     end
 end
 
 function love.touchpressed(id, x, y, dx, dy, pressure)
+    suppress_hover = false
     if on_back_button(x, y) then
         touches[id] = { ui = "esc" }
         press_esc()
@@ -592,7 +635,8 @@ function love.touchreleased(id, x, y, dx, dy, pressure)
     if t.dispatched then
         if t.drag_kind == "drag" then
             fire_left_release(x, y)
-            glog("drag end -> release")
+            suppress_hover = true
+            glog("drag end -> release (hover suppressed)")
         end
         return
     end
@@ -638,6 +682,18 @@ end
 local auto_shot = false
 function love.update(dt)
     if game_update then game_update(dt) end
+    flush_pin()
+    if suppress_hover then
+        local sp = get_ui()
+        local stp = sp and sp.tooltip
+        if stp and not stp.locked then
+            stp.candidate = nil
+            stp.target = nil
+            stp.state = "IDLE"
+            stp.fade = 0
+            stp.hoverT = 0
+        end
+    end
     local t = now()
     if not auto_shot and t > 4 then
         auto_shot = true
@@ -663,3 +719,218 @@ end
 
 -- 训练器后端（纯 Lua，读取 cheats_ui.lua）
 pcall(function() require("trainer_backend") end)
+-- ==== 设置页注入：导出/恢复存档 + 滚动补偿 ====
+-- 原生设置列表里插入「导出存档 / 恢复存档」
+-- 原理：__slotSettingsLayout 是全局函数，每帧先拿到整张 items 表再算布局；
+-- 在它里面把 resetSaveData 挪到末尾、前面插两行 button，之后游戏自己的
+-- 绘制/布局/滚动条/字体适配全部照常工作（就是原生行）。
+local S = {}
+_G.__sbSaveRows = S
+if S.installed or S.installing then return S end
+
+local ROWH = 26
+
+local function dir()
+  local ok, d = pcall(function() return love.filesystem.getSaveDirectory() end)
+  return ok and d or "."
+end
+
+local function log(...)
+  local args = { ... }
+  local ok, line = pcall(function() return table.concat(args, " ") end)
+  if not ok then return end
+  local p = dir() .. "/sblog2.txt"
+  local prev = ""
+  local f = io.open(p, "rb")
+  if f then prev = f:read("*a") or ""; f:close() end
+  if #prev > 3000 then prev = prev:sub(-3000) end
+  local h = io.open(p, "wb")
+  if h then h:write(prev .. os.date("%H:%M:%S ") .. line .. "\n"); h:close() end
+end
+
+local ffi_ok, ffi = pcall(require, "ffi")
+if ffi_ok then
+  pcall(ffi.cdef, [[
+    typedef struct objc_object { void *isa; } *sb_id;
+    typedef struct objc_selector *sb_sel;
+    sb_id objc_getClass(const char *name);
+    sb_sel sel_registerName(const char *name);
+    sb_id objc_msgSend(sb_id self, sb_sel op, ...);
+  ]])
+end
+
+local function call_panel(selname)
+  if not ffi_ok then log("ffi missing") return false end
+  local ok, r = pcall(function()
+    local cls = ffi.C.objc_getClass("CheatsOverlay")
+    if cls == nil then return false end
+    local s = ffi.C.sel_registerName(selname)
+    if s == nil then return false end
+    ffi.C.objc_msgSend(cls, s, nil)
+    return true
+  end)
+  log("call", selname, tostring(ok), tostring(r))
+  return ok and r == true
+end
+
+local function labels()
+  local l = (ui and ui.menuSettings and ui.menuSettings.language) or "en"
+  if l == "zh" or l == "cn" or l == "zh_cn" or l == "chinese" then
+    return "导出存档", "恢复存档"
+  elseif l == "ko" then
+    return "저장 내보내기", "저장 불러오기"
+  elseif l == "ja" then
+    return "セーブ書き出し", "セーブ読み込み"
+  end
+  return "Export Save", "Import Save"
+end
+
+local function act_export() if not call_panel("exportSave:") then log("export unreachable") end end
+local function act_import() if not call_panel("importSave:") then log("import unreachable") end end
+
+local function make_rows()
+  local lex, limp = labels()
+  return {
+    { kind = "button", key = "sbExportSave", label = lex, tone = "normal", disabled = false, set = act_export },
+    { kind = "button", key = "sbImportSave", label = limp, tone = "normal", disabled = false, set = act_import },
+  }
+end
+
+local function is_target(items)
+  if type(items) ~= "table" then return false end
+  local n = #items
+  if n < 8 then return false end
+  local last = items[n]
+  if type(last) ~= "table" or last.key ~= "resetSaveData" then return false end
+  -- 战斗内暂停页的列表同一张表、但重置存档是 disabled（游戏自己传 "pause" 建的）；
+  -- 那种页面保持原样：只有一个不可点的「重置存档」。
+  if last.disabled == true then return false end
+  return true
+end
+
+-- 让 settingsScrollMax 对外多报 52（两行），内部仍存原值；
+-- 这样游戏每帧重算的 clamp、滚动条几何、拖动全部自动跟上。
+local function hook_state(st)
+  if type(st) ~= "table" or st.__sbHooked then return end
+  local raw = st.settingsScrollMax or 0
+  rawset(st, "settingsScrollMax", nil)
+  local mt = {
+    __index = function(t, k)
+      if k == "settingsScrollMax" then
+        if rawget(t, "page") == nil then return raw + ROWH * 2 end
+        return raw
+      end
+      return rawget(t, k)
+    end,
+    __newindex = function(t, k, v)
+      if k == "settingsScrollMax" then raw = v else rawset(t, k, v) end
+    end,
+  }
+  setmetatable(st, mt)
+  rawset(st, "__sbHooked", true)
+  log("state hooked raw=" .. tostring(raw))
+end
+
+local function to_virtual(x, y)
+  if toVirtual then
+    local ok, a, b = pcall(toVirtual, x, y)
+    if ok and a then return a, b end
+  end
+  local sc = screenScale or 1
+  return (x - (screenOffsetX or 0)) / sc, (y - (screenOffsetY or 0)) / sc
+end
+
+function S.install()
+  if S.installed then return true end
+  if type(__slotSettingsLayout) ~= "function" then return false end
+
+  local prev_layout = __slotSettingsLayout
+  __slotSettingsLayout = function(items, x, w)
+    S.injected = false
+    if is_target(items) and not items.__sbDone then
+      local ok = pcall(function()
+        items.__sbDone = true
+        S.injected = true
+        local reset = table.remove(items)
+        local rows = make_rows()
+        items[#items + 1] = rows[1]
+        items[#items + 1] = rows[2]
+        items[#items + 1] = reset
+        S.items = items
+        local t = os.time()
+        if S.lastlog ~= t then
+          S.lastlog = t
+          local st = ui and ui.menuSettingsOverlayState
+          log("inject n=" .. #items .. " x=" .. tostring(math.floor(x)) .. " w=" .. tostring(math.floor(w)) ..
+              " sy=" .. tostring(math.floor((st and st.settingsScrollY) or 0)) ..
+              " max=" .. tostring(math.floor((st and st.settingsScrollMax) or 0)))
+        end
+      end)
+      if not ok then log("inject failed") end
+    end
+    return prev_layout(items, x, w)
+  end
+
+  if type(updateMenuSettingsOverlay) == "function" then
+    local prev_update = updateMenuSettingsOverlay
+    updateMenuSettingsOverlay = function(dt)
+      prev_update(dt)
+      if ui then
+        hook_state(ui.menuSettingsOverlayState)
+      end
+    end
+  else
+    log("update missing")
+  end
+
+  if type(menuSettingsOverlayMousepressed) == "function" then
+    local prev_press = menuSettingsOverlayMousepressed
+    menuSettingsOverlayMousepressed = function(x, y, btn)
+      local ok, handled = pcall(function()
+        if not S.injected then return false end
+        if type(__slotPadSettingsView) ~= "function" or not ui then return false end
+        local v = __slotPadSettingsView()
+        if not v or not v.st or v.st.open ~= true or v.st.page ~= nil then return false end
+        local vx, vy = x, y
+        local W = (ui.virtual and ui.virtual.W) or 640
+        local H = (ui.virtual and ui.virtual.H) or 360
+        if x > W + 1 or y > H + 1 then vx, vy = to_virtual(x, y) end
+        if vx < v.cx or vx > v.cx + v.cw - 20 then return false end
+        if vy < v.cy or vy > v.cy + v.ch then return false end
+        local idx = math.floor((vy - v.cy + (v.scrollY or 0)) / ROWH) + 1
+        local row = type(S.items) == "table" and S.items[idx] or nil
+        if type(row) ~= "table" then return false end
+        if idx >= 9 then log("press idx=" .. idx .. " key=" .. tostring(row.key) .. " vy=" .. tostring(math.floor(vy))) end
+        if row.key == "sbExportSave" then act_export() return true end
+        if row.key == "sbImportSave" then act_import() return true end
+        if row.key == "resetSaveData" then
+          -- 直接走这一行自己的回调（内部是 openConfirm("resetsave")），
+          -- 不再用「上移两行再模拟点击」——新版底座里那样会落到导出存档那一行。
+          if row.disabled ~= true and type(row.set) == "function" then pcall(row.set) end
+          return true
+        end
+        return false
+      end)
+      if ok and handled == true then return true end
+      if not ok then log("press err " .. tostring(handled)) end
+      return prev_press(x, y, btn)
+    end
+  else
+    log("press missing")
+  end
+
+  S.installed = true
+  log("installed v2")
+  return true
+end
+
+if not S.install() then
+  log("deferred")
+  local tick = love.update
+  love.update = function(dt)
+    if tick then tick(dt) end
+    if not S.installed then S.install() end
+  end
+end
+
+return S

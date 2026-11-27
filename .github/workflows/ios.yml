@@ -112,8 +112,8 @@ jobs:
           set -euo pipefail
           python3 - << 'PYEOF'
           import sys, zipfile
-          EXPECT_TOTAL = 2079
-          EXPECT_SRC = 2072
+          EXPECT_TOTAL = 2080
+          EXPECT_SRC = 2073
           KEY_FILES = ["main.lua", "real_main.luac", "conf.lua", "icon.png",
                        "trainer_backend.lua", "release.flag", "@bootstrap"]
           with zipfile.ZipFile("game.love") as z:

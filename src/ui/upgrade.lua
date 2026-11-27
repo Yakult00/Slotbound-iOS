@@ -11,50 +11,45 @@ local var_0_5 = require("src.ui.config")
 local var_0_6 = require("src.ui.widgets").count_impact
 local var_0_7 = {}
 local var_0_8 = {
-	slotrare = "src/sprites/icons/menu/upgrade/21rareresearch1.png",
-	slotrare2 = "src/sprites/icons/menu/upgrade/21rareresearch2.png",
-	slotadvanced3 = "src/sprites/icons/menu/upgrade/20advancedresearch3.png",
-	slotrare3 = "src/sprites/icons/menu/upgrade/21rareresearch3.png",
-	slotadvanced2 = "src/sprites/icons/menu/upgrade/19advancedresearch2.png",
 	slotlegend = "src/sprites/icons/menu/upgrade/35legendresearch1.png",
-	slotadvanced = "src/sprites/icons/menu/upgrade/04advancedresearch1.png",
-	slotlegend2 = "src/sprites/icons/menu/upgrade/35legendresearch2.png",
-	slotodds = "src/sprites/icons/menu/upgrade/01slotodds.png",
-	slotlegend3 = "src/sprites/icons/menu/upgrade/35legendresearch3.png",
 	factionsynergy = "src/sprites/icons/menu/upgrade/34factionsynergy.png",
-	slotprism = "src/sprites/icons/menu/upgrade/36prismresearch1.png",
+	slotlegend2 = "src/sprites/icons/menu/upgrade/35legendresearch2.png",
 	growthbranch = "src/sprites/icons/menu/upgrade/33growthbranch.png",
-	slotprism2 = "src/sprites/icons/menu/upgrade/36prismresearch2.png",
+	slotlegend3 = "src/sprites/icons/menu/upgrade/35legendresearch3.png",
 	dormantpower = "src/sprites/icons/menu/upgrade/32dormantpower.png",
-	slotprism3 = "src/sprites/icons/menu/upgrade/36prismresearch3.png",
+	slotprism = "src/sprites/icons/menu/upgrade/36prismresearch1.png",
 	interest = "src/sprites/icons/menu/upgrade/07InterestBonus.png",
-	fatestone = "src/sprites/icons/menu/upgrade/36fatestone.png",
+	slotprism2 = "src/sprites/icons/menu/upgrade/36prismresearch2.png",
 	preptime = "src/sprites/icons/menu/upgrade/06prephourglass.png",
-	stonetwin = "src/sprites/icons/menu/upgrade/37stonetwin.png",
+	slotprism3 = "src/sprites/icons/menu/upgrade/36prismresearch3.png",
 	slotnudge = "src/sprites/icons/menu/upgrade/05nudge.png",
-	stonebreeze = "src/sprites/icons/menu/upgrade/38stonebreeze.png",
+	fatestone = "src/sprites/icons/menu/upgrade/36fatestone.png",
 	startgold2 = "src/sprites/icons/menu/upgrade/17startgold2.png",
-	stoneomen = "src/sprites/icons/menu/upgrade/39stoneomen.png",
+	stonetwin = "src/sprites/icons/menu/upgrade/37stonetwin.png",
 	comebackgold = "src/sprites/icons/menu/upgrade/16comebackgold.png",
-	stonespecial = "src/sprites/icons/menu/upgrade/40stonespecial.png",
+	stonebreeze = "src/sprites/icons/menu/upgrade/38stonebreeze.png",
 	gateheal = "src/sprites/icons/menu/upgrade/15regenhp.png",
-	stonemastery = "src/sprites/icons/menu/upgrade/41stonemastery.png",
+	stoneomen = "src/sprites/icons/menu/upgrade/39stoneomen.png",
 	comebackspin = "src/sprites/icons/menu/upgrade/14emergencygrant.png",
-	stonerift = "src/sprites/icons/menu/upgrade/42stonerift.png",
+	stonespecial = "src/sprites/icons/menu/upgrade/40stonespecial.png",
 	startingmerccontract = "src/sprites/icons/menu/upgrade/31merccontract.png",
-	stoneconstellation = "src/sprites/icons/menu/upgrade/43stoneconstellation.png",
+	stonemastery = "src/sprites/icons/menu/upgrade/41stonemastery.png",
 	startgold = "src/sprites/icons/menu/upgrade/13startgold.png",
-	stonesanctum = "src/sprites/icons/menu/upgrade/44stonesanctum.png",
+	stonerift = "src/sprites/icons/menu/upgrade/42stonerift.png",
 	noviceshield = "src/sprites/icons/menu/upgrade/12noviceshield.png",
-	stonegambit = "src/sprites/icons/menu/upgrade/45stonegambit.png",
+	stoneconstellation = "src/sprites/icons/menu/upgrade/43stoneconstellation.png",
 	maxhp2 = "src/sprites/icons/menu/upgrade/18heartII.png",
-	preptime2 = "src/sprites/icons/menu/upgrade/08prephourglass2.png",
+	stonesanctum = "src/sprites/icons/menu/upgrade/44stonesanctum.png",
 	maxhp = "src/sprites/icons/menu/upgrade/02heart.png",
-	preptimerdisabled = "src/sprites/icons/menu/upgrade/09prephourglass3.png",
+	stonegambit = "src/sprites/icons/menu/upgrade/45stonegambit.png",
 	maxunit3 = "src/sprites/icons/menu/upgrade/11maxunit3.png",
+	slotadvanced = "src/sprites/icons/menu/upgrade/04advancedresearch1.png",
 	maxunit2 = "src/sprites/icons/menu/upgrade/10maxunit2.png",
+	slotodds = "src/sprites/icons/menu/upgrade/01slotodds.png",
 	maxunit = "src/sprites/icons/menu/upgrade/03maxunit.png",
+	preptime2 = "src/sprites/icons/menu/upgrade/08prephourglass2.png",
 	shoppin = "src/sprites/icons/menu/upgrade/28shoppin.png",
+	preptimerdisabled = "src/sprites/icons/menu/upgrade/09prephourglass3.png",
 	itemresearch = "src/sprites/icons/menu/upgrade/27debuffitemresearch.png",
 	iteminventory2 = "src/sprites/icons/menu/upgrade/26iteminventory2.png",
 	itemrefund = "src/sprites/icons/menu/upgrade/25refundbook.png",
@@ -62,7 +57,12 @@ local var_0_8 = {
 	shopreroll = "src/sprites/icons/menu/upgrade/23shopreroll.png",
 	firstcoreuncommon = "src/sprites/icons/menu/upgrade/30corechoice.png",
 	firstcorespin = "src/sprites/icons/menu/upgrade/29firstcorespin.png",
-	corereroll = "src/sprites/icons/menu/upgrade/22corereroll.png"
+	corereroll = "src/sprites/icons/menu/upgrade/22corereroll.png",
+	slotrare = "src/sprites/icons/menu/upgrade/21rareresearch1.png",
+	slotadvanced3 = "src/sprites/icons/menu/upgrade/20advancedresearch3.png",
+	slotadvanced2 = "src/sprites/icons/menu/upgrade/19advancedresearch2.png",
+	slotrare3 = "src/sprites/icons/menu/upgrade/21rareresearch3.png",
+	slotrare2 = "src/sprites/icons/menu/upgrade/21rareresearch2.png"
 }
 local var_0_9
 local var_0_10
@@ -363,6 +363,14 @@ local var_0_71 = {}
 local function var_0_72(arg_16_0)
 	if not var_0_71[arg_16_0] then
 		var_0_71[arg_16_0] = {
+			isDisappearing = false,
+			appearTimer = 0,
+			isAppearing = false,
+			revealed = false,
+			unlockLineProgress = 0,
+			pressed = false,
+			isPopping = false,
+			flashT = 0,
 			pulseT = 0,
 			shakeAmp = 0,
 			shakeDur = 0,
@@ -370,16 +378,8 @@ local function var_0_72(arg_16_0)
 			pressTimer = 0,
 			scaleY = 1,
 			scaleX = 1,
-			pressed = false,
-			disappearTimer = 0,
-			isDisappearing = false,
-			appearTimer = 0,
-			isAppearing = false,
-			revealed = false,
-			unlockLineProgress = 0,
 			popTimer = 0,
-			isPopping = false,
-			flashT = 0,
+			disappearTimer = 0,
 			shineT = love.math.random() * -2,
 			energyParticles = {}
 		}
@@ -732,253 +732,253 @@ end
 local var_0_90
 local var_0_91 = {
 	maxhp = {
-		cost = 1,
 		nameKey = "upgrade_maxhp_name",
+		cost = 1,
 		nodeId = "A01",
 		stat = "5 -> 6",
 		descKey = "upgrade_maxhp_desc"
 	},
 	maxhp2 = {
-		descKey = "upgrade_maxhp2_desc",
 		nameKey = "upgrade_maxhp2_name",
-		cost = 22,
+		descKey = "upgrade_maxhp2_desc",
 		nodeId = "A11",
+		cost = 22,
 		stat = "6 -> 7",
 		statKey = "upgrade_maxhp2_stat"
 	},
 	noviceshield = {
-		descKey = "upgrade_noviceshield_desc",
 		nameKey = "upgrade_noviceshield_name",
-		cost = 4,
+		descKey = "upgrade_noviceshield_desc",
 		nodeId = "A03",
+		cost = 4,
 		stat = "First life loss 0 -> 1",
 		statKey = "upgrade_noviceshield_stat"
 	},
 	startgold = {
-		descKey = "upgrade_startgold_desc",
 		nameKey = "upgrade_startgold_name",
-		cost = 2,
+		descKey = "upgrade_startgold_desc",
 		nodeId = "A02",
+		cost = 2,
 		stat = "Starting {gold.png} 450 -> 500",
 		statKey = "upgrade_startgold_stat"
 	},
 	startingmerccontract = {
-		cost = 12,
 		nameKey = "upgrade_startingmerccontract_name",
-		nodeId = "A07",
-		stat = "startingmerccontract 0 -> 1",
 		unlockCoreKey = "MercContract",
+		nodeId = "A07",
+		cost = 12,
+		stat = "startingmerccontract 0 -> 1",
 		descKey = "upgrade_startingmerccontract_desc"
 	},
 	comebackspin = {
-		descKey = "upgrade_comebackspin_desc",
 		nameKey = "upgrade_comebackspin_name",
-		cost = 20,
+		descKey = "upgrade_comebackspin_desc",
 		nodeId = "A06",
+		cost = 20,
 		stat = "First spin guaranteed win",
 		statKey = "upgrade_comebackspin_stat"
 	},
 	gateheal = {
-		descKey = "upgrade_gateheal_desc",
 		nameKey = "upgrade_gateheal_name",
-		cost = 48,
+		descKey = "upgrade_gateheal_desc",
 		nodeId = "A09",
+		cost = 48,
 		stat = "Life recovery",
 		statKey = "upgrade_gateheal_stat"
 	},
 	comebackgold = {
-		descKey = "upgrade_comebackgold_desc",
 		nameKey = "upgrade_comebackgold_name",
-		cost = 9,
+		descKey = "upgrade_comebackgold_desc",
 		nodeId = "A05",
+		cost = 9,
 		stat = "After defeat {gold.png} 0 -> 100",
 		statKey = "upgrade_comebackgold_stat"
 	},
 	startgold2 = {
-		descKey = "upgrade_startgold2_desc",
 		nameKey = "upgrade_startgold2_name",
-		cost = 7,
+		descKey = "upgrade_startgold2_desc",
 		nodeId = "A04",
+		cost = 7,
 		stat = "Starting {gold.png} 500 -> 550",
 		statKey = "upgrade_startgold2_stat"
 	},
 	slotnudge = {
-		descKey = "upgrade_slotnudge_desc",
 		nameKey = "upgrade_slotnudge_name",
-		cost = 3,
+		descKey = "upgrade_slotnudge_desc",
 		nodeId = "B02",
+		cost = 3,
 		stat = "Nudge spin cost reduction",
 		statKey = "upgrade_slotnudge_stat"
 	},
 	interest = {
-		descKey = "upgrade_interest_desc",
 		nameKey = "upgrade_interest_name",
-		cost = 8,
+		descKey = "upgrade_interest_desc",
 		nodeId = "B03",
+		cost = 8,
 		stat = "Interest 0 -> 50",
 		statKey = "upgrade_interest_stat"
 	},
 	dormantpower = {
-		descKey = "upgrade_dormantpower_desc",
 		nameKey = "upgrade_dormantpower_name",
-		cost = 12,
+		descKey = "upgrade_dormantpower_desc",
 		nodeId = "B04",
+		cost = 12,
 		stat = "awakeningUnlocked 0 -> 1",
 		statKey = "upgrade_dormantpower_stat"
 	},
 	growthbranch = {
-		descKey = "upgrade_growthbranch_desc",
 		nameKey = "upgrade_growthbranch_name",
-		cost = 45,
+		descKey = "upgrade_growthbranch_desc",
 		nodeId = "B05",
+		cost = 45,
 		stat = "promotionTraitChoice 0 -> 1",
 		statKey = "upgrade_growthbranch_stat"
 	},
 	factionsynergy = {
-		descKey = "upgrade_factionsynergy_desc",
 		nameKey = "upgrade_factionsynergy_name",
-		cost = 60,
+		descKey = "upgrade_factionsynergy_desc",
 		nodeId = "B10",
+		cost = 60,
 		stat = "factionSynergyUnlocked 0 -> 1",
 		statKey = "upgrade_factionsynergy_stat"
 	},
 	slotodds = {
-		descKey = "upgrade_slotodds_desc",
 		nameKey = "upgrade_slotodds_name",
-		cost = 1,
+		descKey = "upgrade_slotodds_desc",
 		nodeId = "S01",
+		cost = 1,
 		stat = "Locked -> Unsealed",
 		statKey = "upgrade_slotodds_stat"
 	},
 	slotadvanced = {
-		descKey = "upgrade_slotadvanced_desc",
 		nameKey = "upgrade_slotadvanced_name",
-		cost = 4,
+		descKey = "upgrade_slotadvanced_desc",
 		nodeId = "R01",
+		cost = 4,
 		stat = "怨좉툒 0% -> 5%",
 		statKey = "upgrade_slotadvanced_stat"
 	},
 	slotadvanced2 = {
-		descKey = "upgrade_slotadvanced2_desc",
 		nameKey = "upgrade_slotadvanced2_name",
-		cost = 12,
+		descKey = "upgrade_slotadvanced2_desc",
 		nodeId = "R02",
+		cost = 12,
 		stat = "Advanced 5% -> 10%",
 		statKey = "upgrade_slotadvanced2_stat"
 	},
 	slotadvanced3 = {
-		descKey = "upgrade_slotadvanced3_desc",
 		nameKey = "upgrade_slotadvanced3_name",
-		cost = 28,
+		descKey = "upgrade_slotadvanced3_desc",
 		nodeId = "R03",
+		cost = 28,
 		stat = "Advanced 10% -> 15%",
 		statKey = "upgrade_slotadvanced3_stat"
 	},
 	slotrare = {
-		statKey = "upgrade_slotrare_stat",
+		reqStage = 2,
 		cost = 70,
+		reqFull = true,
+		reqDiff = 2,
 		stat = "Rare 0% -> 2%",
 		descKey = "upgrade_slotrare_desc",
 		nameKey = "upgrade_slotrare_name",
 		nodeId = "R04",
-		reqFull = true,
-		reqDiff = 2,
-		reqStage = 2
+		statKey = "upgrade_slotrare_stat"
 	},
 	corereroll = {
-		descKey = "upgrade_corereroll_desc",
 		nameKey = "upgrade_corereroll_name",
-		cost = 10,
+		descKey = "upgrade_corereroll_desc",
 		nodeId = "K01",
+		cost = 10,
 		stat = "Free reroll 0 -> 1",
 		statKey = "upgrade_corereroll_stat"
 	},
 	firstcorespin = {
-		descKey = "upgrade_firstcorespin_desc",
 		nameKey = "upgrade_firstcorespin_name",
-		cost = 30,
+		descKey = "upgrade_firstcorespin_desc",
 		nodeId = "K02",
+		cost = 30,
 		stat = "First core required spins 0 -> -1",
 		statKey = "upgrade_firstcorespin_stat"
 	},
 	firstcoreuncommon = {
-		descKey = "upgrade_firstcoreuncommon_desc",
 		nameKey = "upgrade_firstcoreuncommon_name",
-		cost = 60,
+		descKey = "upgrade_firstcoreuncommon_desc",
 		nodeId = "K03",
+		cost = 60,
 		stat = "Uncommon core appears",
 		statKey = "upgrade_firstcoreuncommon_stat"
 	},
 	shopreroll = {
-		descKey = "upgrade_shopreroll_desc",
 		nameKey = "upgrade_shopreroll_name",
-		cost = 6,
+		descKey = "upgrade_shopreroll_desc",
 		nodeId = "M01",
+		cost = 6,
 		stat = "Shop reroll discount 0 -> 1",
 		statKey = "upgrade_shopreroll_stat"
 	},
 	iteminventory = {
-		descKey = "upgrade_iteminventory_desc",
 		nameKey = "upgrade_iteminventory_name",
-		cost = 45,
+		descKey = "upgrade_iteminventory_desc",
 		nodeId = "M03",
+		cost = 45,
 		stat = "Item slots 6 -> 7",
 		statKey = "upgrade_iteminventory_stat"
 	},
 	itemrefund = {
-		descKey = "upgrade_itemrefund_desc",
 		nameKey = "upgrade_itemrefund_name",
-		cost = 35,
+		descKey = "upgrade_itemrefund_desc",
 		nodeId = "M04",
+		cost = 35,
 		stat = "Refund rate 50% -> 80%",
 		statKey = "upgrade_itemrefund_stat"
 	},
 	iteminventory2 = {
-		descKey = "upgrade_iteminventory2_desc",
 		nameKey = "upgrade_iteminventory2_name",
-		cost = 160,
+		descKey = "upgrade_iteminventory2_desc",
 		nodeId = "M12",
+		cost = 160,
 		stat = "Item slots 7 -> 8",
 		statKey = "upgrade_iteminventory2_stat"
 	},
 	itemresearch = {
-		statKey = "upgrade_itemresearch_stat",
 		nameKey = "upgrade_itemresearch_name",
-		stat = "2 specialist items added",
-		nodeId = "M05",
-		cost = 24,
 		hidden = true,
+		nodeId = "M05",
+		statKey = "upgrade_itemresearch_stat",
+		stat = "2 specialist items added",
+		cost = 24,
 		descKey = "upgrade_itemresearch_desc"
 	},
 	shoppin = {
-		statKey = "upgrade_shoppin_stat",
 		nameKey = "upgrade_shoppin_name",
-		stat = "Pin product",
-		nodeId = "M02",
-		cost = 30,
 		hidden = true,
+		nodeId = "M02",
+		statKey = "upgrade_shoppin_stat",
+		stat = "Pin product",
+		cost = 30,
 		descKey = "upgrade_shoppin_desc"
 	},
 	maxunit = {
-		cost = 6,
 		nameKey = "upgrade_maxunit_name",
+		cost = 6,
 		nodeId = "B01",
 		stat = "5 -> 6",
 		descKey = "upgrade_maxunit_desc"
 	},
 	maxunit2 = {
-		descKey = "upgrade_maxunit2_desc",
 		nameKey = "upgrade_maxunit2_name",
-		cost = 70,
+		descKey = "upgrade_maxunit2_desc",
 		nodeId = "B06",
+		cost = 70,
 		stat = "6 -> 7",
 		statKey = "upgrade_maxunit2_stat"
 	},
 	maxunit3 = {
-		descKey = "upgrade_maxunit3_desc",
 		nameKey = "upgrade_maxunit3_name",
-		cost = 180,
+		descKey = "upgrade_maxunit3_desc",
 		nodeId = "B09",
+		cost = 180,
 		stat = "7 -> 8",
 		statKey = "upgrade_maxunit3_stat"
 	}
@@ -1016,12 +1016,12 @@ var_0_92("slotrare3", "R06", "slotrare2", 140, -200, -360, {
 	value = "4.5%"
 })
 var_0_92("slotlegend", "R07", "slotrare", 120, -80, -320, {
-	reqFull = true,
-	value = "0.1%",
-	grade = "legendary",
 	stat = "Legendary 0% -> 0.1%",
+	grade = "legendary",
+	value = "0.1%",
 	reqDiff = 1,
-	reqStage = 4
+	reqStage = 4,
+	reqFull = true
 })
 var_0_92("slotlegend2", "R08", "slotlegend", 170, -140, -380, {
 	grade = "legendary",
@@ -1034,12 +1034,12 @@ var_0_92("slotlegend3", "R09", "slotlegend2", 230, -200, -440, {
 	value = "0.4%"
 })
 var_0_92("slotprism", "R10", "slotlegend", 200, -80, -400, {
-	reqFull = true,
-	value = "0.02%",
-	grade = "prism",
 	stat = "Prism 0% -> 0.02%",
+	grade = "prism",
+	value = "0.02%",
 	reqDiff = 1,
-	reqStage = 5
+	reqStage = 5,
+	reqFull = true
 })
 var_0_92("slotprism2", "R11", "slotprism", 280, -140, -460, {
 	grade = "prism",
@@ -1058,40 +1058,40 @@ var_0_92("stonetwin", "F02", "fatestone", 45, 60, -460, {
 	stat = "Locked -> Unlocked"
 })
 var_0_92("stonebreeze", "F03", "stonetwin", 90, 120, -520, {
+	reqStage = 5,
 	stat = "Locked -> Unlocked",
-	reqDiff = 2,
-	reqStage = 5
+	reqDiff = 2
 })
 var_0_92("stoneomen", "F04", "stonebreeze", 120, 180, -580, {
+	reqStage = 5,
 	stat = "Locked -> Unlocked",
-	reqDiff = 2,
-	reqStage = 5
+	reqDiff = 2
 })
 var_0_92("stonespecial", "F05", "fatestone", 70, 80, -400, {
 	stat = "Locked -> Unlocked"
 })
 var_0_92("stonemastery", "F06", "stonespecial", 130, 140, -460, {
+	reqStage = 5,
 	stat = "Locked -> Unlocked",
-	reqDiff = 2,
-	reqStage = 5
+	reqDiff = 2
 })
 var_0_92("stonerift", "F07", "stonemastery", 170, 200, -520, {
+	reqStage = 5,
 	stat = "Locked -> Unlocked",
-	reqDiff = 2,
-	reqStage = 5
+	reqDiff = 2
 })
 var_0_92("stoneconstellation", "F08", "fatestone", 110, 0, -480, {
 	stat = "Locked -> Unlocked"
 })
 var_0_92("stonesanctum", "F09", "stoneconstellation", 180, 60, -540, {
+	reqStage = 5,
 	stat = "Locked -> Unlocked",
-	reqDiff = 2,
-	reqStage = 5
+	reqDiff = 2
 })
 var_0_92("stonegambit", "F10", "stonesanctum", 230, 120, -600, {
+	reqStage = 5,
 	stat = "Locked -> Unlocked",
-	reqDiff = 2,
-	reqStage = 5
+	reqDiff = 2
 })
 
 for iter_0_1, iter_0_2 in pairs(var_0_91) do
@@ -1125,8 +1125,8 @@ local var_0_94 = {
 
 local function var_0_95(arg_34_0, arg_34_1, arg_34_2, arg_34_3, arg_34_4, arg_34_5, arg_34_6, arg_34_7)
 	local var_34_0 = {
-		stat = "Locked -> Unlocked",
 		tree2 = true,
+		stat = "Locked -> Unlocked",
 		nodeId = arg_34_1,
 		cost = arg_34_3,
 		parent = arg_34_2,
@@ -1142,11 +1142,7 @@ local function var_0_95(arg_34_0, arg_34_1, arg_34_2, arg_34_3, arg_34_4, arg_34
 		end
 	end
 
-	if not arg_34_7 then
-		var_34_0.nameKey = "upgrade_" .. arg_34_0 .. "_name"
-		var_34_0.descKey = "upgrade_" .. arg_34_0 .. "_desc"
-		var_34_0.statKey = "upgrade_" .. arg_34_0 .. "_stat"
-	else
+	if arg_34_7 then
 		var_34_0.unlock = arg_34_7
 		var_34_0.wideTooltip = true
 		var_34_0.nameKey, var_34_0.descKey = var_0_93[arg_34_7.kind](arg_34_7)
@@ -1171,6 +1167,10 @@ local function var_0_95(arg_34_0, arg_34_1, arg_34_2, arg_34_3, arg_34_4, arg_34
 			}
 			var_34_0.descKey = "upgrade_unlock_" .. arg_34_7.kind .. "_desc"
 		end
+	else
+		var_34_0.nameKey = "upgrade_" .. arg_34_0 .. "_name"
+		var_34_0.descKey = "upgrade_" .. arg_34_0 .. "_desc"
+		var_34_0.statKey = "upgrade_" .. arg_34_0 .. "_stat"
 	end
 
 	var_0_91[arg_34_0] = var_34_0
@@ -1185,103 +1185,103 @@ var_0_95("corereroll2", "K04", "corereroll", 24, -80, -160, {
 }, nil)
 var_0_95("unlock_core_31", "C31", "corereroll", 8, -160, -80, nil, {
 	id = "31",
-	kind = "core",
-	key = "GoldTooth"
+	key = "GoldTooth",
+	kind = "core"
 })
 var_0_95("unlock_core_28", "C28", "unlock_core_31", 8, -220, -140, nil, {
 	id = "28",
-	kind = "core",
-	key = "ChaliceGreed"
+	key = "ChaliceGreed",
+	kind = "core"
 })
 var_0_95("unlock_core_29", "C29", "unlock_core_28", 12, -280, -200, {
 	1,
 	2
 }, {
 	id = "29",
-	kind = "core",
-	key = "JokerGrin"
+	key = "JokerGrin",
+	kind = "core"
 })
 var_0_95("unlock_core_27", "C27", "unlock_core_29", 14, -340, -260, {
 	1,
 	2
 }, {
 	id = "27",
-	kind = "core",
-	key = "WitchTorch"
+	key = "WitchTorch",
+	kind = "core"
 })
 var_0_95("unlock_core_19", "C19", "unlock_core_31", 12, -240, -80, nil, {
 	id = "19",
-	kind = "core",
-	key = "BlackNote"
+	key = "BlackNote",
+	kind = "core"
 })
 var_0_95("unlock_core_20", "C20", "unlock_core_19", 12, -300, -140, nil, {
 	id = "20",
-	kind = "core",
-	key = "ResonantAnvil"
+	key = "ResonantAnvil",
+	kind = "core"
 })
 var_0_95("unlock_core_21", "C21", "unlock_core_20", 20, -360, -200, {
 	1,
 	2
 }, {
 	id = "21",
-	kind = "core",
-	key = "CrookedFang"
+	key = "CrookedFang",
+	kind = "core"
 })
 var_0_95("unlock_core_25", "C25", "unlock_core_21", 40, -420, -260, {
 	2,
 	2
 }, {
 	id = "25",
-	kind = "core",
-	key = "TricksterCube"
+	key = "TricksterCube",
+	kind = "core"
 })
 var_0_95("unlock_core_24", "C24", "unlock_core_25", 40, -480, -320, {
 	2,
 	2
 }, {
 	id = "24",
-	kind = "core",
-	key = "MagicLamp"
+	key = "MagicLamp",
+	kind = "core"
 })
 var_0_95("unlock_core_30", "C30", "unlock_core_24", 45, -540, -380, {
 	2,
 	2
 }, {
 	id = "30",
-	kind = "core",
-	key = "FourLeafClover"
+	key = "FourLeafClover",
+	kind = "core"
 })
 var_0_95("unlock_core_26", "C26", "unlock_core_30", 60, -600, -440, {
 	3,
 	2
 }, {
 	id = "26",
-	kind = "core",
-	key = "HammerOfFate"
+	key = "HammerOfFate",
+	kind = "core"
 })
 var_0_95("unlock_core_22", "C22", "unlock_core_19", 40, -320, -80, {
 	1,
 	2
 }, {
 	id = "22",
-	kind = "core",
-	key = "Wildcard"
+	key = "Wildcard",
+	kind = "core"
 })
 var_0_95("unlock_core_23", "C23", "unlock_core_22", 45, -380, -140, {
 	1,
 	2
 }, {
 	id = "23",
-	kind = "core",
-	key = "GoldenLever"
+	key = "GoldenLever",
+	kind = "core"
 })
 var_0_95("unlock_core_32", "C32", "unlock_core_23", 150, -440, -200, {
 	4,
 	2
 }, {
 	id = "32",
-	kind = "core",
-	key = "EchoShell"
+	key = "EchoShell",
+	kind = "core"
 })
 var_0_95("secondcoreuncommon", "K05", "firstcoreuncommon", 80, -300, -20, {
 	3,
@@ -1319,85 +1319,85 @@ var_0_95("comebackgold2", "A16", "comebackgold", 35, -120, 280, {
 	2
 }, nil)
 var_0_95("unlock_item_07", "I07", "shopreroll", 5, 160, -80, nil, {
-	kind = "item",
-	id = "07"
+	id = "07",
+	kind = "item"
 })
 var_0_95("unlock_item_08", "I08", "unlock_item_07", 8, 240, -80, {
 	1,
 	2
 }, {
-	kind = "item",
-	id = "08"
+	id = "08",
+	kind = "item"
 })
 var_0_95("unlock_item_37", "I37", "unlock_item_08", 10, 320, -80, {
 	1,
 	2
 }, {
-	kind = "item",
-	id = "37"
+	id = "37",
+	kind = "item"
 })
 var_0_95("unlock_item_17", "I17", "unlock_item_08", 24, 300, -140, {
 	2,
 	2
 }, {
-	kind = "item",
-	id = "17"
+	id = "17",
+	kind = "item"
 })
 var_0_95("unlock_item_27", "I27", "unlock_item_17", 50, 360, -200, {
 	3,
 	2
 }, {
-	kind = "item",
-	id = "27"
+	id = "27",
+	kind = "item"
 })
 var_0_95("unlock_item_24", "I24", "unlock_item_27", 80, 420, -260, {
 	4,
 	2
 }, {
-	kind = "item",
-	id = "24"
+	id = "24",
+	kind = "item"
 })
 var_0_95("unlock_item_11", "I11", "unlock_item_37", 28, 380, -140, {
 	2,
 	2
 }, {
-	kind = "item",
-	id = "11"
+	id = "11",
+	kind = "item"
 })
 var_0_95("unlock_item_40", "I40", "unlock_item_11", 28, 440, -200, {
 	2,
 	2
 }, {
-	kind = "item",
-	id = "40"
+	id = "40",
+	kind = "item"
 })
 var_0_95("unlock_item_28", "I28", "unlock_item_40", 55, 500, -260, {
 	3,
 	2
 }, {
-	kind = "item",
-	id = "28"
+	id = "28",
+	kind = "item"
 })
 var_0_95("unlock_item_45", "I45", "unlock_item_28", 160, 560, -320, {
 	4,
 	2
 }, {
-	kind = "item",
-	id = "45"
+	id = "45",
+	kind = "item"
 })
 var_0_95("unlock_item_23", "I23", "unlock_item_37", 55, 400, -80, {
 	3,
 	2
 }, {
-	kind = "item",
-	id = "23"
+	id = "23",
+	kind = "item"
 })
 var_0_95("unlock_item_48", "I48", "unlock_item_23", 140, 460, -140, {
 	4,
 	2
 }, {
-	kind = "item",
-	id = "48"
+	id = "48",
+	kind = "item"
 })
 var_0_95("shopdiscount", "M06", "itemrefund", 50, 280, -200, {
 	3,
@@ -1405,103 +1405,103 @@ var_0_95("shopdiscount", "M06", "itemrefund", 50, 280, -200, {
 }, nil)
 var_0_95("unlock_core_38", "C38", "slotnudge", 5, -280, 40, nil, {
 	id = "38",
-	kind = "core",
-	key = "GreedyPearl"
+	key = "GreedyPearl",
+	kind = "core"
 })
 var_0_95("unlock_core_36", "C36", "unlock_core_38", 10, -360, 40, {
 	1,
 	2
 }, {
 	id = "36",
-	kind = "core",
-	key = "ReverseAxis"
+	key = "ReverseAxis",
+	kind = "core"
 })
 var_0_95("unlock_core_37", "C37", "unlock_core_36", 12, -440, 40, {
 	1,
 	2
 }, {
 	id = "37",
-	kind = "core",
-	key = "CycleBell"
+	key = "CycleBell",
+	kind = "core"
 })
 var_0_95("unlock_core_39", "C39", "unlock_core_35", 36, -580, 100, {
 	2,
 	2
 }, {
 	id = "39",
-	kind = "core",
-	key = "JesterCandle"
+	key = "JesterCandle",
+	kind = "core"
 })
 var_0_95("unlock_core_40", "C40", "unlock_core_39", 110, -660, 100, {
 	3,
 	2
 }, {
 	id = "40",
-	kind = "core",
-	key = "GoldenCrest"
+	key = "GoldenCrest",
+	kind = "core"
 })
 var_0_95("unlock_core_35", "C35", "unlock_core_37", 16, -500, 100, {
 	1,
 	2
 }, {
 	id = "35",
-	kind = "core",
-	key = "ReboundAxis"
+	key = "ReboundAxis",
+	kind = "core"
 })
 var_0_95("blastmachine", "X01", "slotodds", 60, 80, 0, {
 	2,
 	2
 }, {
-	kind = "machine",
-	id = "blast"
+	id = "blast",
+	kind = "machine"
 })
 var_0_95("unlock_core_43", "C43", "blastmachine", 20, 160, 0, {
 	2,
 	2
 }, {
 	id = "43",
-	kind = "core",
-	key = "BlastCart"
+	key = "BlastCart",
+	kind = "core"
 })
 var_0_95("unlock_core_44", "C44", "unlock_core_43", 20, 240, 0, {
 	2,
 	2
 }, {
 	id = "44",
-	kind = "core",
-	key = "UpdraftFeather"
+	key = "UpdraftFeather",
+	kind = "core"
 })
 var_0_95("unlock_core_45", "C45", "unlock_core_44", 22, 320, 0, {
 	2,
 	2
 }, {
 	id = "45",
-	kind = "core",
-	key = "SporeShroom"
+	key = "SporeShroom",
+	kind = "core"
 })
 var_0_95("unlock_core_46", "C46", "unlock_core_45", 50, 380, 60, {
 	3,
 	2
 }, {
 	id = "46",
-	kind = "core",
-	key = "ArsonistLighter"
+	key = "ArsonistLighter",
+	kind = "core"
 })
 var_0_95("unlock_core_47", "C47", "unlock_core_46", 55, 460, 60, {
 	3,
 	2
 }, {
 	id = "47",
-	kind = "core",
-	key = "PowderKeg"
+	key = "PowderKeg",
+	kind = "core"
 })
 var_0_95("unlock_core_48", "C48", "unlock_core_47", 150, 540, 60, {
 	4,
 	2
 }, {
 	id = "48",
-	kind = "core",
-	key = "Burstberry"
+	key = "Burstberry",
+	kind = "core"
 })
 var_0_95("blastmastery", "X02", "blastmachine", 30, 140, 60, {
 	2,
@@ -1511,78 +1511,78 @@ var_0_95("unlock_trait_23", "T23", "dormantpower", 12, 260, 180, {
 	1,
 	2
 }, {
-	kind = "trait",
-	id = "23"
+	id = "23",
+	kind = "trait"
 })
 var_0_95("unlock_trait_11", "T11", "unlock_trait_23", 24, 340, 180, {
 	2,
 	2
 }, {
-	kind = "trait",
-	id = "11"
+	id = "11",
+	kind = "trait"
 })
 var_0_95("unlock_trait_25", "T25", "unlock_trait_11", 28, 420, 180, {
 	2,
 	2
 }, {
-	kind = "trait",
-	id = "25"
+	id = "25",
+	kind = "trait"
 })
 var_0_95("unlock_trait_28", "T28", "unlock_trait_25", 40, 500, 180, {
 	3,
 	2
 }, {
-	kind = "trait",
-	id = "28"
+	id = "28",
+	kind = "trait"
 })
 var_0_95("unlock_trait_26", "T26", "unlock_trait_28", 130, 580, 180, {
 	4,
 	2
 }, {
-	kind = "trait",
-	id = "26"
+	id = "26",
+	kind = "trait"
 })
 var_0_95("unlock_trait_29", "T29", "unlock_trait_23", 28, 260, 260, {
 	2,
 	2
 }, {
-	kind = "trait",
-	id = "29"
+	id = "29",
+	kind = "trait"
 })
 var_0_95("unlock_trait_32", "T32", "unlock_trait_29", 48, 340, 260, {
 	3,
 	2
 }, {
-	kind = "trait",
-	id = "32"
+	id = "32",
+	kind = "trait"
 })
 var_0_95("unlock_faction_arcane", "P01", "factionsynergy", 40, 0, 200, {
 	2,
 	2
 }, {
-	kind = "faction",
-	id = "arcane"
+	id = "arcane",
+	kind = "faction"
 })
 var_0_95("unlock_faction_abyss", "P02", "unlock_faction_arcane", 70, 0, 280, {
 	3,
 	2
 }, {
-	kind = "faction",
-	id = "abyss"
+	id = "abyss",
+	kind = "faction"
 })
 var_0_95("unlock_faction_undead", "P03", "unlock_faction_abyss", 70, 0, 360, {
 	3,
 	2
 }, {
-	kind = "faction",
-	id = "undead"
+	id = "undead",
+	kind = "faction"
 })
 var_0_95("unlock_faction_celestial", "P04", "unlock_faction_undead", 120, 0, 440, {
 	4,
 	1
 }, {
-	kind = "faction",
-	id = "celestial"
+	id = "celestial",
+	kind = "faction"
 })
 var_0_95("questreroll", "F11", "fatestone", 60, -60, -460, {
 	4,
@@ -1612,44 +1612,44 @@ var_0_8.unlock_faction_undead = "src/sprites/icons/menu/upgrade/55factionundead.
 var_0_8.unlock_faction_celestial = "src/sprites/icons/menu/upgrade/56factioncelestial.png"
 
 for iter_0_3, iter_0_4 in pairs({
-	["32"] = "70coreechoshell",
-	["19"] = "57coreblacknote",
-	["28"] = "66corechalicegreed",
-	["36"] = "72corereverseaxis",
-	["29"] = "67corejokergrin",
-	["27"] = "65corewitchtorch",
-	["25"] = "63coretrickstercube",
-	["38"] = "74coregreedypearl",
+	["20"] = "58coreresonantanvil",
 	["24"] = "62coremagiclamp",
-	["26"] = "64corehammeroffate",
-	["44"] = "78coreupdraftfeather",
+	["28"] = "66corechalicegreed",
+	["35"] = "71corereboundaxis",
+	["19"] = "57coreblacknote",
 	["37"] = "73corecyclebell",
-	["48"] = "82coreburstberry",
-	["30"] = "68corefourleafclover",
+	["40"] = "76coregoldencrest",
 	["43"] = "77coreblastcart",
-	["22"] = "60corewildcard",
-	["45"] = "79coresporeshroom",
-	["31"] = "69coregoldtooth",
+	["27"] = "65corewitchtorch",
+	["39"] = "75corejestercandle",
+	["44"] = "78coreupdraftfeather",
+	["32"] = "70coreechoshell",
+	["29"] = "67corejokergrin",
+	["47"] = "81corepowderkeg",
 	["46"] = "80corearsonistlighter",
 	["23"] = "61coregoldenlever",
-	["35"] = "71corereboundaxis",
-	["40"] = "76coregoldencrest",
+	["30"] = "68corefourleafclover",
+	["36"] = "72corereverseaxis",
+	["22"] = "60corewildcard",
+	["31"] = "69coregoldtooth",
+	["38"] = "74coregreedypearl",
+	["26"] = "64corehammeroffate",
+	["25"] = "63coretrickstercube",
+	["48"] = "82coreburstberry",
 	["21"] = "59corecrookedfang",
-	["39"] = "75corejestercandle",
-	["20"] = "58coreresonantanvil",
-	["47"] = "81corepowderkeg"
+	["45"] = "79coresporeshroom"
 }) do
 	var_0_8["unlock_core_" .. iter_0_3] = "src/sprites/icons/menu/upgrade/" .. iter_0_4 .. ".png"
 end
 
 for iter_0_5, iter_0_6 in pairs({
-	["25"] = "85traitpredatoryinstinct",
-	["23"] = "83traitcalculatedluck",
-	["11"] = "84traitallydeath",
-	["26"] = "87traitversatile",
-	["29"] = "88traitanchoredstance",
 	["28"] = "86traitrapidstrikes",
-	["32"] = "89traitheavyweight"
+	["11"] = "84traitallydeath",
+	["25"] = "85traitpredatoryinstinct",
+	["32"] = "89traitheavyweight",
+	["29"] = "88traitanchoredstance",
+	["26"] = "87traitversatile",
+	["23"] = "83traitcalculatedluck"
 }) do
 	var_0_8["unlock_trait_" .. iter_0_5] = "src/sprites/icons/menu/upgrade/" .. iter_0_6 .. ".png"
 end
@@ -1658,18 +1658,18 @@ var_0_8.blastmachine = "src/sprites/icons/menu/upgrade/90blastmachine.png"
 var_0_8.blastmastery = "src/sprites/icons/menu/upgrade/91blastmastery.png"
 
 for iter_0_7, iter_0_8 in pairs({
-	["17"] = "95itemricochetstone",
-	["24"] = "100itemguardiantotem",
-	["08"] = "93itemcursedmushroom",
+	["28"] = "97itemreapershourglass",
 	["37"] = "94itemshieldmanual",
+	["08"] = "93itemcursedmushroom",
+	["11"] = "98itemhealingspring",
+	["40"] = "99itemmagiccircle",
+	["24"] = "100itemguardiantotem",
+	["23"] = "102itemoverflowingchalice",
 	["07"] = "92itemdustcloak",
 	["27"] = "96itemtunnel",
-	["40"] = "99itemmagiccircle",
-	["45"] = "101itempeddlerspack",
-	["23"] = "102itemoverflowingchalice",
-	["11"] = "98itemhealingspring",
 	["48"] = "103itemburningheart",
-	["28"] = "97itemreapershourglass"
+	["17"] = "95itemricochetstone",
+	["45"] = "101itempeddlerspack"
 }) do
 	var_0_8["unlock_item_" .. iter_0_7] = "src/sprites/icons/menu/upgrade/" .. iter_0_8 .. ".png"
 end
@@ -3283,10 +3283,10 @@ local function var_0_113(arg_63_0, arg_63_1, arg_63_2, arg_63_3, arg_63_4, arg_6
 	end
 
 	for iter_63_0, iter_63_1 in ipairs(arg_63_0 or {}) do
-		if not ((iter_63_1.type == "icon" or iter_63_1.type == "iconword") and iter_63_1.icon or iter_63_1.type == "infinity") then
-			var_63_2 = var_63_2 .. tostring(iter_63_1.text or iter_63_1.fallback or "")
-		else
+		if not not ((iter_63_1.type == "icon" or iter_63_1.type == "iconword") and iter_63_1.icon or iter_63_1.type == "infinity") then
 			var_63_3()
+		else
+			var_63_2 = var_63_2 .. tostring(iter_63_1.text or iter_63_1.fallback or "")
 		end
 
 		if iter_63_1.type == "icon" and iter_63_1.icon then
@@ -3321,7 +3321,20 @@ local function var_0_113(arg_63_0, arg_63_1, arg_63_2, arg_63_3, arg_63_4, arg_6
 
 			var_63_0 = var_63_0 + var_63_7 * arg_63_5 + var_63_9
 
-			if iter_63_1.number then
+			if not iter_63_1.number then
+				love.graphics.setColor(arg_63_6 or {
+					1,
+					1,
+					1,
+					1
+				})
+
+				local var_63_11 = iter_63_1.word or ""
+
+				love.graphics.print(var_63_11, math.floor(var_63_0), math.floor(arg_63_2), 0, arg_63_4, arg_63_4)
+
+				var_63_0 = var_63_0 + var_0_110(var_63_11, arg_63_3, arg_63_4)
+			else
 				love.graphics.setColor(arg_63_8 or arg_63_6 or {
 					1,
 					1,
@@ -3333,7 +3346,7 @@ local function var_0_113(arg_63_0, arg_63_1, arg_63_2, arg_63_3, arg_63_4, arg_6
 				var_63_0 = var_63_0 + var_0_110(iter_63_1.number, arg_63_3, arg_63_4)
 
 				if iter_63_1.suffix and iter_63_1.suffix ~= "" then
-					local var_63_11 = " " .. iter_63_1.suffix
+					local var_63_12 = " " .. iter_63_1.suffix
 
 					love.graphics.setColor(arg_63_6 or {
 						1,
@@ -3341,23 +3354,10 @@ local function var_0_113(arg_63_0, arg_63_1, arg_63_2, arg_63_3, arg_63_4, arg_6
 						1,
 						1
 					})
-					love.graphics.print(var_63_11, math.floor(var_63_0), math.floor(arg_63_2), 0, arg_63_4, arg_63_4)
+					love.graphics.print(var_63_12, math.floor(var_63_0), math.floor(arg_63_2), 0, arg_63_4, arg_63_4)
 
-					var_63_0 = var_63_0 + var_0_110(var_63_11, arg_63_3, arg_63_4)
+					var_63_0 = var_63_0 + var_0_110(var_63_12, arg_63_3, arg_63_4)
 				end
-			else
-				love.graphics.setColor(arg_63_6 or {
-					1,
-					1,
-					1,
-					1
-				})
-
-				local var_63_12 = iter_63_1.word or ""
-
-				love.graphics.print(var_63_12, math.floor(var_63_0), math.floor(arg_63_2), 0, arg_63_4, arg_63_4)
-
-				var_63_0 = var_63_0 + var_0_110(var_63_12, arg_63_3, arg_63_4)
 			end
 		elseif iter_63_1.type == "infinity" then
 			local var_63_13 = var_0_88()
@@ -3382,15 +3382,15 @@ local function var_0_114(arg_66_0, arg_66_1, arg_66_2, arg_66_3, arg_66_4)
 	local var_66_1 = {}
 
 	for iter_66_0, iter_66_1 in ipairs(var_66_0) do
-		if iter_66_1.type ~= "text" then
-			table.insert(var_66_1, iter_66_1)
-		else
+		if iter_66_1.type == "text" then
 			for iter_66_2 in tostring(iter_66_1.text):gmatch("%s*%S+") do
 				table.insert(var_66_1, {
 					type = "text",
 					text = iter_66_2
 				})
 			end
+		else
+			table.insert(var_66_1, iter_66_1)
 		end
 	end
 
@@ -3727,10 +3727,10 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 			return love.graphics.newImage(love.image.newImageData(1, 1))
 		end)
 
-		if not var_71_15 or not var_71_16 then
-			_G.__slotUpgradeLazyFailed.whitePixel = true
-		else
+		if var_71_15 and var_71_16 then
 			var_0_11 = var_71_16
+		else
+			_G.__slotUpgradeLazyFailed.whitePixel = true
 		end
 	end
 
@@ -5650,15 +5650,15 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 
 						local var_73_22 = math.floor(var_73_20.size)
 
-						if var_73_22 < 2 then
-							love.graphics.rectangle("fill", math.floor(var_73_9 + var_73_20.x), math.floor(arg_73_3 + var_73_20.y), 1, 1)
-						else
+						if not (var_73_22 < 2) then
 							local var_73_23 = math.floor(var_73_9 + var_73_20.x)
 							local var_73_24 = math.floor(arg_73_3 + var_73_20.y)
 							local var_73_25 = math.floor(var_73_22 / 2)
 
 							love.graphics.rectangle("fill", var_73_23 - var_73_25, var_73_24, var_73_22, 1)
 							love.graphics.rectangle("fill", var_73_23, var_73_24 - var_73_25, 1, var_73_22)
+						else
+							love.graphics.rectangle("fill", math.floor(var_73_9 + var_73_20.x), math.floor(arg_73_3 + var_73_20.y), 1, 1)
 						end
 					end
 				end
@@ -6012,9 +6012,7 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 			love.graphics.print(var_71_647, math.floor(var_71_665), math.floor(var_71_666), 0, var_71_656, var_71_657)
 		end
 
-		if not var_0_69 then
-			var_0_70 = {}
-		else
+		if var_0_69 then
 			local var_71_667 = 20
 			local var_71_668 = 5
 			local var_71_669 = var_71_660 + (var_71_643 * var_71_644 - var_71_667) / 2
@@ -6045,6 +6043,8 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 				w = var_71_667,
 				h = var_71_667
 			}
+		else
+			var_0_70 = {}
 		end
 	end
 
@@ -6069,25 +6069,25 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 		love.graphics.draw(var_0_24, var_71_675, var_71_676, 0, var_71_672, var_71_672, var_71_673 / 2, var_71_674 / 2)
 	end
 
-	if var_0_18 then
-		local var_71_679, var_71_680 = var_0_18:getDimensions()
-		local var_71_681 = 1.15
-		local var_71_682 = math.floor((var_71_0 - var_71_679 * var_71_681) / 2)
-		local var_71_683 = 25
+	if not var_0_18 then
+		local var_71_679 = arg_71_0.fontTitle or love.graphics.getFont()
 
-		love.graphics.draw(var_0_18, var_71_682, var_71_683, 0, var_71_681, var_71_681)
+		love.graphics.setFont(var_71_679)
+
+		local var_71_680 = arg_71_0 and arg_71_0.menuSettings and arg_71_0.menuSettings.language or "ko"
+		local var_71_681 = var_0_3.getText("upgrade_title", var_71_680)
+		local var_71_682 = 2
+		local var_71_683 = var_71_679:getWidth(var_71_681) * var_71_682
+		local var_71_684 = var_71_679:getHeight() * var_71_682
+
+		love.graphics.print(var_71_681, (var_71_0 - var_71_683) / 2, 50, 0, var_71_682, var_71_682)
 	else
-		local var_71_684 = arg_71_0.fontTitle or love.graphics.getFont()
+		local var_71_685, var_71_686 = var_0_18:getDimensions()
+		local var_71_687 = 1.15
+		local var_71_688 = math.floor((var_71_0 - var_71_685 * var_71_687) / 2)
+		local var_71_689 = 25
 
-		love.graphics.setFont(var_71_684)
-
-		local var_71_685 = arg_71_0 and arg_71_0.menuSettings and arg_71_0.menuSettings.language or "ko"
-		local var_71_686 = var_0_3.getText("upgrade_title", var_71_685)
-		local var_71_687 = 2
-		local var_71_688 = var_71_684:getWidth(var_71_686) * var_71_687
-		local var_71_689 = var_71_684:getHeight() * var_71_687
-
-		love.graphics.print(var_71_686, (var_71_0 - var_71_688) / 2, 50, 0, var_71_687, var_71_687)
+		love.graphics.draw(var_0_18, var_71_688, var_71_689, 0, var_71_687, var_71_687)
 	end
 
 	if var_0_21 and var_0_22 and var_0_23 then
@@ -6376,10 +6376,10 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 		local var_71_792 = 4
 		local var_71_793 = 0
 
-		if not var_71_739 then
-			var_71_793 = var_71_790 * var_71_789 + var_71_792 + var_0_110(var_71_766, var_71_744, var_71_750)
-		else
+		if var_71_739 then
 			var_71_793 = var_0_110(var_71_766, var_71_744, var_71_750)
+		else
+			var_71_793 = var_71_790 * var_71_789 + var_71_792 + var_0_110(var_71_766, var_71_744, var_71_750)
 		end
 
 		local var_71_794
@@ -6606,125 +6606,7 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 
 		local var_71_855 = var_71_854 + var_71_749 + var_71_748
 
-		if not var_71_761 then
-			local var_71_856 = var_71_840 + var_71_747 + (var_71_809 - var_71_788) / 2
-
-			if var_71_856 < var_71_840 + var_71_747 then
-				var_71_856 = var_71_840 + var_71_747
-			end
-
-			local var_71_857, var_71_858 = var_71_763:match("^(.*%->%s*)(.*)$")
-
-			if not var_71_857 or not var_71_858 then
-				if var_0_109(var_71_763) then
-					local var_71_859 = var_0_108(var_71_763, var_71_744, var_71_750, var_71_751)
-
-					var_0_113(var_71_859, math.floor(var_71_856), math.floor(var_71_855 + var_71_845) - 2, var_71_744, var_71_750, var_71_751, {
-						0.2,
-						1,
-						0.2,
-						1
-					}, {
-						1,
-						1,
-						1,
-						1
-					}, nil, {
-						lang = var_71_752
-					})
-				else
-					love.graphics.setColor(0.2, 1, 0.2, 1)
-					require("src.ui.widgets").text_color.drawRich(var_71_763, math.floor(var_71_856), math.floor(var_71_855 + var_71_845) - 2, {
-						font = var_71_744,
-						scale = var_71_750,
-						color = {
-							0.2,
-							1,
-							0.2,
-							1
-						},
-						lang = var_71_752,
-						measure = function(arg_78_0)
-							return var_0_110(arg_78_0, var_71_744, var_71_750)
-						end
-					})
-				end
-			else
-				local var_71_860 = var_0_110(var_71_857, var_71_744, var_71_750)
-
-				if var_0_109(var_71_857) then
-					local var_71_861 = var_0_108(var_71_857, var_71_744, var_71_750, var_71_751)
-
-					var_71_860 = var_0_111(var_71_861, var_71_744, var_71_750, var_71_751)
-
-					var_0_113(var_71_861, math.floor(var_71_856), math.floor(var_71_855 + var_71_845) - 2, var_71_744, var_71_750, var_71_751, {
-						1,
-						1,
-						1,
-						1
-					}, {
-						1,
-						1,
-						1,
-						1
-					}, nil, {
-						lang = var_71_752
-					})
-				else
-					love.graphics.setColor(1, 1, 1, 1)
-					require("src.ui.widgets").text_color.drawRich(var_71_857, math.floor(var_71_856), math.floor(var_71_855 + var_71_845) - 2, {
-						font = var_71_744,
-						scale = var_71_750,
-						color = {
-							1,
-							1,
-							1,
-							1
-						},
-						lang = var_71_752,
-						measure = function(arg_79_0)
-							return var_0_110(arg_79_0, var_71_744, var_71_750)
-						end
-					})
-				end
-
-				if var_0_109(var_71_858) then
-					local var_71_862 = var_0_108(var_71_858, var_71_744, var_71_750, var_71_751)
-
-					var_0_113(var_71_862, math.floor(var_71_856 + var_71_860), math.floor(var_71_855 + var_71_845) - 2, var_71_744, var_71_750, var_71_751, {
-						0.2,
-						1,
-						0.2,
-						1
-					}, {
-						1,
-						1,
-						1,
-						1
-					}, nil, {
-						lang = var_71_752
-					})
-				else
-					love.graphics.setColor(0.2, 1, 0.2, 1)
-					require("src.ui.widgets").text_color.drawRich(var_71_858, math.floor(var_71_856 + var_71_860), math.floor(var_71_855 + var_71_845) - 2, {
-						font = var_71_744,
-						scale = var_71_750,
-						color = {
-							0.2,
-							1,
-							0.2,
-							1
-						},
-						lang = var_71_752,
-						measure = function(arg_80_0)
-							return var_0_110(arg_80_0, var_71_744, var_71_750)
-						end
-					})
-				end
-			end
-
-			var_71_855 = var_71_855 + var_71_811 + var_71_748
-		else
+		if var_71_761 then
 			var_71_855 = var_71_855 - var_71_817
 
 			love.graphics.setColor(0.2, 1, 0.2, 1)
@@ -6739,9 +6621,9 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 
 			love.graphics.setColor(1, 0.8, 0.2, 1)
 
-			local var_71_863 = var_71_840 + var_71_747 + (var_71_809 - var_71_778) / 2
+			local var_71_856 = var_71_840 + var_71_747 + (var_71_809 - var_71_778) / 2
 
-			love.graphics.print(var_71_757, math.floor(var_71_863), math.floor(var_71_855 + var_71_845), 0, var_71_750, var_71_750)
+			love.graphics.print(var_71_757, math.floor(var_71_856), math.floor(var_71_855 + var_71_845), 0, var_71_750, var_71_750)
 
 			if var_71_759 then
 				var_71_855 = var_71_855 + math.floor(var_71_811 * 1.4 + 0.5)
@@ -6764,13 +6646,13 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 
 			var_71_744:setLineHeight(1.4)
 
-			local var_71_864 = var_71_745:getHeight() * var_71_744:getLineHeight() * var_71_750
+			local var_71_857 = var_71_745:getHeight() * var_71_744:getLineHeight() * var_71_750
 
 			for iter_71_49, iter_71_50 in ipairs(var_71_775 or {}) do
-				local var_71_865 = var_0_111(iter_71_50, var_71_744, var_71_750, var_71_751)
-				local var_71_866 = var_71_840 + var_71_747 + (var_71_809 - var_71_865) / 2
+				local var_71_858 = var_0_111(iter_71_50, var_71_744, var_71_750, var_71_751)
+				local var_71_859 = var_71_840 + var_71_747 + (var_71_809 - var_71_858) / 2
 
-				var_0_113(iter_71_50, math.floor(var_71_866), math.floor(var_71_855 + var_71_845 + (iter_71_49 - 1) * var_71_864), var_71_744, var_71_750, var_71_751, {
+				var_0_113(iter_71_50, math.floor(var_71_859), math.floor(var_71_855 + var_71_845 + (iter_71_49 - 1) * var_71_857), var_71_744, var_71_750, var_71_751, {
 					0.9,
 					0.9,
 					0.9,
@@ -6793,6 +6675,122 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 			var_71_744:setLineHeight(1)
 
 			var_71_855 = var_71_855 + var_71_776 + var_71_748
+		else
+			local var_71_860 = var_71_840 + var_71_747 + (var_71_809 - var_71_788) / 2
+
+			if var_71_860 < var_71_840 + var_71_747 then
+				var_71_860 = var_71_840 + var_71_747
+			end
+
+			local var_71_861, var_71_862 = var_71_763:match("^(.*%->%s*)(.*)$")
+
+			if var_71_861 and var_71_862 then
+				local var_71_863 = var_0_110(var_71_861, var_71_744, var_71_750)
+
+				if not var_0_109(var_71_861) then
+					love.graphics.setColor(1, 1, 1, 1)
+					require("src.ui.widgets").text_color.drawRich(var_71_861, math.floor(var_71_860), math.floor(var_71_855 + var_71_845) - 2, {
+						font = var_71_744,
+						scale = var_71_750,
+						color = {
+							1,
+							1,
+							1,
+							1
+						},
+						lang = var_71_752,
+						measure = function(arg_78_0)
+							return var_0_110(arg_78_0, var_71_744, var_71_750)
+						end
+					})
+				else
+					local var_71_864 = var_0_108(var_71_861, var_71_744, var_71_750, var_71_751)
+
+					var_71_863 = var_0_111(var_71_864, var_71_744, var_71_750, var_71_751)
+
+					var_0_113(var_71_864, math.floor(var_71_860), math.floor(var_71_855 + var_71_845) - 2, var_71_744, var_71_750, var_71_751, {
+						1,
+						1,
+						1,
+						1
+					}, {
+						1,
+						1,
+						1,
+						1
+					}, nil, {
+						lang = var_71_752
+					})
+				end
+
+				if var_0_109(var_71_862) then
+					local var_71_865 = var_0_108(var_71_862, var_71_744, var_71_750, var_71_751)
+
+					var_0_113(var_71_865, math.floor(var_71_860 + var_71_863), math.floor(var_71_855 + var_71_845) - 2, var_71_744, var_71_750, var_71_751, {
+						0.2,
+						1,
+						0.2,
+						1
+					}, {
+						1,
+						1,
+						1,
+						1
+					}, nil, {
+						lang = var_71_752
+					})
+				else
+					love.graphics.setColor(0.2, 1, 0.2, 1)
+					require("src.ui.widgets").text_color.drawRich(var_71_862, math.floor(var_71_860 + var_71_863), math.floor(var_71_855 + var_71_845) - 2, {
+						font = var_71_744,
+						scale = var_71_750,
+						color = {
+							0.2,
+							1,
+							0.2,
+							1
+						},
+						lang = var_71_752,
+						measure = function(arg_79_0)
+							return var_0_110(arg_79_0, var_71_744, var_71_750)
+						end
+					})
+				end
+			elseif var_0_109(var_71_763) then
+				local var_71_866 = var_0_108(var_71_763, var_71_744, var_71_750, var_71_751)
+
+				var_0_113(var_71_866, math.floor(var_71_860), math.floor(var_71_855 + var_71_845) - 2, var_71_744, var_71_750, var_71_751, {
+					0.2,
+					1,
+					0.2,
+					1
+				}, {
+					1,
+					1,
+					1,
+					1
+				}, nil, {
+					lang = var_71_752
+				})
+			else
+				love.graphics.setColor(0.2, 1, 0.2, 1)
+				require("src.ui.widgets").text_color.drawRich(var_71_763, math.floor(var_71_860), math.floor(var_71_855 + var_71_845) - 2, {
+					font = var_71_744,
+					scale = var_71_750,
+					color = {
+						0.2,
+						1,
+						0.2,
+						1
+					},
+					lang = var_71_752,
+					measure = function(arg_80_0)
+						return var_0_110(arg_80_0, var_71_744, var_71_750)
+					end
+				})
+			end
+
+			var_71_855 = var_71_855 + var_71_811 + var_71_748
 		end
 
 		love.graphics.setColor(var_0_86.separator)
@@ -6914,10 +6912,7 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 				var_71_890 = var_71_890 + var_71_800 + var_71_801
 			end
 
-			if not var_71_795 then
-				love.graphics.setColor(var_71_878[1], var_71_878[2], var_71_878[3], 1)
-				love.graphics.print(var_71_794, math.floor(var_71_890), math.floor(var_71_884), 0, var_71_750, var_71_750)
-			else
+			if var_71_795 then
 				local var_71_891 = var_0_110(" ", var_71_744, var_71_750)
 
 				for iter_71_51, iter_71_52 in ipairs(var_71_795) do
@@ -6932,6 +6927,9 @@ function var_0_0.draw(arg_71_0, arg_71_1, arg_71_2)
 						var_71_890 = var_71_890 + var_71_891
 					end
 				end
+			else
+				love.graphics.setColor(var_71_878[1], var_71_878[2], var_71_878[3], 1)
+				love.graphics.print(var_71_794, math.floor(var_71_890), math.floor(var_71_884), 0, var_71_750, var_71_750)
 			end
 		end
 
@@ -8531,10 +8529,10 @@ function var_0_0.wheelmoved(arg_85_0, arg_85_1, arg_85_2, arg_85_3)
 		end
 	end
 
-	if not (var_85_0 > 0) then
-		var_85_1 = math.max(1, var_85_1 - 1)
-	else
+	if var_85_0 > 0 then
 		var_85_1 = math.min(#var_0_47, var_85_1 + 1)
+	else
+		var_85_1 = math.max(1, var_85_1 - 1)
 	end
 
 	local var_85_4 = var_0_47[var_85_1]
@@ -8941,18 +8939,18 @@ end
 local var_0_120 = "src/sprites/mainmenu/upgrade_sections/"
 local var_0_121 = {
 	it = "italian",
-	ko = "korean",
-	fr = "french",
-	pt = "portuguese_brazil",
 	["zh-Hant"] = "chinese_traditional",
-	tr = "turkish",
+	fr = "french",
+	ja = "japanese",
+	ko = "korean",
+	pt = "portuguese_brazil",
 	zh = "chinese",
+	tr = "turkish",
 	pl = "polish",
 	en = "english",
 	ru = "russian",
 	es = "spanish",
-	de = "german",
-	ja = "japanese"
+	de = "german"
 }
 local var_0_122 = {
 	"research",
@@ -8964,11 +8962,11 @@ local var_0_122 = {
 }
 local var_0_123 = {
 	units = "maxunit",
-	blast = "blastmachine",
-	core = "corereroll",
 	research = "slotadvanced",
+	blast = "blastmachine",
+	supply = "maxhp",
 	shop = "shopreroll",
-	supply = "maxhp"
+	core = "corereroll"
 }
 local var_0_124 = {
 	"blastmachine",
@@ -8981,28 +8979,28 @@ local var_0_124 = {
 	"unlock_core_48"
 }
 local var_0_125 = {
-	startgold = "maxhp",
-	corereroll = "slotadvanced",
-	noviceshield = "maxhp",
-	comebackspin = "noviceshield",
-	slotadvanced2 = "slotadvanced",
-	maxhp = "slotodds",
 	slotadvanced = "slotodds",
-	firstcoreuncommon = "firstcorespin",
-	maxunit3 = "maxunit2",
-	slotrare = "slotadvanced3",
 	maxunit2 = "maxunit",
-	startgold2 = "startgold",
+	corereroll = "slotadvanced",
 	maxunit = "slotodds",
-	maxhp2 = "comebackgold",
+	firstcoreuncommon = "firstcorespin",
+	slotrare = "slotadvanced3",
 	comebackgold = "startgold",
-	slotadvanced3 = "slotadvanced2",
+	startgold2 = "startgold",
+	maxhp2 = "comebackgold",
 	iteminventory2 = "iteminventory",
+	firstcorespin = "corereroll",
+	noviceshield = "maxhp",
 	iteminventory = "shopreroll",
 	shopreroll = "slotadvanced",
 	gateheal = "comebackspin",
-	firstcorespin = "corereroll",
-	startingmerccontract = "startgold"
+	comebackspin = "noviceshield",
+	startingmerccontract = "startgold",
+	startgold = "maxhp",
+	slotadvanced3 = "slotadvanced2",
+	slotadvanced2 = "slotadvanced",
+	maxhp = "slotodds",
+	maxunit3 = "maxunit2"
 }
 local var_0_126 = 6
 local var_0_127 = 1
@@ -9493,10 +9491,10 @@ local function var_0_144(arg_134_0, arg_134_1, arg_134_2, arg_134_3, arg_134_4)
 		local var_134_0 = arg_134_1.x - arg_134_0.x
 		local var_134_1 = arg_134_1.y - arg_134_0.y
 
-		if var_134_0 * var_134_0 + var_134_1 * var_134_1 > 0.25 then
-			arg_134_0.x, arg_134_0.y = arg_134_0.x + var_134_0 * arg_134_4.ease, arg_134_0.y + var_134_1 * arg_134_4.ease
-		else
+		if not (var_134_0 * var_134_0 + var_134_1 * var_134_1 > 0.25) then
 			arg_134_0.x, arg_134_0.y = arg_134_1.x, arg_134_1.y
+		else
+			arg_134_0.x, arg_134_0.y = arg_134_0.x + var_134_0 * arg_134_4.ease, arg_134_0.y + var_134_1 * arg_134_4.ease
 		end
 	end
 
