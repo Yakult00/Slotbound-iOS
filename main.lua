@@ -192,6 +192,11 @@ local function draw_box(rx, ry, bw, bh, text, color)
 end
 
 local SBToast = { text = nil, expire = 0 }
+local SB_TOAST_FONT
+local function sb_toast_font()
+    if not SB_TOAST_FONT then SB_TOAST_FONT = love.graphics.newFont(26) end
+    return SB_TOAST_FONT
+end
 local function sb_toast(t)
     SBToast.text = t
     SBToast.expire = love.timer.getTime() + 3.5
@@ -209,17 +214,24 @@ love.draw = function()
     local ex, ey, ew, eh = back_rect()
     draw_box(ex, ey, ew, eh, "ESC", {0.12, 0.12, 0.16, 0.65})
     if SBToast.text and love.timer.getTime() < SBToast.expire then
-        local font = love.graphics.getFont()
-        local w = math.min(love.graphics.getWidth() - 40, font:getWidth(SBToast.text) + 28)
-        local h = font:getHeight() + 18
+        local font = sb_toast_font()
+        local prev_font = love.graphics.getFont()
+        local pad = 20
+        local textw = math.min(love.graphics.getWidth() - 80, font:getWidth(SBToast.text))
+        local w, h = textw + pad * 2, font:getHeight() + pad
         local x = (love.graphics.getWidth() - w) / 2
-        local y = love.graphics.getHeight() - h - 34
+        local y = love.graphics.getHeight() - h - 46
         love.graphics.push()
         love.graphics.origin()
-        love.graphics.setColor(0, 0, 0, 0.78)
-        love.graphics.rectangle("fill", x, y, w, h, 8, 8)
-        love.graphics.setColor(1, 1, 1, 0.95)
-        love.graphics.printf(SBToast.text, x + 14, y + 9, w - 28, "center")
+        love.graphics.setColor(0, 0, 0, 0.8)
+        love.graphics.rectangle("fill", x, y, w, h, 10, 10)
+        love.graphics.setColor(1, 1, 1, 0.18)
+        love.graphics.setLineWidth(2)
+        love.graphics.rectangle("line", x, y, w, h, 10, 10)
+        love.graphics.setColor(1, 1, 1, 0.96)
+        love.graphics.setFont(font)
+        love.graphics.printf(SBToast.text, x + pad, y + (h - font:getHeight()) / 2, textw, "center")
+        love.graphics.setFont(prev_font)
         love.graphics.pop()
     end
 end
