@@ -1208,6 +1208,9 @@ function S.install()
         if type(__slotPadSettingsView) ~= "function" or not ui then return false end
         local v = __slotPadSettingsView()
         if not v or not v.st or v.st.open ~= true or v.st.page ~= nil then return false end
+        -- 语言下拉框开着时不拦截：让游戏原版先处理下拉框点选，
+        -- 否则点语言会落到下面的存档行。
+        if v.st.langDropdownOpen == true then return false end
         local vx, vy = x, y
         local W = (ui.virtual and ui.virtual.W) or 640
         local H = (ui.virtual and ui.virtual.H) or 360
